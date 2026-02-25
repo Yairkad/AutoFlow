@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אוטוליין – הצעות מחיר</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .tab-bar { display:flex; gap:0; margin-bottom:20px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); background:white; }
+    .tab-btn { flex:1; padding:12px 10px; border:none; background:transparent; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s,color .15s; color:var(--text-muted); }
+    .tab-btn.active { background:var(--primary); color:white; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    .status-badge { font-size:11px; padding:2px 8px; border-radius:12px; font-weight:700; }
+    .status-open     { background:#fef3c7; color:#92400e; }
+    .status-quoted   { background:#dbeafe; color:#1e40af; }
+    .status-closed   { background:#d1fae5; color:#065f46; }
+    .status-canceled { background:#fee2e2; color:#991b1b; }
+    .profit-good { color:var(--primary); font-weight:700; }
+    .profit-bad  { color:var(--danger);  font-weight:700; }
+
+    /* ===== SUPPLIER OFFERS ===== */
+    .offers-section { grid-column:1/-1; }
+    .offers-section label { font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block; }
+    .offers-wrap { display:flex; flex-direction:column; gap:6px; }
+    .offer-row {
+      display:grid;
+      grid-template-columns: 2fr 1fr 1.2fr 1.5fr 36px 36px;
+      gap:6px; align-items:center;
+      background:var(--bg); border-radius:8px;
+      padding:8px 10px; border:2px solid transparent;
+      transition:border-color .15s, background .15s;
+    }
+    .offer-row.selected { border-color:var(--primary); background:var(--primary-light); }
+    .offer-row input, .offer-row select {
+      padding:5px 8px; border:1px solid var(--border); border-radius:6px;
+      font-size:13px; background:white; font-family:inherit;
+    }
+    .offer-row .o-price { font-weight:700; color:var(--primary); }
+    .offer-row .btn-pick { background:var(--primary); color:white; border:none; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:14px; }
+    .offer-row .btn-pick:hover { opacity:.85; }
+    .offer-row .btn-del  { background:var(--danger-light); color:var(--danger); border:none; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:13px; }
+    .selected-info { font-size:12px; color:var(--primary); margin-top:6px; font-weight:700; min-height:18px; }
+    .offers-header { display:grid; grid-template-columns:2fr 1fr 1.2fr 1.5fr 36px 36px; gap:6px; padding:0 10px; margin-bottom:2px; }
+    .offers-header span { font-size:11px; color:var(--text-muted); }
+
+    @media print {
+      .app-header, .main-nav, .tab-bar, .search-wrap,
+      .action-area, .page-title, .stats-row, #confirmOverlay,
+      #editModal, #toast, .btn, button, .btn-icon,
+      .no-print, .offers-section, .offer-row { display:none !important; }
+      body { background:white !important; }
+      .card { box-shadow:none !important; margin:0 !important; }
+      .print-doc-header { display:flex !important; }
+      td:last-child, th:last-child { display:none; }
+    }
+    @media screen { .print-doc-header { display:none; } }
+    .print-doc-header {
+      justify-content:space-between; align-items:center;
+      padding:10px 0 12px; margin-bottom:14px;
+      border-bottom:3px solid #000;
+    }
+    .pdh-info h2 { font-size:20px; font-weight:900; margin:0 0 3px; }
+    .pdh-info p  { font-size:12px; color:#555; margin:0; }
+    .pdh-logo img { height:55px; object-fit:contain; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" src="" alt="לוגו">
+    <div class="header-title">
+      <h1>אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+  <div class="page-title"><span class="icon">💬</span> הצעות מחיר</div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tires')">🔵 צמיגים</button>
+    <button class="tab-btn"        onclick="switchTab('parts')">🔧 חלקים</button>
+  </div>
+
+  <!-- ===== TIRES TAB ===== -->
+  <div id="tab-tires" class="tab-content active">
+    <div class="card no-print">
+      <div class="card-header">
+        <div class="card-header-left"><div class="icon blue">➕</div><h3>בקשת הצעה – צמיגים</h3></div>
+      </div>
+      <div class="card-body">
+        <div class="grid-inputs">
+          <div class="field"><label>תאריך <span class="required-star">*</span></label><input type="text" id="tf_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
+          <div class="field"><label>שם הפונה <span class="required-star">*</span></label><input type="text" id="tf_name" placeholder="שם הלקוח" oninput="markFilled(this)"></div>
+          <div class="field"><label>טלפון</label><input type="text" id="tf_phone" placeholder="050-0000000" oninput="markFilled(this)"></div>
+          <div class="field"><label>מס' רכב</label><input type="text" id="tf_plate" placeholder="12-345-67" oninput="markFilled(this)"></div>
+          <div class="field"><label>מותג מבוקש</label><input type="text" id="tf_brand" list="tireBrandList" placeholder="Michelin, Bridgestone..." oninput="markFilled(this)"><datalist id="tireBrandList"></datalist></div>
+          <div class="field"><label>רוחב</label><input type="number" id="tf_width" list="tireWidthList" placeholder="205" oninput="markFilled(this)"><datalist id="tireWidthList"><option value="145"><option value="155"><option value="165"><option value="175"><option value="185"><option value="195"><option value="205"><option value="215"><option value="225"><option value="235"><option value="245"><option value="255"><option value="265"><option value="275"><option value="285"><option value="295"><option value="305"><option value="315"></datalist></div>
+          <div class="field"><label>פרופיל</label><input type="number" id="tf_profile" placeholder="55" oninput="markFilled(this)"></div>
+          <div class="field"><label>קוטר (אינץ')</label><input type="number" id="tf_rim" placeholder="16" oninput="markFilled(this)"></div>
+          <div class="field"><label>כמות</label><input type="number" id="tf_qty" placeholder="4" min="1" oninput="calcTireProfit(); markFilled(this)"></div>
+
+          <!-- Multi-supplier offers -->
+          <div class="offers-section">
+            <label>הצעות ספקים <small style="font-weight:400;color:var(--text-muted)">(הוסף הצעה מכל ספק, לחץ ✓ לבחירת המועדף)</small></label>
+            <div class="offers-header">
+              <span>שם ספק</span><span>סוג</span><span>מחיר ליח' (₪)</span><span>הערה</span><span></span><span></span>
+            </div>
+            <div class="offers-wrap" id="tf_offersWrap"></div>
+            <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addOffer('tf')">➕ הוסף הצעת ספק</button>
+            <div class="selected-info" id="tf_selectedInfo"></div>
+            <!-- Hidden fields that receive the selected offer values -->
+            <input type="hidden" id="tf_costPrice" value="">
+            <input type="hidden" id="tf_supplier" value="">
+          </div>
+
+          <div class="field">
+            <label>הצעה ללקוח (₪ ליח')</label>
+            <input type="number" id="tf_sellPrice" placeholder="0.00" min="0" step="0.01" oninput="calcTireProfit(); markFilled(this)">
+          </div>
+          <div class="field">
+            <label>סטטוס</label>
+            <select id="tf_status" onchange="markFilled(this)">
+              <option value="open">בטיפול</option>
+              <option value="quoted">הוצעה ללקוח</option>
+              <option value="closed">נסגרה</option>
+              <option value="canceled">בוטלה</option>
+            </select>
+          </div>
+          <div class="field"><label>הערות</label><input type="text" id="tf_notes" placeholder="הערה חופשית" oninput="markFilled(this)"></div>
+        </div>
+        <div id="tf_profit_display" style="margin-top:10px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:13px;display:none"></div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="saveTireQuote()">💾 שמור בקשה</button>
+        <button class="btn btn-secondary" onclick="clearTireForm()">🗑 נקה</button>
+      </div>
+    </div>
+
+    <div class="card" id="tirePrintCard">
+      <div class="print-doc-header">
+        <div class="pdh-info"><h2 id="pdh_title_t">הצעות מחיר – צמיגים</h2><p id="pdh_sub_t"></p></div>
+        <div class="pdh-logo"><img id="pdh_logo_t" src="" style="display:none"></div>
+      </div>
+      <div class="card-header no-print">
+        <div class="card-header-left"><div class="icon blue">📋</div><h3>בקשות צמיגים</h3></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-warning btn-sm" onclick="printQuotes('tires')">🖨️ הדפס</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportQuotes('tires')">📊 ייצא Excel</button>
+        </div>
+      </div>
+      <div class="search-wrap no-print">
+        <input type="text" class="search-input" id="tireSearch" placeholder="🔍  חיפוש לפי שם / מספר רכב / מותג..." oninput="renderTireTable()">
+        <select class="filter-select" id="tireFilterStatus" onchange="renderTireTable()">
+          <option value="">כל הסטטוסים</option>
+          <option value="open">בטיפול</option>
+          <option value="quoted">הוצעה</option>
+          <option value="closed">נסגרה</option>
+          <option value="canceled">בוטלה</option>
+        </select>
+      </div>
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th>תאריך</th><th>פונה</th><th>טלפון</th><th>רכב</th><th>מידה / מותג</th><th>כמות</th>
+            <th class="no-print">הצעות ספקים</th><th>הצעה ללקוח</th>
+            <th class="no-print">רווח</th><th>סטטוס</th><th>הערות</th><th class="no-print"></th>
+          </tr></thead>
+          <tbody id="tireTableBody"></tbody>
+        </table>
+      </div>
+      <div id="tireEmptyState" class="empty-state" style="display:none"><div class="emoji">💬</div><p>אין בקשות צמיגים עדיין</p></div>
+    </div>
+  </div>
+
+  <!-- ===== PARTS TAB ===== -->
+  <div id="tab-parts" class="tab-content">
+    <div class="card no-print">
+      <div class="card-header">
+        <div class="card-header-left"><div class="icon green">➕</div><h3>בקשת הצעה – חלקים</h3></div>
+      </div>
+      <div class="card-body">
+        <div class="grid-inputs">
+          <div class="field"><label>תאריך <span class="required-star">*</span></label><input type="text" id="pf_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
+          <div class="field"><label>שם הפונה <span class="required-star">*</span></label><input type="text" id="pf_name" placeholder="שם הלקוח" oninput="markFilled(this)"></div>
+          <div class="field"><label>טלפון</label><input type="text" id="pf_phone" placeholder="050-0000000" oninput="markFilled(this)"></div>
+          <div class="field"><label>מס' רכב</label><input type="text" id="pf_plate" placeholder="12-345-67" oninput="markFilled(this)"></div>
+          <div class="field"><label>יצרן / דגם רכב</label><input type="text" id="pf_car" placeholder="טויוטה קורולה 2019" oninput="markFilled(this)"></div>
+          <div class="field"><label>שם החלק <span class="required-star">*</span></label><input type="text" id="pf_part" placeholder="שם החלק המבוקש" oninput="markFilled(this)"></div>
+          <div class="field"><label>מק"ט / קטלוג</label><input type="text" id="pf_sku" placeholder="מספר קטלוג" oninput="markFilled(this)"></div>
+          <div class="field"><label>כמות</label><input type="number" id="pf_qty" placeholder="1" min="1" oninput="calcPartProfit(); markFilled(this)"></div>
+
+          <!-- Multi-supplier offers -->
+          <div class="offers-section">
+            <label>הצעות ספקים <small style="font-weight:400;color:var(--text-muted)">(הוסף הצעה מכל ספק, לחץ ✓ לבחירת המועדף)</small></label>
+            <div class="offers-header">
+              <span>שם ספק</span><span>סוג</span><span>מחיר (₪)</span><span>הערה</span><span></span><span></span>
+            </div>
+            <div class="offers-wrap" id="pf_offersWrap"></div>
+            <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addOffer('pf')">➕ הוסף הצעת ספק</button>
+            <div class="selected-info" id="pf_selectedInfo"></div>
+            <input type="hidden" id="pf_costPrice" value="">
+            <input type="hidden" id="pf_supplier" value="">
+          </div>
+
+          <div class="field">
+            <label>הצעה ללקוח (₪)</label>
+            <input type="number" id="pf_sellPrice" placeholder="0.00" min="0" step="0.01" oninput="calcPartProfit(); markFilled(this)">
+          </div>
+          <div class="field">
+            <label>סטטוס</label>
+            <select id="pf_status" onchange="markFilled(this)">
+              <option value="open">בטיפול</option>
+              <option value="quoted">הוצעה ללקוח</option>
+              <option value="closed">נסגרה</option>
+              <option value="canceled">בוטלה</option>
+            </select>
+          </div>
+          <div class="field"><label>הערות</label><input type="text" id="pf_notes" placeholder="הערה חופשית" oninput="markFilled(this)"></div>
+        </div>
+        <div id="pf_profit_display" style="margin-top:10px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:13px;display:none"></div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="savePartQuote()">💾 שמור בקשה</button>
+        <button class="btn btn-secondary" onclick="clearPartForm()">🗑 נקה</button>
+      </div>
+    </div>
+
+    <div class="card" id="partPrintCard">
+      <div class="print-doc-header">
+        <div class="pdh-info"><h2 id="pdh_title_p">הצעות מחיר – חלקים</h2><p id="pdh_sub_p"></p></div>
+        <div class="pdh-logo"><img id="pdh_logo_p" src="" style="display:none"></div>
+      </div>
+      <div class="card-header no-print">
+        <div class="card-header-left"><div class="icon green">📋</div><h3>בקשות חלקים</h3></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-warning btn-sm" onclick="printQuotes('parts')">🖨️ הדפס</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportQuotes('parts')">📊 ייצא Excel</button>
+        </div>
+      </div>
+      <div class="search-wrap no-print">
+        <input type="text" class="search-input" id="partSearch" placeholder="🔍  חיפוש לפי שם / חלק / רכב..." oninput="renderPartTable()">
+        <select class="filter-select" id="partFilterStatus" onchange="renderPartTable()">
+          <option value="">כל הסטטוסים</option>
+          <option value="open">בטיפול</option>
+          <option value="quoted">הוצעה</option>
+          <option value="closed">נסגרה</option>
+          <option value="canceled">בוטלה</option>
+        </select>
+      </div>
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th>תאריך</th><th>פונה</th><th>טלפון</th><th>רכב / דגם</th><th>חלק</th><th>כמות</th>
+            <th class="no-print">הצעות ספקים</th><th>הצעה ללקוח</th>
+            <th class="no-print">רווח</th><th>סטטוס</th><th>הערות</th><th class="no-print"></th>
+          </tr></thead>
+          <tbody id="partTableBody"></tbody>
+        </table>
+      </div>
+      <div id="partEmptyState" class="empty-state" style="display:none"><div class="emoji">🔧</div><p>אין בקשות חלקים עדיין</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal-overlay">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <h3 id="editModalTitle">עריכת הצעה</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="editModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">ביטול</button>
+      <button class="btn btn-primary" style="flex:unset;padding:10px 24px" onclick="saveEdit()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="big-icon">🗑️</div>
+    <h3>מחיקת הצעה</h3>
+    <p id="confirmMsg">האם למחוק?</p>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmYes()">מחק</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const DB_TIRES = 'pnc_quotes_tires';
+const DB_PARTS = 'pnc_quotes_parts';
+const OFFER_TYPES = ['מקורי','חליפי','מפירוק','ממחסן','חדש','אחר'];
+const STATUS_LABEL = { open:'בטיפול', quoted:'הוצעה', closed:'נסגרה', canceled:'בוטלה' };
+const STATUS_CLASS = { open:'status-open', quoted:'status-quoted', closed:'status-closed', canceled:'status-canceled' };
+
+let currentTab = 'tires';
+let editId = null;
+let editType = null;
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('tf_date').value = todayStr();
+  document.getElementById('pf_date').value = todayStr();
+  loadBrandList();
+  renderStats();
+  renderTireTable();
+  renderPartTable();
+  // Start with one empty offer row in each form
+  addOffer('tf');
+  addOffer('pf');
+});
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='tires')||(i===1&&tab==='parts')));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function loadBrandList() {
+  const db = getDB('pnc_tires');
+  const brands = [...new Set(db.map(t=>t.brand).filter(Boolean))].sort();
+  document.getElementById('tireBrandList').innerHTML = brands.map(b=>`<option value="${b}">`).join('');
+}
+
+// ===== SUPPLIER OFFER ROWS =====
+function _offerRowHtml(prefix) {
+  const opts = OFFER_TYPES.map(t=>`<option value="${t}">${t}</option>`).join('');
+  return `
+    <input type="text" class="o-sup" placeholder="שם ספק">
+    <select class="o-type">${opts}</select>
+    <input type="number" class="o-price" placeholder="0.00" min="0" step="0.01" oninput="onPriceInput('${prefix}',this)">
+    <input type="text" class="o-note" placeholder="הערה (אופציונלי)">
+    <button type="button" class="btn-pick" title="בחר הצעה זו" onclick="pickOffer('${prefix}',this.closest('.offer-row'))">✓</button>
+    <button type="button" class="btn-del"  title="הסר שורה"   onclick="removeOffer('${prefix}',this.closest('.offer-row'))">✕</button>
+  `;
+}
+
+function addOffer(prefix, data) {
+  const wrap = document.getElementById(prefix + '_offersWrap');
+  const row  = document.createElement('div');
+  row.className = 'offer-row';
+  row.innerHTML  = _offerRowHtml(prefix);
+  wrap.appendChild(row);
+  if (data) {
+    row.querySelector('.o-sup').value  = data.supplier || '';
+    row.querySelector('.o-type').value = data.type     || OFFER_TYPES[0];
+    row.querySelector('.o-price').value= data.price    || '';
+    row.querySelector('.o-note').value = data.note     || '';
+    if (data.selected) pickOffer(prefix, row, true);
+  }
+}
+
+function removeOffer(prefix, row) {
+  if (row.classList.contains('selected')) {
+    document.getElementById(prefix + '_costPrice').value = '';
+    document.getElementById(prefix + '_supplier').value  = '';
+    document.getElementById(prefix + '_selectedInfo').textContent = '';
+    _recalcProfit(prefix);
+  }
+  row.remove();
+}
+
+function pickOffer(prefix, row, silent) {
+  // Deselect siblings
+  document.querySelectorAll(`#${prefix}_offersWrap .offer-row`).forEach(r => r.classList.remove('selected'));
+  row.classList.add('selected');
+  const price    = parseFloat(row.querySelector('.o-price').value) || 0;
+  const supplier = row.querySelector('.o-sup').value.trim();
+  const type     = row.querySelector('.o-type').value;
+  document.getElementById(prefix + '_costPrice').value = price || '';
+  document.getElementById(prefix + '_supplier').value  = supplier;
+  const info = document.getElementById(prefix + '_selectedInfo');
+  if (info) info.textContent = price > 0
+    ? `✓ נבחר: ${supplier||'(ללא שם)'} – ${type} – ₪${price.toFixed(2)} ליח'`
+    : '';
+  if (!silent) _recalcProfit(prefix);
+}
+
+function onPriceInput(prefix, input) {
+  const row = input.closest('.offer-row');
+  if (row.classList.contains('selected')) pickOffer(prefix, row, false);
+}
+
+function _recalcProfit(prefix) {
+  if (prefix === 'tf' || prefix === 'ef_t') calcTireProfit();
+  else calcPartProfit();
+}
+
+function collectOffers(prefix) {
+  const rows = document.querySelectorAll(`#${prefix}_offersWrap .offer-row`);
+  return Array.from(rows).map(r => ({
+    supplier: r.querySelector('.o-sup').value.trim(),
+    type:     r.querySelector('.o-type').value,
+    price:    parseFloat(r.querySelector('.o-price').value) || 0,
+    note:     r.querySelector('.o-note').value.trim(),
+    selected: r.classList.contains('selected')
+  })).filter(o => o.supplier || o.price > 0);
+}
+
+// ===== PROFIT CALC =====
+function _profitHtml(cost, sell, qty) {
+  if (!(cost > 0) || !(sell > 0)) return null;
+  const pp = sell - cost;
+  const tp = pp * qty;
+  const mg = Math.round((pp / cost) * 100);
+  const cls = pp >= 0 ? 'profit-good' : 'profit-bad';
+  return `רווח ליח': <strong class="${cls}">₪${pp.toFixed(2)}</strong>
+    &nbsp;|&nbsp; % רווח: <strong class="${cls}">${mg}%</strong>
+    &nbsp;|&nbsp; סה"כ רווח: <strong class="${cls}">₪${tp.toFixed(2)}</strong>`;
+}
+
+function calcTireProfit() {
+  const cost = parseFloat(document.getElementById('tf_costPrice').value) || 0;
+  const sell = parseFloat(document.getElementById('tf_sellPrice').value) || 0;
+  const qty  = parseFloat(document.getElementById('tf_qty').value) || 1;
+  const el   = document.getElementById('tf_profit_display');
+  const html = _profitHtml(cost, sell, qty);
+  el.style.display = html ? '' : 'none';
+  if (html) el.innerHTML = html;
+}
+function calcPartProfit() {
+  const cost = parseFloat(document.getElementById('pf_costPrice').value) || 0;
+  const sell = parseFloat(document.getElementById('pf_sellPrice').value) || 0;
+  const qty  = parseFloat(document.getElementById('pf_qty').value) || 1;
+  const el   = document.getElementById('pf_profit_display');
+  const html = _profitHtml(cost, sell, qty);
+  el.style.display = html ? '' : 'none';
+  if (html) el.innerHTML = html;
+}
+
+// ===== SAVE TIRE QUOTE =====
+function saveTireQuote() {
+  const name = document.getElementById('tf_name').value.trim();
+  const date = document.getElementById('tf_date').value.trim();
+  if (!name) return showToast('יש להזין שם פונה', 'error');
+  if (!date) return showToast('יש להזין תאריך', 'error');
+
+  const offers = collectOffers('tf');
+  const selOffer = offers.find(o=>o.selected) || offers[0] || {};
+  const cost = parseFloat(document.getElementById('tf_costPrice').value) || selOffer.price || 0;
+  const sell = parseFloat(document.getElementById('tf_sellPrice').value) || 0;
+  const qty  = parseFloat(document.getElementById('tf_qty').value) || 1;
+  const w = document.getElementById('tf_width').value;
+  const p = document.getElementById('tf_profile').value;
+  const r = document.getElementById('tf_rim').value;
+  const size = (w&&p&&r) ? `${w}/${p}R${r}` : '';
+  const rec = {
+    id: nowId(), date, name,
+    phone:          document.getElementById('tf_phone').value.trim(),
+    plate:          document.getElementById('tf_plate').value.trim(),
+    brand:          document.getElementById('tf_brand').value.trim(),
+    size, width:parseInt(w)||0, profile:parseInt(p)||0, rim:parseInt(r)||0,
+    qty,
+    supplierOffers: offers,
+    costPrice: cost, sellPrice: sell,
+    supplier:       selOffer.supplier || document.getElementById('tf_supplier').value.trim(),
+    profit:         sell>0&&cost>0 ? (sell-cost)*qty : 0,
+    status:         document.getElementById('tf_status').value,
+    notes:          document.getElementById('tf_notes').value.trim()
+  };
+  const db = getDB(DB_TIRES);
+  db.unshift(rec);
+  setDB(DB_TIRES, db);
+  clearTireForm();
+  renderStats();
+  renderTireTable();
+  showToast('הבקשה נשמרה ✓', 'success');
+}
+
+// ===== SAVE PART QUOTE =====
+function savePartQuote() {
+  const name = document.getElementById('pf_name').value.trim();
+  const date = document.getElementById('pf_date').value.trim();
+  const part = document.getElementById('pf_part').value.trim();
+  if (!name) return showToast('יש להזין שם פונה', 'error');
+  if (!date) return showToast('יש להזין תאריך', 'error');
+  if (!part) return showToast('יש להזין שם חלק', 'error');
+
+  const offers = collectOffers('pf');
+  const selOffer = offers.find(o=>o.selected) || offers[0] || {};
+  const cost = parseFloat(document.getElementById('pf_costPrice').value) || selOffer.price || 0;
+  const sell = parseFloat(document.getElementById('pf_sellPrice').value) || 0;
+  const qty  = parseFloat(document.getElementById('pf_qty').value) || 1;
+  const rec = {
+    id: nowId(), date, name,
+    phone:          document.getElementById('pf_phone').value.trim(),
+    plate:          document.getElementById('pf_plate').value.trim(),
+    car:            document.getElementById('pf_car').value.trim(),
+    part,
+    sku:            document.getElementById('pf_sku').value.trim(),
+    qty,
+    supplierOffers: offers,
+    costPrice: cost, sellPrice: sell,
+    supplier:       selOffer.supplier || document.getElementById('pf_supplier').value.trim(),
+    profit:         sell>0&&cost>0 ? (sell-cost)*qty : 0,
+    status:         document.getElementById('pf_status').value,
+    notes:          document.getElementById('pf_notes').value.trim()
+  };
+  const db = getDB(DB_PARTS);
+  db.unshift(rec);
+  setDB(DB_PARTS, db);
+  clearPartForm();
+  renderStats();
+  renderPartTable();
+  showToast('הבקשה נשמרה ✓', 'success');
+}
+
+// ===== CLEAR FORMS =====
+function clearTireForm() {
+  ['tf_date','tf_name','tf_phone','tf_plate','tf_brand','tf_width','tf_profile','tf_rim','tf_qty','tf_sellPrice','tf_notes']
+    .forEach(id => { const el=document.getElementById(id); if(el){el.value='';el.classList.remove('filled');} });
+  document.getElementById('tf_costPrice').value = '';
+  document.getElementById('tf_supplier').value  = '';
+  document.getElementById('tf_date').value = todayStr();
+  document.getElementById('tf_status').value = 'open';
+  document.getElementById('tf_profit_display').style.display = 'none';
+  document.getElementById('tf_selectedInfo').textContent = '';
+  document.getElementById('tf_offersWrap').innerHTML = '';
+  addOffer('tf');
+  markFilled(document.getElementById('tf_date'));
+}
+function clearPartForm() {
+  ['pf_date','pf_name','pf_phone','pf_plate','pf_car','pf_part','pf_sku','pf_qty','pf_sellPrice','pf_notes']
+    .forEach(id => { const el=document.getElementById(id); if(el){el.value='';el.classList.remove('filled');} });
+  document.getElementById('pf_costPrice').value = '';
+  document.getElementById('pf_supplier').value  = '';
+  document.getElementById('pf_date').value = todayStr();
+  document.getElementById('pf_status').value = 'open';
+  document.getElementById('pf_profit_display').style.display = 'none';
+  document.getElementById('pf_selectedInfo').textContent = '';
+  document.getElementById('pf_offersWrap').innerHTML = '';
+  addOffer('pf');
+  markFilled(document.getElementById('pf_date'));
+}
+
+// ===== STATS =====
+function renderStats() {
+  const tires = getDB(DB_TIRES);
+  const parts = getDB(DB_PARTS);
+  const tOpen   = tires.filter(x=>x.status==='open').length;
+  const pOpen   = parts.filter(x=>x.status==='open').length;
+  const tClosed = tires.filter(x=>x.status==='closed').length;
+  const pClosed = parts.filter(x=>x.status==='closed').length;
+  const totalRev = [...tires,...parts].filter(x=>x.status==='closed').reduce((s,x)=>s+(x.sellPrice||0)*(x.qty||1),0);
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card blue"><span class="num">${tOpen}</span><div class="lbl">צמיגים בטיפול</div></div>
+    <div class="stat-card"><span class="num">${pOpen}</span><div class="lbl">חלקים בטיפול</div></div>
+    <div class="stat-card"><span class="num">${tClosed+pClosed}</span><div class="lbl">עסקאות שנסגרו</div></div>
+    <div class="stat-card blue"><span class="num">₪${Math.round(totalRev).toLocaleString('he-IL')}</span><div class="lbl">הכנסות (עסקאות סגורות)</div></div>
+  `;
+}
+
+// ===== OFFERS SUMMARY (for table display) =====
+function offersHtml(offers) {
+  if (!offers || !offers.length) return '—';
+  return offers.map(o => {
+    const cls = o.selected ? 'badge-green' : 'badge-gray';
+    const label = `${o.supplier||'?'} / ${o.type}${o.price>0?' – ₪'+o.price.toFixed(2):''}`;
+    return `<span class="badge ${cls}" style="display:block;margin-bottom:2px">${o.selected?'✓ ':''}${label}${o.note?` <small>(${o.note})</small>`:''}</span>`;
+  }).join('');
+}
+
+// ===== RENDER TIRE TABLE =====
+function renderTireTable() {
+  const db     = getDB(DB_TIRES);
+  const search = document.getElementById('tireSearch').value.toLowerCase();
+  const stF    = document.getElementById('tireFilterStatus').value;
+  const filtered = db.filter(x => {
+    if (stF && x.status !== stF) return false;
+    if (search) {
+      const hay = [x.name,x.phone,x.plate,x.brand,x.size,x.notes].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  const body  = document.getElementById('tireTableBody');
+  const empty = document.getElementById('tireEmptyState');
+  if (!filtered.length) { body.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  body.innerHTML = filtered.map(x => {
+    const pp = x.sellPrice && x.costPrice ? (x.sellPrice - x.costPrice) * (x.qty||1) : null;
+    return `<tr>
+      <td>${x.date||'—'}</td>
+      <td style="font-weight:700">${x.name}</td>
+      <td>${x.phone||'—'}</td>
+      <td>${x.plate||'—'}</td>
+      <td>${[x.size,x.brand].filter(Boolean).join(' ')||'—'}</td>
+      <td>${x.qty||1}</td>
+      <td class="no-print" style="font-size:12px">${offersHtml(x.supplierOffers)}</td>
+      <td style="font-weight:700;color:var(--primary)">${x.sellPrice?'₪'+x.sellPrice.toFixed(2):'—'}</td>
+      <td class="no-print">${pp!==null?`<span class="${pp>=0?'profit-good':'profit-bad'}">₪${pp.toFixed(2)}</span>`:'—'}</td>
+      <td><span class="status-badge ${STATUS_CLASS[x.status]||''}">${STATUS_LABEL[x.status]||x.status}</span></td>
+      <td style="font-size:12px;color:var(--text-muted)">${x.notes||'—'}</td>
+      <td class="no-print" style="white-space:nowrap">
+        <button class="btn-icon" title="ערוך"  onclick="openEditTire(${x.id})">✏️</button>
+        <button class="btn-icon" title="מחק"   onclick="deleteQuote(${x.id},'tires')">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== RENDER PART TABLE =====
+function renderPartTable() {
+  const db     = getDB(DB_PARTS);
+  const search = document.getElementById('partSearch').value.toLowerCase();
+  const stF    = document.getElementById('partFilterStatus').value;
+  const filtered = db.filter(x => {
+    if (stF && x.status !== stF) return false;
+    if (search) {
+      const hay = [x.name,x.phone,x.plate,x.car,x.part,x.sku,x.notes].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  const body  = document.getElementById('partTableBody');
+  const empty = document.getElementById('partEmptyState');
+  if (!filtered.length) { body.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  body.innerHTML = filtered.map(x => {
+    const pp = x.sellPrice && x.costPrice ? (x.sellPrice - x.costPrice) * (x.qty||1) : null;
+    return `<tr>
+      <td>${x.date||'—'}</td>
+      <td style="font-weight:700">${x.name}</td>
+      <td>${x.phone||'—'}</td>
+      <td style="font-size:12px">${[x.plate,x.car].filter(Boolean).join(' / ')||'—'}</td>
+      <td style="font-weight:700">${x.part||'—'}${x.sku?`<br><small style="color:var(--text-muted)">${x.sku}</small>`:''}</td>
+      <td>${x.qty||1}</td>
+      <td class="no-print" style="font-size:12px">${offersHtml(x.supplierOffers)}</td>
+      <td style="font-weight:700;color:var(--primary)">${x.sellPrice?'₪'+x.sellPrice.toFixed(2):'—'}</td>
+      <td class="no-print">${pp!==null?`<span class="${pp>=0?'profit-good':'profit-bad'}">₪${pp.toFixed(2)}</span>`:'—'}</td>
+      <td><span class="status-badge ${STATUS_CLASS[x.status]||''}">${STATUS_LABEL[x.status]||x.status}</span></td>
+      <td style="font-size:12px;color:var(--text-muted)">${x.notes||'—'}</td>
+      <td class="no-print" style="white-space:nowrap">
+        <button class="btn-icon" title="ערוך"  onclick="openEditPart(${x.id})">✏️</button>
+        <button class="btn-icon" title="מחק"   onclick="deleteQuote(${x.id},'parts')">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== EDIT TIRE =====
+function openEditTire(id) {
+  const x = getDB(DB_TIRES).find(r=>r.id===id); if(!x) return;
+  editId=id; editType='tires';
+  document.getElementById('editModalTitle').textContent = 'עריכת הצעה – צמיגים';
+  const opts = OFFER_TYPES.map(t=>`<option value="${t}">${t}</option>`).join('');
+  document.getElementById('editModalBody').innerHTML = `
+    <div class="grid-inputs">
+      <div class="field"><label>תאריך</label><input type="text" id="ef_date" value="${x.date||''}"></div>
+      <div class="field"><label>שם פונה</label><input type="text" id="ef_name" value="${x.name||''}"></div>
+      <div class="field"><label>טלפון</label><input type="text" id="ef_phone" value="${x.phone||''}"></div>
+      <div class="field"><label>רכב</label><input type="text" id="ef_plate" value="${x.plate||''}"></div>
+      <div class="field"><label>מותג</label><input type="text" id="ef_brand" value="${x.brand||''}"></div>
+      <div class="field"><label>מידה</label><input type="text" id="ef_size" value="${x.size||''}"></div>
+      <div class="field"><label>כמות</label><input type="number" id="ef_qty" value="${x.qty||1}"></div>
+      <div class="offers-section">
+        <label>הצעות ספקים</label>
+        <div class="offers-header"><span>שם ספק</span><span>סוג</span><span>מחיר ליח' (₪)</span><span>הערה</span><span></span><span></span></div>
+        <div class="offers-wrap" id="ef_offersWrap"></div>
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addOffer('ef')">➕ הוסף הצעת ספק</button>
+        <div class="selected-info" id="ef_selectedInfo"></div>
+        <input type="hidden" id="ef_costPrice" value="${x.costPrice||''}">
+        <input type="hidden" id="ef_supplier" value="${x.supplier||''}">
+      </div>
+      <div class="field"><label>הצעה ללקוח (₪ ליח')</label><input type="number" id="ef_sellPrice" value="${x.sellPrice||''}" step="0.01"></div>
+      <div class="field"><label>סטטוס</label>
+        <select id="ef_status">
+          <option value="open" ${x.status==='open'?'selected':''}>בטיפול</option>
+          <option value="quoted" ${x.status==='quoted'?'selected':''}>הוצעה ללקוח</option>
+          <option value="closed" ${x.status==='closed'?'selected':''}>נסגרה</option>
+          <option value="canceled" ${x.status==='canceled'?'selected':''}>בוטלה</option>
+        </select>
+      </div>
+      <div class="field"><label>הערות</label><input type="text" id="ef_notes" value="${x.notes||''}"></div>
+    </div>`;
+  document.getElementById('editModal').classList.add('open');
+  // Populate existing offers
+  (x.supplierOffers || []).forEach(o => addOffer('ef', o));
+  if (!(x.supplierOffers||[]).length) addOffer('ef');
+}
+
+// ===== EDIT PART =====
+function openEditPart(id) {
+  const x = getDB(DB_PARTS).find(r=>r.id===id); if(!x) return;
+  editId=id; editType='parts';
+  document.getElementById('editModalTitle').textContent = 'עריכת הצעה – חלקים';
+  document.getElementById('editModalBody').innerHTML = `
+    <div class="grid-inputs">
+      <div class="field"><label>תאריך</label><input type="text" id="ef_date" value="${x.date||''}"></div>
+      <div class="field"><label>שם פונה</label><input type="text" id="ef_name" value="${x.name||''}"></div>
+      <div class="field"><label>טלפון</label><input type="text" id="ef_phone" value="${x.phone||''}"></div>
+      <div class="field"><label>רכב</label><input type="text" id="ef_plate" value="${x.plate||''}"></div>
+      <div class="field"><label>יצרן/דגם</label><input type="text" id="ef_car" value="${x.car||''}"></div>
+      <div class="field"><label>שם חלק</label><input type="text" id="ef_part" value="${x.part||''}"></div>
+      <div class="field"><label>מק"ט</label><input type="text" id="ef_sku" value="${x.sku||''}"></div>
+      <div class="field"><label>כמות</label><input type="number" id="ef_qty" value="${x.qty||1}"></div>
+      <div class="offers-section">
+        <label>הצעות ספקים</label>
+        <div class="offers-header"><span>שם ספק</span><span>סוג</span><span>מחיר (₪)</span><span>הערה</span><span></span><span></span></div>
+        <div class="offers-wrap" id="ef_offersWrap"></div>
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addOffer('ef')">➕ הוסף הצעת ספק</button>
+        <div class="selected-info" id="ef_selectedInfo"></div>
+        <input type="hidden" id="ef_costPrice" value="${x.costPrice||''}">
+        <input type="hidden" id="ef_supplier" value="${x.supplier||''}">
+      </div>
+      <div class="field"><label>הצעה ללקוח (₪)</label><input type="number" id="ef_sellPrice" value="${x.sellPrice||''}" step="0.01"></div>
+      <div class="field"><label>סטטוס</label>
+        <select id="ef_status">
+          <option value="open" ${x.status==='open'?'selected':''}>בטיפול</option>
+          <option value="quoted" ${x.status==='quoted'?'selected':''}>הוצעה ללקוח</option>
+          <option value="closed" ${x.status==='closed'?'selected':''}>נסגרה</option>
+          <option value="canceled" ${x.status==='canceled'?'selected':''}>בוטלה</option>
+        </select>
+      </div>
+      <div class="field"><label>הערות</label><input type="text" id="ef_notes" value="${x.notes||''}"></div>
+    </div>`;
+  document.getElementById('editModal').classList.add('open');
+  (x.supplierOffers || []).forEach(o => addOffer('ef', o));
+  if (!(x.supplierOffers||[]).length) addOffer('ef');
+}
+
+// ===== SAVE EDIT =====
+function saveEdit() {
+  if (!editId || !editType) return;
+  const dbKey = editType === 'tires' ? DB_TIRES : DB_PARTS;
+  const db = getDB(dbKey);
+  const idx = db.findIndex(x=>x.id===editId);
+  if (idx===-1) return;
+
+  const offers   = collectOffers('ef');
+  const selOffer = offers.find(o=>o.selected) || offers[0] || {};
+  const cost = parseFloat(document.getElementById('ef_costPrice').value) || selOffer.price || 0;
+  const sell = parseFloat(document.getElementById('ef_sellPrice').value) || 0;
+  const qty  = parseFloat(document.getElementById('ef_qty').value) || 1;
+
+  const base = {
+    date:           document.getElementById('ef_date').value.trim(),
+    name:           document.getElementById('ef_name').value.trim(),
+    phone:          document.getElementById('ef_phone').value.trim(),
+    plate:          document.getElementById('ef_plate').value.trim(),
+    qty, supplierOffers: offers,
+    costPrice: cost, sellPrice: sell,
+    supplier:       selOffer.supplier || document.getElementById('ef_supplier').value.trim(),
+    profit:         sell>0&&cost>0?(sell-cost)*qty:0,
+    status:         document.getElementById('ef_status').value,
+    notes:          document.getElementById('ef_notes').value.trim()
+  };
+  if (editType === 'tires') {
+    base.brand = document.getElementById('ef_brand').value.trim();
+    base.size  = document.getElementById('ef_size').value.trim();
+  } else {
+    base.car  = document.getElementById('ef_car').value.trim();
+    base.part = document.getElementById('ef_part').value.trim();
+    base.sku  = document.getElementById('ef_sku').value.trim();
+  }
+  db[idx] = { ...db[idx], ...base };
+  setDB(dbKey, db);
+  closeModal();
+  renderStats();
+  if (editType==='tires') renderTireTable(); else renderPartTable();
+  showToast('עודכן ✓','success');
+}
+
+// ===== DELETE =====
+function deleteQuote(id, type) {
+  showConfirm('למחוק את הבקשה?', () => {
+    const key = type === 'tires' ? DB_TIRES : DB_PARTS;
+    setDB(key, getDB(key).filter(x=>x.id!==id));
+    renderStats();
+    if (type==='tires') renderTireTable(); else renderPartTable();
+    showToast('נמחק ✓');
+  });
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editId=null; editType=null;
+}
+
+// ===== PRINT =====
+function printQuotes(type) {
+  const s = getSettings();
+  const sub = [s.businessName, s.businessPhone].filter(Boolean).join(' | ') + '  |  ' + todayStr();
+  if (type === 'tires') {
+    document.getElementById('pdh_title_t').textContent = 'הצעות מחיר – צמיגים';
+    document.getElementById('pdh_sub_t').textContent   = sub;
+    if (s.logoBase64) { const l=document.getElementById('pdh_logo_t'); l.src=s.logoBase64; l.style.display=''; }
+  } else {
+    document.getElementById('pdh_title_p').textContent = 'הצעות מחיר – חלקים';
+    document.getElementById('pdh_sub_p').textContent   = sub;
+    if (s.logoBase64) { const l=document.getElementById('pdh_logo_p'); l.src=s.logoBase64; l.style.display=''; }
+  }
+  document.getElementById('tirePrintCard').style.display = type==='tires' ? '' : 'none';
+  document.getElementById('partPrintCard').style.display = type==='parts' ? '' : 'none';
+  window.print();
+  document.getElementById('tirePrintCard').style.display = '';
+  document.getElementById('partPrintCard').style.display = '';
+}
+
+// ===== EXPORT =====
+function exportQuotes(type) {
+  if (type === 'tires') {
+    const db = getDB(DB_TIRES); if(!db.length) return showToast('אין נתונים','error');
+    const hdrs = ['תאריך','פונה','טלפון','רכב','מידה','מותג','כמות','הצעות ספקים','הצעה ללקוח','רווח כולל','סטטוס','הערות'];
+    const rows = db.map(x=>[
+      x.date,x.name,x.phone,x.plate,x.size,x.brand,x.qty,
+      (x.supplierOffers||[]).map(o=>`${o.supplier}/${o.type}=₪${o.price}`).join('; '),
+      x.sellPrice, x.profit, STATUS_LABEL[x.status]||x.status, x.notes
+    ]);
+    exportToExcel([hdrs,...rows],'הצעות-צמיגים-אוטוליין','צמיגים');
+  } else {
+    const db = getDB(DB_PARTS); if(!db.length) return showToast('אין נתונים','error');
+    const hdrs = ['תאריך','פונה','טלפון','רכב','דגם','חלק','מק"ט','כמות','הצעות ספקים','הצעה ללקוח','רווח כולל','סטטוס','הערות'];
+    const rows = db.map(x=>[
+      x.date,x.name,x.phone,x.plate,x.car,x.part,x.sku,x.qty,
+      (x.supplierOffers||[]).map(o=>`${o.supplier}/${o.type}=₪${o.price}`).join('; '),
+      x.sellPrice, x.profit, STATUS_LABEL[x.status]||x.status, x.notes
+    ]);
+    exportToExcel([hdrs,...rows],'הצעות-חלקים-אוטוליין','חלקים');
+  }
+}
+</script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</body>
+</html>

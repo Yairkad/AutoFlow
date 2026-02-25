@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אוטוליין – הגדרות</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .settings-section { background:white; border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; margin-bottom:20px; }
+    .settings-section h3 { font-size:15px; font-weight:700; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+    .logo-preview { width:120px; height:60px; object-fit:contain; border:1px solid var(--border); border-radius:8px; padding:4px; display:none; }
+    .danger-zone { border:2px solid var(--danger-light); }
+    .danger-zone h3 { color:var(--danger); }
+    .stat-counts { display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; }
+    .count-chip { background:var(--bg); border-radius:8px; padding:8px 14px; font-size:13px; }
+    .count-chip strong { display:block; font-size:20px; font-weight:900; color:var(--primary); }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" src="" alt="לוגו">
+    <div class="header-title">
+      <h1>אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+  <div class="page-title"><span class="icon">⚙️</span> הגדרות</div>
+
+  <!-- Business info -->
+  <div class="settings-section">
+    <h3>🏢 פרטי העסק</h3>
+    <div class="grid-inputs wide">
+      <div class="field">
+        <label>שם העסק</label>
+        <input type="text" id="s_name" placeholder="אוטוליין" oninput="markFilled(this)">
+      </div>
+      <div class="field">
+        <label>שורה שנייה (כתובת / תיאור)</label>
+        <input type="text" id="s_sub" placeholder="תיקוני צמיגים וריאפשופ" oninput="markFilled(this)">
+      </div>
+      <div class="field">
+        <label>טלפון</label>
+        <input type="text" id="s_phone" placeholder="050-0000000" oninput="markFilled(this)">
+      </div>
+      <div class="field">
+        <label>כתובת</label>
+        <input type="text" id="s_address" placeholder="רחוב, עיר" oninput="markFilled(this)">
+      </div>
+      <div class="field">
+        <label>מספר עוסק / ח.פ.</label>
+        <input type="text" id="s_taxId" placeholder="000000000" oninput="markFilled(this)">
+      </div>
+    </div>
+
+    <!-- Logo -->
+    <div style="margin-top:20px">
+      <div class="field" style="max-width:340px">
+        <label>לוגו העסק</label>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <img id="logoPreview" class="logo-preview">
+          <div>
+            <label class="btn btn-secondary btn-sm" style="cursor:pointer">
+              📷 בחר תמונה
+              <input type="file" accept="image/*" id="logoInput" style="display:none" onchange="loadLogo(this)">
+            </label>
+            <button class="btn btn-danger btn-sm" style="margin-top:6px" onclick="removeLogo()">הסר לוגו</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <button class="btn btn-primary" style="max-width:200px" onclick="saveSettingsForm()">💾 שמור הגדרות</button>
+    </div>
+  </div>
+
+  <!-- Defaults -->
+  <div class="settings-section">
+    <h3>🔵 ברירות מחדל</h3>
+    <div class="grid-inputs wide">
+      <div class="field">
+        <label>% רווח ברירת מחדל לצמיגים</label>
+        <input type="number" id="s_tireMargin" placeholder="25" min="0" max="200" step="1" oninput="markFilled(this)">
+      </div>
+      <div class="field">
+        <label>% רווח ברירת מחדל למוצרים</label>
+        <input type="number" id="s_productMargin" placeholder="20" min="0" max="200" step="1" oninput="markFilled(this)">
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <button class="btn btn-primary" style="max-width:200px" onclick="saveSettingsForm()">💾 שמור</button>
+    </div>
+  </div>
+
+  <!-- Backup -->
+  <div class="settings-section">
+    <h3>💾 גיבוי ושחזור</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+      מומלץ לגבות את הנתונים מדי שבוע – שמור את קובץ הגיבוי על הכונן הנייד לצד קבצי הסריקות.
+    </p>
+
+    <!-- Data counts -->
+    <div class="stat-counts" id="dataCounts"></div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">
+      <button class="btn btn-accent" onclick="backupAll()">📥 הורד גיבוי JSON</button>
+      <label class="btn btn-secondary" style="cursor:pointer">
+        📤 שחזר מגיבוי
+        <input type="file" accept=".json" style="display:none" onchange="restoreAll(this.files[0])">
+      </label>
+    </div>
+  </div>
+
+  <!-- Danger Zone -->
+  <div class="settings-section danger-zone">
+    <h3>⚠️ אזור מסוכן – מחיקת נתונים</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+      פעולות אלו בלתי הפיכות! מומלץ לגבות לפני.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_expenses','הוצאות')">🗑 מחק כל ההוצאות</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_products','מוצרים')">🗑 מחק כל המוצרים</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_tires','צמיגים')">🗑 מחק כל הצמיגים</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('mualem_db_v3','בדיקות קניה')">🗑 מחק כל הבדיקות</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="big-icon">⚠️</div>
+    <h3>אישור מחיקה</h3>
+    <p id="confirmMsg"></p>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmYes()">מחק הכל</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  loadSettingsForm();
+  loadDataCounts();
+});
+
+function loadSettingsForm() {
+  const s = getSettings();
+  document.getElementById('s_name').value         = s.businessName    || '';
+  document.getElementById('s_sub').value          = s.businessSub     || '';
+  document.getElementById('s_phone').value        = s.businessPhone   || '';
+  document.getElementById('s_address').value      = s.businessAddress || '';
+  document.getElementById('s_taxId').value        = s.taxId           || '';
+  document.getElementById('s_tireMargin').value   = s.defaultTireMargin    || '';
+  document.getElementById('s_productMargin').value= s.defaultProductMargin || '';
+  if (s.logoBase64) {
+    const img = document.getElementById('logoPreview');
+    img.src = s.logoBase64; img.style.display = '';
+  }
+}
+
+function saveSettingsForm() {
+  const s = getSettings();
+  const updated = {
+    ...s,
+    businessName:    document.getElementById('s_name').value.trim(),
+    businessSub:     document.getElementById('s_sub').value.trim(),
+    businessPhone:   document.getElementById('s_phone').value.trim(),
+    businessAddress: document.getElementById('s_address').value.trim(),
+    taxId:           document.getElementById('s_taxId').value.trim(),
+    defaultTireMargin:    parseFloat(document.getElementById('s_tireMargin').value)||0,
+    defaultProductMargin: parseFloat(document.getElementById('s_productMargin').value)||0,
+  };
+  saveSettings(updated);
+  loadHeaderBranding();
+  showToast('ההגדרות נשמרו ✓', 'success');
+}
+
+function loadLogo(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const b64 = e.target.result;
+    const s = getSettings();
+    s.logoBase64 = b64;
+    window.saveSettings(s);
+    const img = document.getElementById('logoPreview');
+    img.src = b64; img.style.display = '';
+    loadHeaderBranding();
+    showToast('הלוגו עודכן ✓', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeLogo() {
+  const s = getSettings();
+  delete s.logoBase64;
+  window.saveSettings(s);
+  const img = document.getElementById('logoPreview');
+  img.src=''; img.style.display='none';
+  const hLogo = document.querySelector('.header-logo');
+  if(hLogo) hLogo.style.display='none';
+  showToast('הלוגו הוסר ✓');
+}
+
+function loadDataCounts() {
+  const counts = [
+    { label:'הוצאות',        key:'pnc_expenses',      color:'' },
+    { label:'מוצרים',        key:'pnc_products',      color:'blue' },
+    { label:'צמיגים',        key:'pnc_tires',         color:'orange' },
+    { label:'הצעות צמיגים', key:'pnc_quotes_tires',  color:'' },
+    { label:'הצעות חלקים',  key:'pnc_quotes_parts',  color:'' },
+    { label:'ספקים',         key:'pnc_suppliers',     color:'orange' },
+    { label:'בדיקות',        key:'mualem_db_v3',      color:'' },
+  ];
+  document.getElementById('dataCounts').innerHTML = counts.map(c => {
+    const db = getDB(c.key);
+    return `<div class="count-chip"><strong style="color:var(--${c.color?'accent':'primary'})">${db.length}</strong>${c.label}</div>`;
+  }).join('');
+}
+
+function clearModule(key, label) {
+  showConfirm(`למחוק את כל רשומות ${label}? פעולה זו בלתי הפיכה!`, () => {
+    setDB(key, []);
+    loadDataCounts();
+    showToast(`${label} נמחקו ✓`);
+  });
+}
+
+</script>
+</body>
+</html>

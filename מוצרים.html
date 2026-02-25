@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אוטוליין – מלאי מוצרים</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    @media print {
+      .app-header, .main-nav, .search-wrap,
+      .action-area, .page-title, .stats-row, #confirmOverlay,
+      #editModal, #toast, .btn, button, .btn-icon, .no-print { display:none !important; }
+      body { background: white !important; }
+      .card { box-shadow: none !important; margin: 0 !important; }
+      .print-doc-header { display: flex !important; }
+      td:last-child, th:last-child { display: none; }
+    }
+    @media screen { .print-doc-header { display: none; } }
+    .print-doc-header {
+      justify-content: space-between; align-items: center;
+      padding: 10px 0 12px; margin-bottom: 14px;
+      border-bottom: 3px solid #000;
+    }
+    .pdh-info h2 { font-size: 20px; font-weight: 900; margin: 0 0 3px; }
+    .pdh-info p  { font-size: 12px; color: #555; margin: 0; }
+    .pdh-logo img { height: 55px; object-fit: contain; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" src="" alt="לוגו">
+    <div class="header-title">
+      <h1>אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+  <div class="page-title"><span class="icon">📦</span> מלאי מוצרים</div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Form -->
+  <div class="card no-print">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="icon green">➕</div>
+        <h3 id="formTitle">הוספת מוצר</h3>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="grid-inputs">
+        <div class="field">
+          <label>שם מוצר <span class="required-star">*</span></label>
+          <input type="text" id="f_name" placeholder="שם המוצר" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>קטגוריה</label>
+          <input type="text" id="f_category" list="catList" placeholder="למשל: שמנים, פילטרים..." oninput="markFilled(this)">
+          <datalist id="catList"></datalist>
+        </div>
+        <div class="field">
+          <label>יחידה</label>
+          <select id="f_unit" onchange="markFilled(this)">
+            <option value="יח׳">יחידה</option>
+            <option value="ליטר">ליטר</option>
+            <option value="ק״ג">ק״ג</option>
+            <option value="מ״ל">מ״ל</option>
+            <option value="זוג">זוג</option>
+            <option value="קופסה">קופסה</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>מחיר קנייה (₪) <small style="font-weight:400;color:var(--text-muted)">לפני מע"מ</small></label>
+          <input type="number" id="f_costPrice" placeholder="0.00" min="0" step="0.01" oninput="calcSellPrice(); updateVat('f_costPrice','f_costVat'); markFilled(this)">
+          <small id="f_costVat" style="color:var(--text-muted);font-size:11px;margin-top:2px;display:block"></small>
+        </div>
+        <div class="field">
+          <label>% רווח</label>
+          <input type="number" id="f_margin" placeholder="20" min="0" step="1" oninput="calcSellPrice(); markFilled(this)">
+        </div>
+        <div class="field">
+          <label>מחיר מכירה (₪)</label>
+          <input type="number" id="f_sellPrice" placeholder="0.00" min="0" step="0.01" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>כמות במלאי <span class="required-star">*</span></label>
+          <input type="number" id="f_quantity" placeholder="0" min="0" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>כמות מינימום להתראה</label>
+          <input type="number" id="f_minQty" placeholder="5" min="0" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>ספק</label>
+          <input type="text" id="f_supplier" placeholder="שם הספק" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>ברקוד / מק״ט</label>
+          <input type="text" id="f_sku" placeholder="מק״ט או ברקוד" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>הערות</label>
+          <input type="text" id="f_notes" placeholder="הערה חופשית" oninput="markFilled(this)">
+        </div>
+      </div>
+    </div>
+    <div class="action-area">
+      <button class="btn btn-primary" onclick="saveProduct()">💾 שמור מוצר</button>
+      <button class="btn btn-secondary" onclick="clearForm()">🗑 נקה</button>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div class="card" id="printCard">
+    <div class="print-doc-header" id="printDocHeader">
+      <div class="pdh-info">
+        <h2 id="pdh_title">מלאי מוצרים</h2>
+        <p id="pdh_sub"></p>
+      </div>
+      <div class="pdh-logo"><img id="pdh_logo" src="" style="display:none"></div>
+    </div>
+    <div class="card-header no-print">
+      <div class="card-header-left">
+        <div class="icon blue">📋</div>
+        <h3>רשימת מוצרים</h3>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-warning btn-sm" onclick="printProducts()">🖨️ הדפס</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportProducts()">📊 ייצא Excel</button>
+        <label class="btn btn-secondary btn-sm" style="cursor:pointer">
+          📥 ייבא Excel <input type="file" accept=".xlsx,.xls" style="display:none" onchange="importProducts(this)">
+        </label>
+      </div>
+    </div>
+    <div class="search-wrap no-print">
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍  חיפוש לפי שם / קטגוריה / ספק..." oninput="renderTable()">
+      <select class="filter-select" id="filterCat" onchange="renderTable()">
+        <option value="">כל הקטגוריות</option>
+      </select>
+      <select class="filter-select" id="filterStock" onchange="renderTable()">
+        <option value="">כל המלאי</option>
+        <option value="low">מלאי נמוך</option>
+        <option value="out">אזל</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>שם מוצר</th>
+            <th>קטגוריה</th>
+            <th>יחידה</th>
+            <th>מחיר קנייה</th>
+            <th>מחיר מכירה</th>
+            <th>% רווח</th>
+            <th>כמות</th>
+            <th class="no-print">מכר החודש</th>
+            <th>מינימום</th>
+            <th>ספק</th>
+            <th>הערות</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none">
+      <div class="emoji">📦</div>
+      <p>אין מוצרים רשומים עדיין</p>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Update Modal -->
+<div id="stockModal" class="modal-overlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3>עדכון מלאי</h3>
+      <button class="modal-close" onclick="closeStockModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="stock_name" style="font-weight:700;font-size:15px;margin-bottom:16px"></p>
+      <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:16px;text-align:center">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">כמות נוכחית במלאי</div>
+        <div id="stock_current" style="font-size:32px;font-weight:900;color:var(--accent)">0</div>
+        <div id="stock_unit" style="font-size:12px;color:var(--text-muted)"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="field">
+          <label style="color:var(--primary)">➕ קיבלתי</label>
+          <input type="number" id="stock_add" placeholder="0" min="0" step="1"
+            oninput="stock_sub.value='';stock_set.value=''; updateStockPreview()"
+            style="border-color:var(--primary);font-size:18px;font-weight:700;text-align:center">
+        </div>
+        <div class="field">
+          <label style="color:var(--danger)">➖ מכרתי</label>
+          <input type="number" id="stock_sub" placeholder="0" min="0" step="1"
+            oninput="stock_add.value='';stock_set.value=''; updateStockPreview()"
+            style="border-color:var(--danger);font-size:18px;font-weight:700;text-align:center">
+        </div>
+        <div class="field">
+          <label style="color:var(--accent)">= קבע ידנית</label>
+          <input type="number" id="stock_set" placeholder="" min="0" step="1"
+            oninput="stock_add.value='';stock_sub.value=''; updateStockPreview()"
+            style="border-color:var(--accent);font-size:18px;font-weight:700;text-align:center">
+        </div>
+      </div>
+      <div id="stock_preview" style="text-align:center;margin-top:12px;font-size:13px;color:var(--text-muted)"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeStockModal()">ביטול</button>
+      <button class="btn btn-primary" style="flex:unset;padding:10px 28px" onclick="saveStock()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>עריכת מוצר</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-inputs">
+        <div class="field"><label>שם מוצר</label><input type="text" id="e_name" oninput="markFilled(this)"></div>
+        <div class="field"><label>קטגוריה</label><input type="text" id="e_category" oninput="markFilled(this)"></div>
+        <div class="field">
+          <label>יחידה</label>
+          <select id="e_unit">
+            <option value="יח׳">יחידה</option><option value="ליטר">ליטר</option>
+            <option value="ק״ג">ק״ג</option><option value="מ״ל">מ״ל</option>
+            <option value="זוג">זוג</option><option value="קופסה">קופסה</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>מחיר קנייה (₪) <small style="font-weight:400;color:var(--text-muted)">לפני מע"מ</small></label>
+          <input type="number" id="e_costPrice" oninput="calcEditSellPrice(); updateVat('e_costPrice','e_costVat'); markFilled(this)">
+          <small id="e_costVat" style="color:var(--text-muted);font-size:11px;margin-top:2px;display:block"></small>
+        </div>
+        <div class="field"><label>% רווח</label><input type="number" id="e_margin" oninput="calcEditSellPrice(); markFilled(this)"></div>
+        <div class="field"><label>מחיר מכירה (₪)</label><input type="number" id="e_sellPrice" oninput="markFilled(this)"></div>
+        <div class="field"><label>כמות במלאי</label><input type="number" id="e_quantity" oninput="markFilled(this)"></div>
+        <div class="field"><label>כמות מינימום</label><input type="number" id="e_minQty" oninput="markFilled(this)"></div>
+        <div class="field"><label>ספק</label><input type="text" id="e_supplier" oninput="markFilled(this)"></div>
+        <div class="field"><label>ברקוד / מק״ט</label><input type="text" id="e_sku" oninput="markFilled(this)"></div>
+        <div class="field"><label>הערות</label><input type="text" id="e_notes" oninput="markFilled(this)"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">ביטול</button>
+      <button class="btn btn-primary" style="flex:unset;padding:10px 24px" onclick="saveEdit()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="big-icon">🗑️</div>
+    <h3>מחיקת מוצר</h3>
+    <p id="confirmMsg">האם למחוק את המוצר?</p>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmYes()">מחק</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const DB_KEY = 'pnc_products';
+let editId = null;
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  buildCatFilter();
+  renderStats();
+  renderTable();
+});
+
+function updateVat(inputId, displayId) {
+  const v = parseFloat(document.getElementById(inputId).value);
+  const el = document.getElementById(displayId);
+  el.textContent = (!isNaN(v) && v > 0)
+    ? 'כולל מע"מ: ₪' + (v * 1.18).toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2})
+    : '';
+}
+
+function calcSellPrice() {
+  const cost   = parseFloat(document.getElementById('f_costPrice').value) || 0;
+  const margin = parseFloat(document.getElementById('f_margin').value);
+  if (cost > 0 && !isNaN(margin)) {
+    document.getElementById('f_sellPrice').value = (cost * (1 + margin/100)).toFixed(2);
+    markFilled(document.getElementById('f_sellPrice'));
+  }
+}
+function calcEditSellPrice() {
+  const cost   = parseFloat(document.getElementById('e_costPrice').value) || 0;
+  const margin = parseFloat(document.getElementById('e_margin').value);
+  if (cost > 0 && !isNaN(margin)) {
+    document.getElementById('e_sellPrice').value = (cost * (1 + margin/100)).toFixed(2);
+  }
+}
+
+// ===== SAVE =====
+function saveProduct() {
+  const name = document.getElementById('f_name').value.trim();
+  const qty  = document.getElementById('f_quantity').value;
+  if (!name) return showToast('יש להזין שם מוצר', 'error');
+  if (qty === '') return showToast('יש להזין כמות', 'error');
+
+  const record = {
+    id:        nowId(),
+    name,
+    category:  document.getElementById('f_category').value.trim(),
+    unit:      document.getElementById('f_unit').value,
+    costPrice: parseFloat(document.getElementById('f_costPrice').value)||0,
+    margin:    parseFloat(document.getElementById('f_margin').value)||0,
+    sellPrice: parseFloat(document.getElementById('f_sellPrice').value)||0,
+    quantity:  parseFloat(qty)||0,
+    minQty:    parseFloat(document.getElementById('f_minQty').value)||0,
+    supplier:  document.getElementById('f_supplier').value.trim(),
+    sku:       document.getElementById('f_sku').value.trim(),
+    notes:     document.getElementById('f_notes').value.trim()
+  };
+
+  const db = getDB(DB_KEY);
+  db.unshift(record);
+  setDB(DB_KEY, db);
+  clearForm();
+  buildCatFilter();
+  renderStats();
+  renderTable();
+  showToast('המוצר נשמר ✓', 'success');
+}
+
+function clearForm() {
+  ['f_name','f_category','f_costPrice','f_margin','f_sellPrice','f_quantity','f_minQty','f_supplier','f_sku','f_notes']
+    .forEach(id => { const el = document.getElementById(id); el.value = ''; el.classList.remove('filled'); });
+  document.getElementById('f_unit').value = 'יח׳';
+}
+
+// ===== STATS =====
+function renderStats() {
+  const db = getDB(DB_KEY);
+  const total    = db.length;
+  const lowStock = db.filter(p => p.minQty > 0 && (parseFloat(p.quantity)||0) <= p.minQty).length;
+  const outStock = db.filter(p => (parseFloat(p.quantity)||0) === 0).length;
+  const totalVal = db.reduce((s,p) => s+(parseFloat(p.sellPrice)||0)*(parseFloat(p.quantity)||0), 0);
+  const thisMonth = todayStr().slice(3); // "MM/YYYY"
+  const soldQty = db.reduce((s,p) =>
+    s + (p.salesHistory||[]).filter(x=>x.date.slice(3)===thisMonth).reduce((a,b)=>a+b.qty,0), 0);
+  const soldRev = db.reduce((s,p) => {
+    const qty = (p.salesHistory||[]).filter(x=>x.date.slice(3)===thisMonth).reduce((a,b)=>a+b.qty,0);
+    return s + qty * (parseFloat(p.sellPrice)||0);
+  }, 0);
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><span class="num">${total}</span><div class="lbl">סה"כ פריטים</div></div>
+    <div class="stat-card blue"><span class="num">₪${Math.round(totalVal).toLocaleString('he-IL')}</span><div class="lbl">שווי מלאי</div></div>
+    <div class="stat-card orange"><span class="num">${lowStock}</span><div class="lbl">מלאי נמוך</div></div>
+    <div class="stat-card red"><span class="num">${outStock}</span><div class="lbl">פריטים שאזלו</div></div>
+    <div class="stat-card"><span class="num">${soldQty}</span><div class="lbl">יח' נמכרו החודש</div></div>
+    <div class="stat-card blue"><span class="num">₪${Math.round(soldRev).toLocaleString('he-IL')}</span><div class="lbl">הכנסות החודש</div></div>
+  `;
+}
+
+// ===== FILTERS =====
+function buildCatFilter() {
+  const db   = getDB(DB_KEY);
+  const cats = [...new Set(db.map(p=>p.category).filter(Boolean))].sort();
+  const sel  = document.getElementById('filterCat');
+  const cur  = sel.value;
+  sel.innerHTML = '<option value="">כל הקטגוריות</option>' +
+    cats.map(c => `<option value="${c}" ${cur===c?'selected':''}>${c}</option>`).join('');
+  // datalist
+  document.getElementById('catList').innerHTML = cats.map(c=>`<option value="${c}">`).join('');
+}
+
+// ===== RENDER TABLE =====
+function renderTable() {
+  const db      = getDB(DB_KEY);
+  const search  = document.getElementById('searchInput').value.toLowerCase();
+  const catF    = document.getElementById('filterCat').value;
+  const stockF  = document.getElementById('filterStock').value;
+
+  const filtered = db.filter(p => {
+    if (catF && p.category !== catF) return false;
+    if (stockF === 'out' && (parseFloat(p.quantity)||0) !== 0) return false;
+    if (stockF === 'low' && !( p.minQty>0 && (parseFloat(p.quantity)||0) <= p.minQty && (parseFloat(p.quantity)||0) > 0 )) return false;
+    if (search) {
+      const hay = [p.name,p.category,p.supplier,p.sku,p.notes].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  const body  = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+
+  if (filtered.length === 0) { body.innerHTML = ''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+
+  const thisMonth = todayStr().slice(3); // "MM/YYYY"
+  body.innerHTML = filtered.map(p => {
+    const qty    = parseFloat(p.quantity)||0;
+    const minQty = parseFloat(p.minQty)||0;
+    const isLow  = minQty>0 && qty<=minQty && qty>0;
+    const isOut  = qty===0;
+    const qtyBadge = isOut
+      ? `<span class="badge badge-red">אזל</span>`
+      : isLow
+        ? `<span class="badge badge-orange">${qty} ${p.unit}</span>`
+        : `<span class="badge badge-green">${qty} ${p.unit}</span>`;
+    const marginPct = p.margin ? p.margin + '%' :
+      (p.costPrice>0 && p.sellPrice>0 ? Math.round((p.sellPrice/p.costPrice-1)*100)+'%' : '—');
+    const soldThisMonth = (p.salesHistory||[])
+      .filter(s => s.date.slice(3) === thisMonth)
+      .reduce((a, s) => a + s.qty, 0);
+    const soldBadge = soldThisMonth > 0
+      ? `<span class="badge badge-blue">${soldThisMonth} ${p.unit||'יח׳'}</span>`
+      : `<span style="color:var(--text-muted)">—</span>`;
+
+    return `<tr>
+      <td style="font-weight:700">${p.name}</td>
+      <td>${p.category||'—'}</td>
+      <td>${p.unit||'יח׳'}</td>
+      <td>${p.costPrice?`₪${p.costPrice.toLocaleString('he-IL',{minimumFractionDigits:2})}<br><small style="color:var(--text-muted)">${(p.costPrice*1.18).toLocaleString('he-IL',{minimumFractionDigits:2})} עם מע"מ</small>`:'—'}</td>
+      <td style="font-weight:700;color:var(--primary)">${p.sellPrice?'₪'+p.sellPrice.toLocaleString('he-IL',{minimumFractionDigits:2}):'—'}</td>
+      <td>${marginPct}</td>
+      <td>${qtyBadge}</td>
+      <td class="no-print">${soldBadge}</td>
+      <td>${minQty||'—'}</td>
+      <td>${p.supplier||'—'}</td>
+      <td style="color:var(--text-muted)">${p.notes||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" title="עדכן כמות" onclick="openStockUpdate(${p.id})">🔢</button>
+        <button class="btn-icon" title="ערוך"       onclick="openEdit(${p.id})">✏️</button>
+        <button class="btn-icon" title="מחק"        onclick="deleteProduct(${p.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== STOCK UPDATE MODAL =====
+let _stockId = null;
+function openStockUpdate(id) {
+  const p = getDB(DB_KEY).find(x=>x.id===id); if(!p) return;
+  _stockId = id;
+  document.getElementById('stock_name').textContent    = p.name;
+  document.getElementById('stock_current').textContent = parseFloat(p.quantity)||0;
+  document.getElementById('stock_unit').textContent    = p.unit||'יח׳';
+  document.getElementById('stock_add').value = '';
+  document.getElementById('stock_sub').value = '';
+  document.getElementById('stock_set').value = '';
+  document.getElementById('stock_preview').textContent = '';
+  document.getElementById('stockModal').classList.add('open');
+  document.getElementById('stock_add').focus();
+}
+function updateStockPreview() {
+  const cur  = parseFloat(document.getElementById('stock_current').textContent)||0;
+  const add  = parseFloat(document.getElementById('stock_add').value);
+  const sub  = parseFloat(document.getElementById('stock_sub').value);
+  const set  = parseFloat(document.getElementById('stock_set').value);
+  const unit = document.getElementById('stock_unit').textContent;
+  if (!isNaN(add) && document.getElementById('stock_add').value !== '') {
+    document.getElementById('stock_preview').innerHTML =
+      `כמות חדשה: <strong style="color:var(--primary);font-size:16px">${cur + add} ${unit}</strong>`;
+  } else if (!isNaN(sub) && document.getElementById('stock_sub').value !== '') {
+    const newQ = Math.max(0, cur - sub);
+    document.getElementById('stock_preview').innerHTML =
+      `כמות חדשה: <strong style="color:var(--danger);font-size:16px">${newQ} ${unit}</strong>`;
+  } else if (!isNaN(set) && document.getElementById('stock_set').value !== '') {
+    document.getElementById('stock_preview').innerHTML =
+      `כמות חדשה: <strong style="color:var(--accent);font-size:16px">${set} ${unit}</strong>`;
+  } else {
+    document.getElementById('stock_preview').textContent = '';
+  }
+}
+function saveStock() {
+  if(!_stockId) return;
+  const cur = parseFloat(document.getElementById('stock_current').textContent)||0;
+  const add = document.getElementById('stock_add').value;
+  const sub = document.getElementById('stock_sub').value;
+  const set = document.getElementById('stock_set').value;
+  let newQty, soldQty = 0;
+  if (add !== '') {
+    newQty = cur + (parseFloat(add)||0);
+  } else if (sub !== '') {
+    soldQty = parseFloat(sub)||0;
+    newQty = Math.max(0, cur - soldQty);
+  } else if (set !== '') {
+    newQty = parseFloat(set)||0;
+  } else {
+    return showToast('יש להזין כמות','error');
+  }
+  if (newQty < 0) newQty = 0;
+  const db = getDB(DB_KEY);
+  const idx = db.findIndex(x=>x.id===_stockId);
+  db[idx].quantity = newQty;
+  if (soldQty > 0) {
+    if (!db[idx].salesHistory) db[idx].salesHistory = [];
+    db[idx].salesHistory.push({ date: todayStr(), qty: soldQty });
+  }
+  setDB(DB_KEY, db);
+  closeStockModal();
+  renderStats(); renderTable();
+  showToast('המלאי עודכן ✓','success');
+}
+function closeStockModal() {
+  document.getElementById('stockModal').classList.remove('open');
+  _stockId = null;
+}
+
+// ===== EDIT =====
+function openEdit(id) {
+  const p = getDB(DB_KEY).find(x=>x.id===id);
+  if (!p) return;
+  editId = id;
+  document.getElementById('e_name').value      = p.name      || '';
+  document.getElementById('e_category').value  = p.category  || '';
+  document.getElementById('e_unit').value       = p.unit      || 'יח׳';
+  document.getElementById('e_costPrice').value  = p.costPrice || '';
+  updateVat('e_costPrice','e_costVat');
+  document.getElementById('e_margin').value     = p.margin    || '';
+  document.getElementById('e_sellPrice').value  = p.sellPrice || '';
+  document.getElementById('e_quantity').value   = p.quantity  || '';
+  document.getElementById('e_minQty').value     = p.minQty    || '';
+  document.getElementById('e_supplier').value   = p.supplier  || '';
+  document.getElementById('e_sku').value        = p.sku       || '';
+  document.getElementById('e_notes').value      = p.notes     || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editId = null;
+}
+
+function saveEdit() {
+  if (!editId) return;
+  const db  = getDB(DB_KEY);
+  const idx = db.findIndex(x=>x.id===editId);
+  if (idx===-1) return;
+  db[idx] = {
+    ...db[idx],
+    name:      document.getElementById('e_name').value.trim(),
+    category:  document.getElementById('e_category').value.trim(),
+    unit:      document.getElementById('e_unit').value,
+    costPrice: parseFloat(document.getElementById('e_costPrice').value)||0,
+    margin:    parseFloat(document.getElementById('e_margin').value)||0,
+    sellPrice: parseFloat(document.getElementById('e_sellPrice').value)||0,
+    quantity:  parseFloat(document.getElementById('e_quantity').value)||0,
+    minQty:    parseFloat(document.getElementById('e_minQty').value)||0,
+    supplier:  document.getElementById('e_supplier').value.trim(),
+    sku:       document.getElementById('e_sku').value.trim(),
+    notes:     document.getElementById('e_notes').value.trim()
+  };
+  setDB(DB_KEY, db);
+  closeModal();
+  buildCatFilter();
+  renderStats();
+  renderTable();
+  showToast('המוצר עודכן ✓', 'success');
+}
+
+// ===== DELETE =====
+function deleteProduct(id) {
+  const p = getDB(DB_KEY).find(x=>x.id===id);
+  showConfirm(`למחוק את "${p?.name||'המוצר'}"?`, () => {
+    setDB(DB_KEY, getDB(DB_KEY).filter(x=>x.id!==id));
+    buildCatFilter(); renderStats(); renderTable();
+    showToast('נמחק ✓');
+  });
+}
+
+// ===== PRINT =====
+function printProducts() {
+  const s = getSettings();
+  const cat = document.getElementById('filterCat').value;
+  const stk = document.getElementById('filterStock').value;
+  let title = 'מלאי מוצרים';
+  if (cat) title += ' – ' + cat;
+  if (stk === 'low') title += ' (מלאי נמוך)';
+  if (stk === 'out') title += ' (אזל)';
+  const sub = [s.businessName, s.businessPhone].filter(Boolean).join(' | ') + '  |  ' + todayStr();
+  document.getElementById('pdh_title').textContent = title;
+  document.getElementById('pdh_sub').textContent   = sub;
+  const logo = document.getElementById('pdh_logo');
+  if (s.logoBase64) { logo.src = s.logoBase64; logo.style.display = ''; }
+  else { logo.style.display = 'none'; }
+  window.print();
+}
+
+// ===== EXPORT =====
+function exportProducts() {
+  const db = getDB(DB_KEY);
+  if (!db.length) return showToast('אין נתונים לייצוא', 'error');
+  const headers = ['שם מוצר','קטגוריה','יחידה','מחיר קנייה','% רווח','מחיר מכירה','כמות','כמות מינימום','ספק','ברקוד/מק"ט','הערות'];
+  const rows = db.map(p => [p.name,p.category,p.unit,p.costPrice,p.margin,p.sellPrice,p.quantity,p.minQty,p.supplier,p.sku,p.notes]);
+  exportToExcel([headers,...rows], 'מלאי-מוצרים-אוטוליין', 'מוצרים');
+}
+
+// ===== IMPORT =====
+function importProducts(input) {
+  const file = input.files[0]; if (!file) return;
+  importFromExcel(file, rows => {
+    if (rows.length < 2) return showToast('הקובץ ריק', 'error');
+    const db = getDB(DB_KEY);
+    let count = 0;
+    rows.slice(1).forEach((r,i) => {
+      if (!r[0]) return;
+      const cost = parseFloat(r[3])||0;
+      const mg   = parseFloat(r[4])||0;
+      const sell = parseFloat(r[5]) || (cost>0&&mg>0 ? cost*(1+mg/100) : 0);
+      db.push({
+        id:nowId()+count, name:String(r[0]), category:r[1]||'', unit:r[2]||'יח׳',
+        costPrice:cost, margin:mg, sellPrice:sell,
+        quantity:parseFloat(r[6])||0, minQty:parseFloat(r[7])||0,
+        supplier:r[8]||'', sku:r[9]||'', notes:r[10]||''
+      });
+      count++;
+    });
+    setDB(DB_KEY, db);
+    buildCatFilter(); renderStats(); renderTable();
+    showToast(`יובאו ${count} מוצרים ✓`, 'success');
+  });
+  input.value = '';
+}
+</script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</body>
+</html>

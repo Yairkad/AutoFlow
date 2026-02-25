@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אוטוליין – הוצאות</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    @media print {
+      .app-header, .main-nav, .search-wrap,
+      .action-area, .page-title, .stats-row, #confirmOverlay, #editModal, #toast,
+      .btn, button, .btn-icon, .no-print { display:none !important; }
+      body { background: white !important; }
+      .card { box-shadow: none !important; margin: 0 !important; }
+      .card-header { border-bottom: 2px solid #000 !important; }
+      .print-doc-header { display: flex !important; }
+      td:last-child { display: none; }
+      th:last-child { display: none; }
+    }
+    @media screen { .print-doc-header { display: none; } }
+
+    .print-doc-header {
+      justify-content: space-between; align-items: center;
+      padding: 10px 0 12px; margin-bottom: 14px;
+      border-bottom: 3px solid #000;
+    }
+    .pdh-info h2 { font-size: 20px; font-weight: 900; margin: 0 0 3px; }
+    .pdh-info p  { font-size: 12px; color: #555; margin: 0; }
+    .pdh-logo img { height: 55px; object-fit: contain; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" src="" alt="לוגו">
+    <div class="header-title">
+      <h1>אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+  <div class="page-title"><span class="icon">💰</span> הוצאות</div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Form -->
+  <div class="card no-print">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="icon green">➕</div>
+        <h3>הוספת הוצאה</h3>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="grid-inputs">
+        <div class="field">
+          <label>תאריך <span class="required-star">*</span></label>
+          <input type="text" id="f_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>מקור <span class="required-star">*</span></label>
+          <select id="f_source" onchange="markFilled(this)">
+            <option value="">-- בחר --</option>
+            <option value="office">משרד</option>
+            <option value="garage">פנצריה</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>קטגוריה</label>
+          <input type="text" id="f_category" list="catList" placeholder="הקלד או בחר..." oninput="markFilled(this)">
+          <datalist id="catList"></datalist>
+        </div>
+        <div class="field">
+          <label>ספק / חנות</label>
+          <input type="text" id="f_supplier" placeholder="שם הספק" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>תיאור</label>
+          <input type="text" id="f_desc" placeholder="תיאור ההוצאה" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>סכום (₪) <span class="required-star">*</span></label>
+          <input type="number" id="f_amount" placeholder="0.00" min="0" step="0.01" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>מסמך (שם קובץ)</label>
+          <input type="text" id="f_doc" placeholder="למשל: חשבונית-חשמל-02-2026.pdf" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>הערות</label>
+          <input type="text" id="f_notes" placeholder="הערה חופשית" oninput="markFilled(this)">
+        </div>
+      </div>
+    </div>
+    <div class="action-area">
+      <button class="btn btn-primary" onclick="saveExpense()">💾 שמור הוצאה</button>
+      <button class="btn btn-secondary" onclick="clearForm()">🗑 נקה</button>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card" id="printCard">
+    <!-- Print header – visible only in print -->
+    <div class="print-doc-header" id="printDocHeader">
+      <div class="pdh-info">
+        <h2 id="pdh_title">דוח הוצאות</h2>
+        <p id="pdh_sub"></p>
+      </div>
+      <div class="pdh-logo"><img id="pdh_logo" src="" style="display:none"></div>
+    </div>
+
+    <div class="card-header no-print">
+      <div class="card-header-left">
+        <div class="icon blue">📋</div>
+        <h3>היסטוריה</h3>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-warning btn-sm" onclick="printExpenses()">🖨️ הדפס</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportExpenses()">📊 ייצא Excel</button>
+        <label class="btn btn-secondary btn-sm" style="cursor:pointer">
+          📥 ייבא Excel <input type="file" accept=".xlsx,.xls" style="display:none" onchange="importExpenses(this)">
+        </label>
+      </div>
+    </div>
+    <div class="search-wrap no-print">
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍  חיפוש לפי תיאור / ספק..." oninput="renderTable()">
+      <select class="filter-select" id="filterSource" onchange="renderTable()">
+        <option value="">כל המקורות</option>
+        <option value="office">משרד</option>
+        <option value="garage">פנצריה</option>
+      </select>
+      <select class="filter-select" id="filterMonth" onchange="renderTable()">
+        <option value="">כל החודשים</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>תאריך</th>
+            <th>מקור</th>
+            <th>קטגוריה</th>
+            <th>תיאור</th>
+            <th>ספק</th>
+            <th>סכום</th>
+            <th>מסמך</th>
+            <th>הערות</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none">
+      <div class="emoji">💰</div>
+      <p>אין הוצאות רשומות עדיין</p>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>עריכת הוצאה</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-inputs">
+        <div class="field"><label>תאריך</label><input type="text" id="e_date" oninput="markFilled(this)"></div>
+        <div class="field">
+          <label>מקור</label>
+          <select id="e_source" onchange="updateEditCategories(); markFilled(this)">
+            <option value="office">משרד</option>
+            <option value="garage">פנצריה</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>קטגוריה</label>
+          <input type="text" id="e_category" list="editCatList" oninput="markFilled(this)">
+          <datalist id="editCatList"></datalist>
+        </div>
+        <div class="field"><label>ספק</label><input type="text" id="e_supplier" oninput="markFilled(this)"></div>
+        <div class="field"><label>תיאור</label><input type="text" id="e_desc" oninput="markFilled(this)"></div>
+        <div class="field"><label>סכום (₪)</label><input type="number" id="e_amount" oninput="markFilled(this)"></div>
+        <div class="field"><label>מסמך</label><input type="text" id="e_doc" oninput="markFilled(this)"></div>
+        <div class="field"><label>הערות</label><input type="text" id="e_notes" oninput="markFilled(this)"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">ביטול</button>
+      <button class="btn btn-primary" style="flex:unset;padding:10px 24px" onclick="saveEdit()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="big-icon">🗑️</div>
+    <h3>מחיקת הוצאה</h3>
+    <p id="confirmMsg">האם למחוק את ההוצאה?</p>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmYes()">מחק</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const DB_KEY = 'pnc_expenses';
+
+let editId = null;
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('f_date').value = todayStr();
+  markFilled(document.getElementById('f_date'));
+  buildCatList();
+  buildMonthFilter();
+  renderStats();
+  renderTable();
+});
+
+function buildCatList() {
+  const db   = getDB(DB_KEY);
+  const cats = [...new Set(db.map(e=>e.category).filter(Boolean))].sort();
+  const html = cats.map(c=>`<option value="${c}">`).join('');
+  const el1 = document.getElementById('catList');
+  const el2 = document.getElementById('editCatList');
+  if (el1) el1.innerHTML = html;
+  if (el2) el2.innerHTML = html;
+}
+
+// ===== PRINT =====
+function printExpenses() {
+  const s    = getSettings();
+  const fMonth = document.getElementById('filterMonth').value;
+  const fSrc   = document.getElementById('filterSource').value;
+  const months = ['','ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+  let title = 'דוח הוצאות';
+  if (fMonth) { const [mm,yy]=fMonth.split('/'); title += ' – ' + (months[parseInt(mm)]||mm) + ' ' + yy; }
+  if (fSrc === 'office') title += ' (משרד)';
+  if (fSrc === 'garage') title += ' (פנצריה)';
+
+  const sub = [s.businessName, s.businessPhone, s.businessAddress].filter(Boolean).join(' | ') + '  |  ' + todayStr();
+  document.getElementById('pdh_title').textContent = title;
+  document.getElementById('pdh_sub').textContent   = sub;
+  const logo = document.getElementById('pdh_logo');
+  if (s.logoBase64) { logo.src = s.logoBase64; logo.style.display = ''; }
+  else { logo.style.display = 'none'; }
+  window.print();
+}
+
+// ===== SAVE =====
+function saveExpense() {
+  const date   = document.getElementById('f_date').value.trim();
+  const source = document.getElementById('f_source').value;
+  const amount = parseFloat(document.getElementById('f_amount').value);
+
+  if (!date)   return showToast('יש להזין תאריך', 'error');
+  if (!source) return showToast('יש לבחור מקור', 'error');
+  if (!amount || amount <= 0) return showToast('יש להזין סכום תקין', 'error');
+
+  const record = {
+    id:       nowId(),
+    date,
+    source,
+    category: document.getElementById('f_category').value,
+    desc:     document.getElementById('f_desc').value.trim(),
+    supplier: document.getElementById('f_supplier').value.trim(),
+    amount,
+    doc:      document.getElementById('f_doc').value.trim(),
+    notes:    document.getElementById('f_notes').value.trim()
+  };
+
+  const db = getDB(DB_KEY);
+  db.unshift(record);
+  setDB(DB_KEY, db);
+  clearForm();
+  buildCatList();
+  buildMonthFilter();
+  renderStats();
+  renderTable();
+  showToast('ההוצאה נשמרה ✓', 'success');
+}
+
+function clearForm() {
+  ['f_date','f_source','f_category','f_desc','f_supplier','f_amount','f_doc','f_notes']
+    .forEach(id => { const el = document.getElementById(id); el.value = ''; el.classList.remove('filled'); });
+  document.getElementById('f_date').value = todayStr();
+  markFilled(document.getElementById('f_date'));
+}
+
+// ===== STATS =====
+function renderStats() {
+  const db = getDB(DB_KEY);
+  const now = new Date();
+  const mm  = String(now.getMonth()+1).padStart(2,'0');
+  const yyyy = String(now.getFullYear());
+
+  const thisMonth = db.filter(e => {
+    const p = (e.date||'').split('/');
+    return p.length===3 && p[1]===mm && p[2]===yyyy;
+  });
+
+  const totalMonth  = thisMonth.reduce((s,e) => s+(parseFloat(e.amount)||0),0);
+  const officeMonth = thisMonth.filter(e=>e.source==='office').reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const garageMonth = thisMonth.filter(e=>e.source==='garage').reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><span class="num">₪${totalMonth.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">סה"כ החודש</div></div>
+    <div class="stat-card blue"><span class="num">₪${officeMonth.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">משרד החודש</div></div>
+    <div class="stat-card orange"><span class="num">₪${garageMonth.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">פנצריה החודש</div></div>
+    <div class="stat-card"><span class="num">${db.length}</span><div class="lbl">סה"כ רשומות</div></div>
+  `;
+}
+
+// ===== MONTH FILTER =====
+function buildMonthFilter() {
+  const db = getDB(DB_KEY);
+  const months = [...new Set(db.map(e => {
+    const p=(e.date||'').split('/');
+    return p.length===3 ? p[1]+'/'+p[2] : '';
+  }).filter(Boolean))].sort().reverse();
+
+  const sel = document.getElementById('filterMonth');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">כל החודשים</option>' +
+    months.map(m => {
+      const [mm,yyyy] = m.split('/');
+      const names = ['','ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+      return `<option value="${m}" ${cur===m?'selected':''}>${names[parseInt(mm)]} ${yyyy}</option>`;
+    }).join('');
+}
+
+// ===== RENDER TABLE =====
+function renderTable() {
+  const db      = getDB(DB_KEY);
+  const search  = document.getElementById('searchInput').value.toLowerCase();
+  const srcF    = document.getElementById('filterSource').value;
+  const monthF  = document.getElementById('filterMonth').value;
+
+  const SOURCE_LABEL = { office:'משרד', garage:'פנצריה' };
+
+  const filtered = db.filter(e => {
+    if (srcF && e.source !== srcF) return false;
+    if (monthF) {
+      const p=(e.date||'').split('/');
+      if (p.length!==3 || p[1]+'/'+p[2] !== monthF) return false;
+    }
+    if (search) {
+      const hay = [(e.desc||''),(e.supplier||''),(e.category||''),(e.notes||'')].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  const body = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+
+  if (filtered.length === 0) {
+    body.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  body.innerHTML = filtered.map(e => `
+    <tr>
+      <td>${e.date||'—'}</td>
+      <td><span class="badge ${e.source==='office'?'badge-blue':'badge-orange'}">${SOURCE_LABEL[e.source]||e.source}</span></td>
+      <td>${e.category||'—'}</td>
+      <td>${e.desc||'—'}</td>
+      <td>${e.supplier||'—'}</td>
+      <td style="font-weight:700;color:var(--danger)">₪${(parseFloat(e.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td>${e.doc ? `<span class="badge badge-gray" title="${e.doc}">📎 ${e.doc.length>20?e.doc.slice(0,18)+'…':e.doc}</span>` : '—'}</td>
+      <td style="color:var(--text-muted)">${e.notes||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" title="ערוך" onclick="openEdit(${e.id})">✏️</button>
+        <button class="btn-icon" title="מחק"  onclick="deleteExpense(${e.id})">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ===== EDIT =====
+function openEdit(id) {
+  const e = getDB(DB_KEY).find(x => x.id === id);
+  if (!e) return;
+  editId = id;
+  document.getElementById('e_date').value     = e.date     || '';
+  document.getElementById('e_source').value   = e.source   || 'office';
+  document.getElementById('e_supplier').value = e.supplier || '';
+  document.getElementById('e_desc').value     = e.desc     || '';
+  document.getElementById('e_amount').value   = e.amount   || '';
+  document.getElementById('e_doc').value      = e.doc      || '';
+  document.getElementById('e_notes').value    = e.notes    || '';
+  document.getElementById('e_category').value = e.category || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editId = null;
+}
+
+function saveEdit() {
+  if (!editId) return;
+  const db  = getDB(DB_KEY);
+  const idx = db.findIndex(x => x.id === editId);
+  if (idx === -1) return;
+  db[idx] = {
+    ...db[idx],
+    date:     document.getElementById('e_date').value.trim(),
+    source:   document.getElementById('e_source').value,
+    category: document.getElementById('e_category').value,
+    supplier: document.getElementById('e_supplier').value.trim(),
+    desc:     document.getElementById('e_desc').value.trim(),
+    amount:   parseFloat(document.getElementById('e_amount').value) || 0,
+    doc:      document.getElementById('e_doc').value.trim(),
+    notes:    document.getElementById('e_notes').value.trim()
+  };
+  setDB(DB_KEY, db);
+  closeModal();
+  renderStats();
+  renderTable();
+  showToast('ההוצאה עודכנה ✓', 'success');
+}
+
+// ===== DELETE =====
+function deleteExpense(id) {
+  showConfirm('האם למחוק את ההוצאה?', () => {
+    setDB(DB_KEY, getDB(DB_KEY).filter(x => x.id !== id));
+    renderStats();
+    renderTable();
+    showToast('נמחק ✓');
+  });
+}
+
+// ===== EXPORT =====
+function exportExpenses() {
+  const db = getDB(DB_KEY);
+  if (db.length === 0) return showToast('אין נתונים לייצוא', 'error');
+  const headers = ['תאריך','מקור','קטגוריה','תיאור','ספק','סכום','מסמך','הערות'];
+  const src = { office:'משרד', garage:'פנצריה' };
+  const rows = db.map(e => [e.date,src[e.source]||e.source,e.category,e.desc,e.supplier,e.amount,e.doc,e.notes]);
+  exportToExcel([headers, ...rows], 'הוצאות-אוטוליין', 'הוצאות');
+}
+
+// ===== IMPORT =====
+function importExpenses(input) {
+  const file = input.files[0];
+  if (!file) return;
+  importFromExcel(file, rows => {
+    if (rows.length < 2) return showToast('הקובץ ריק', 'error');
+    const src = { 'משרד':'office', 'פנצריה':'garage' };
+    const db = getDB(DB_KEY);
+    let count = 0;
+    rows.slice(1).forEach(r => {
+      if (!r[0] || !r[5]) return;
+      db.push({
+        id:       nowId() + count,
+        date:     String(r[0]||''),
+        source:   src[r[1]] || 'office',
+        category: r[2]||'',
+        desc:     r[3]||'',
+        supplier: r[4]||'',
+        amount:   parseFloat(r[5])||0,
+        doc:      r[6]||'',
+        notes:    r[7]||''
+      });
+      count++;
+    });
+    setDB(DB_KEY, db);
+    buildMonthFilter();
+    renderStats();
+    renderTable();
+    showToast(`יובאו ${count} רשומות ✓`, 'success');
+  });
+  input.value = '';
+}
+</script>
+
+<!-- SheetJS -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</body>
+</html>

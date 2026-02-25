@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אוטוליין – מלאי צמיגים</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .tire-size { font-weight:900; font-size:15px; color:var(--accent); letter-spacing:0.5px; }
+    .tire-brand { font-weight:700; }
+
+    /* Print price list */
+    @media print {
+      .app-header, .main-nav, .card:not(.print-target), .search-wrap,
+      .action-area, .page-title, .stats-row, .btn, button,
+      #editModal, #confirmOverlay, #toast, .no-print { display:none !important; }
+      .print-target { box-shadow:none !important; margin:0 !important; }
+      body { background: white !important; }
+      .print-header { display:flex !important; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:3px solid #000; margin-bottom:16px; }
+      .ph-title { font-size:22px; font-weight:900; }
+      .ph-sub   { font-size:13px; color:#555; margin-top:4px; }
+      .ph-logo img { height:55px; object-fit:contain; }
+      .print-intro { font-size:12px; color:#555; margin-bottom:16px; }
+    }
+    @media screen { .print-header { display:none; } }
+
+    .size-group { margin-bottom:6px; }
+    .size-group-header {
+      background: var(--accent-light); padding:7px 14px;
+      font-weight:900; font-size:14px; color:var(--accent);
+      border-radius:6px; margin-bottom:4px;
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" src="" alt="לוגו">
+    <div class="header-title">
+      <h1>אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+  <div class="page-title"><span class="icon">🔵</span> מלאי צמיגים</div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Form -->
+  <div class="card no-print">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="icon blue">➕</div>
+        <h3>הוספת צמיג</h3>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- Tire size -->
+      <div style="background:var(--accent-light);border-radius:8px;padding:12px 16px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">מידות הצמיג</div>
+        <div class="grid-inputs narrow">
+          <div class="field">
+            <label>מותג <span class="required-star">*</span></label>
+            <input type="text" id="f_brand" list="brandList" placeholder="Michelin, Bridgestone..." oninput="markFilled(this)">
+            <datalist id="brandList"></datalist>
+          </div>
+          <div class="field">
+            <label>רוחב (מ"מ) <span class="required-star">*</span></label>
+            <input type="number" id="f_width" list="widthList" placeholder="205" min="100" max="400" oninput="markFilled(this)">
+            <datalist id="widthList">
+              <option value="145"><option value="155"><option value="165"><option value="175">
+              <option value="185"><option value="195"><option value="205"><option value="215">
+              <option value="225"><option value="235"><option value="245"><option value="255">
+              <option value="265"><option value="275"><option value="285"><option value="295">
+              <option value="305"><option value="315">
+            </datalist>
+          </div>
+          <div class="field">
+            <label>פרופיל (%) <span class="required-star">*</span></label>
+            <input type="number" id="f_profile" list="profileList" placeholder="55" min="20" max="90" oninput="markFilled(this)">
+            <datalist id="profileList">
+              <option value="25"><option value="30"><option value="35"><option value="40">
+              <option value="45"><option value="50"><option value="55"><option value="60">
+              <option value="65"><option value="70"><option value="75"><option value="80">
+            </datalist>
+          </div>
+          <div class="field">
+            <label>קוטר (אינץ') <span class="required-star">*</span></label>
+            <input type="number" id="f_rim" list="rimList" placeholder="16" min="10" max="24" oninput="markFilled(this)">
+            <datalist id="rimList">
+              <option value="13"><option value="14"><option value="15"><option value="16">
+              <option value="17"><option value="18"><option value="19"><option value="20">
+              <option value="21"><option value="22">
+            </datalist>
+          </div>
+          <div class="field">
+            <label>אינדקס עומס</label>
+            <input type="text" id="f_loadIdx" placeholder="91" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>אינדקס מהירות</label>
+            <input type="text" id="f_speedIdx" placeholder="V" oninput="markFilled(this)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing & stock -->
+      <div class="grid-inputs">
+        <div class="field">
+          <label>מחיר קנייה (₪) <span class="required-star">*</span> <small style="font-weight:400;color:var(--text-muted)">לפני מע"מ</small></label>
+          <input type="number" id="f_costPrice" placeholder="0.00" min="0" step="0.01" oninput="calcTireSell(); updateVat('f_costPrice','f_costVat'); markFilled(this)">
+          <small id="f_costVat" style="color:var(--text-muted);font-size:11px;margin-top:2px;display:block"></small>
+        </div>
+        <div class="field">
+          <label>% רווח</label>
+          <input type="number" id="f_margin" placeholder="25" min="0" step="1" oninput="calcTireSell(); markFilled(this)">
+        </div>
+        <div class="field">
+          <label>מחיר מכירה ללקוח (₪)</label>
+          <input type="number" id="f_sellPrice" placeholder="0.00" min="0" step="0.01" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>כמות במלאי <span class="required-star">*</span></label>
+          <input type="number" id="f_quantity" placeholder="0" min="0" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>מיקום במחסן</label>
+          <input type="text" id="f_location" placeholder="למשל: מדף A3" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>הערות</label>
+          <input type="text" id="f_notes" placeholder="הערה חופשית" oninput="markFilled(this)">
+        </div>
+      </div>
+    </div>
+    <div class="action-area">
+      <button class="btn btn-primary" onclick="saveTire()">💾 שמור צמיג</button>
+      <button class="btn btn-secondary" onclick="clearForm()">🗑 נקה</button>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div class="card print-target" id="tiresListCard">
+    <!-- Print header (visible only in print) -->
+    <div class="print-header" id="printHeader">
+      <div>
+        <div class="ph-title" id="ph_name"></div>
+        <div class="ph-sub" id="ph_sub"></div>
+      </div>
+      <div class="ph-logo"><img id="ph_logo" src="" style="display:none"></div>
+    </div>
+    <p class="print-intro" id="printIntro" style="display:none"></p>
+
+    <div class="card-header no-print">
+      <div class="card-header-left">
+        <div class="icon orange">🔵</div>
+        <h3>רשימת צמיגים</h3>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-warning btn-sm" onclick="printPriceList()">🖨️ מחירון ללקוח</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportTires()">📊 ייצא Excel</button>
+        <label class="btn btn-secondary btn-sm" style="cursor:pointer">
+          📥 ייבא Excel <input type="file" accept=".xlsx,.xls" style="display:none" onchange="importTires(this)">
+        </label>
+      </div>
+    </div>
+
+    <div class="search-wrap no-print">
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍  חיפוש לפי מותג / מידה..." oninput="renderTable()">
+      <input type="number" id="filterWidth"   class="filter-select" placeholder="רוחב" style="width:80px" oninput="renderTable()">
+      <input type="number" id="filterProfile" class="filter-select" placeholder="פרופיל" style="width:80px" oninput="renderTable()">
+      <input type="number" id="filterRim"     class="filter-select" placeholder="קוטר" style="width:70px" oninput="renderTable()">
+      <select class="filter-select no-print" id="filterStock" onchange="renderTable()">
+        <option value="">כל המלאי</option>
+        <option value="instock">במלאי</option>
+        <option value="out">אזל</option>
+      </select>
+    </div>
+
+    <div class="tbl-wrap" id="tiresTableWrap">
+      <table class="data-table" id="tiresTable">
+        <thead>
+          <tr>
+            <th>מותג</th>
+            <th>מידה</th>
+            <th>מדדים</th>
+            <th class="no-print">מחיר קנייה</th>
+            <th class="no-print">% רווח</th>
+            <th>מחיר מכירה</th>
+            <th class="no-print">כמות</th>
+            <th class="no-print">מכר החודש</th>
+            <th class="no-print">מיקום</th>
+            <th class="no-print">הערות</th>
+            <th class="no-print"></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none">
+      <div class="emoji">🔵</div>
+      <p>אין צמיגים רשומים עדיין</p>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Update Modal -->
+<div id="stockModal" class="modal-overlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3>עדכון מלאי צמיג</h3>
+      <button class="modal-close" onclick="closeStockModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="stock_name" style="font-weight:700;font-size:15px;margin-bottom:16px"></p>
+      <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:16px;text-align:center">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">כמות נוכחית במלאי</div>
+        <div id="stock_current" style="font-size:32px;font-weight:900;color:var(--accent)">0</div>
+        <div style="font-size:12px;color:var(--text-muted)">יחידות</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="field">
+          <label style="color:var(--primary)">➕ קיבלתי</label>
+          <input type="number" id="stock_add" placeholder="0" min="0" step="1"
+            oninput="stock_sub.value='';stock_set.value=''; updateStockPreview()"
+            style="border-color:var(--primary);font-size:18px;font-weight:700;text-align:center">
+        </div>
+        <div class="field">
+          <label style="color:var(--danger)">➖ מכרתי</label>
+          <input type="number" id="stock_sub" placeholder="0" min="0" step="1"
+            oninput="stock_add.value='';stock_set.value=''; updateStockPreview()"
+            style="border-color:var(--danger);font-size:18px;font-weight:700;text-align:center">
+        </div>
+        <div class="field">
+          <label style="color:var(--accent)">= קבע ידנית</label>
+          <input type="number" id="stock_set" placeholder="" min="0" step="1"
+            oninput="stock_add.value='';stock_sub.value=''; updateStockPreview()"
+            style="border-color:var(--accent);font-size:18px;font-weight:700;text-align:center">
+        </div>
+      </div>
+      <div id="stock_preview" style="text-align:center;margin-top:12px;font-size:13px;color:var(--text-muted)"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeStockModal()">ביטול</button>
+      <button class="btn btn-primary" style="flex:unset;padding:10px 28px" onclick="saveStock()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>עריכת צמיג</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--accent-light);border-radius:8px;padding:12px 16px;margin-bottom:14px">
+        <div class="grid-inputs narrow">
+          <div class="field"><label>מותג</label><input type="text" id="e_brand" oninput="markFilled(this)"></div>
+          <div class="field"><label>רוחב</label><input type="number" id="e_width" oninput="markFilled(this)"></div>
+          <div class="field"><label>פרופיל</label><input type="number" id="e_profile" oninput="markFilled(this)"></div>
+          <div class="field"><label>קוטר</label><input type="number" id="e_rim" oninput="markFilled(this)"></div>
+          <div class="field"><label>אינדקס עומס</label><input type="text" id="e_loadIdx" oninput="markFilled(this)"></div>
+          <div class="field"><label>אינדקס מהירות</label><input type="text" id="e_speedIdx" oninput="markFilled(this)"></div>
+        </div>
+      </div>
+      <div class="grid-inputs">
+        <div class="field">
+          <label>מחיר קנייה <small style="font-weight:400;color:var(--text-muted)">לפני מע"מ</small></label>
+          <input type="number" id="e_costPrice" oninput="calcEditSell(); updateVat('e_costPrice','e_costVat'); markFilled(this)">
+          <small id="e_costVat" style="color:var(--text-muted);font-size:11px;margin-top:2px;display:block"></small>
+        </div>
+        <div class="field"><label>% רווח</label><input type="number" id="e_margin" oninput="calcEditSell(); markFilled(this)"></div>
+        <div class="field"><label>מחיר מכירה</label><input type="number" id="e_sellPrice" oninput="markFilled(this)"></div>
+        <div class="field"><label>כמות</label><input type="number" id="e_quantity" oninput="markFilled(this)"></div>
+        <div class="field"><label>מיקום</label><input type="text" id="e_location" oninput="markFilled(this)"></div>
+        <div class="field"><label>הערות</label><input type="text" id="e_notes" oninput="markFilled(this)"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">ביטול</button>
+      <button class="btn btn-primary" style="flex:unset;padding:10px 24px" onclick="saveEdit()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="big-icon">🗑️</div>
+    <h3>מחיקת צמיג</h3>
+    <p id="confirmMsg">האם למחוק את הצמיג?</p>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmYes()">מחק</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const DB_KEY = 'pnc_tires';
+let editId = null;
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  const s = getSettings();
+  if (s.defaultTireMargin) document.getElementById('f_margin').value = s.defaultTireMargin;
+  buildBrandList();
+  renderStats();
+  renderTable();
+});
+
+// ===== VAT HELPER =====
+function updateVat(inputId, displayId) {
+  const v = parseFloat(document.getElementById(inputId).value);
+  const el = document.getElementById(displayId);
+  el.textContent = (!isNaN(v) && v > 0)
+    ? 'כולל מע"מ: ₪' + (v * 1.18).toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2})
+    : '';
+}
+
+// ===== PRICE CALC =====
+function calcTireSell() {
+  const cost   = parseFloat(document.getElementById('f_costPrice').value) || 0;
+  const margin = parseFloat(document.getElementById('f_margin').value);
+  if (cost > 0 && !isNaN(margin)) {
+    document.getElementById('f_sellPrice').value = (cost * (1 + margin/100)).toFixed(2);
+    markFilled(document.getElementById('f_sellPrice'));
+  }
+}
+function calcEditSell() {
+  const cost   = parseFloat(document.getElementById('e_costPrice').value) || 0;
+  const margin = parseFloat(document.getElementById('e_margin').value);
+  if (cost > 0 && !isNaN(margin)) {
+    document.getElementById('e_sellPrice').value = (cost * (1 + margin/100)).toFixed(2);
+  }
+}
+
+function tireSize(t) { return `${t.width}/${t.profile}R${t.rim}`; }
+
+// ===== SAVE =====
+function saveTire() {
+  const brand   = document.getElementById('f_brand').value.trim();
+  const width   = document.getElementById('f_width').value;
+  const profile = document.getElementById('f_profile').value;
+  const rim     = document.getElementById('f_rim').value;
+  const cost    = parseFloat(document.getElementById('f_costPrice').value);
+  const qty     = document.getElementById('f_quantity').value;
+
+  if (!brand)         return showToast('יש להזין מותג', 'error');
+  if (!width||!profile||!rim) return showToast('יש להזין מידה מלאה (רוחב/פרופיל/קוטר)', 'error');
+  if (!cost||cost<=0) return showToast('יש להזין מחיר קנייה', 'error');
+  if (qty==='')       return showToast('יש להזין כמות', 'error');
+
+  const margin    = parseFloat(document.getElementById('f_margin').value)||0;
+  const sellPrice = parseFloat(document.getElementById('f_sellPrice').value) || (cost*(1+margin/100));
+
+  const record = {
+    id: nowId(), brand, width: parseInt(width), profile: parseInt(profile),
+    rim: parseInt(rim),
+    loadIdx: document.getElementById('f_loadIdx').value.trim(),
+    speedIdx: document.getElementById('f_speedIdx').value.trim(),
+    costPrice: cost, margin, sellPrice,
+    quantity: parseFloat(qty)||0,
+    location: document.getElementById('f_location').value.trim(),
+    notes:    document.getElementById('f_notes').value.trim()
+  };
+
+  const db = getDB(DB_KEY);
+  db.unshift(record);
+  setDB(DB_KEY, db);
+  clearForm();
+  buildBrandList();
+  renderStats();
+  renderTable();
+  showToast('הצמיג נשמר ✓', 'success');
+}
+
+function clearForm() {
+  ['f_brand','f_width','f_profile','f_rim','f_costPrice','f_margin','f_sellPrice','f_quantity','f_location','f_notes','f_loadIdx','f_speedIdx']
+    .forEach(id => { const el = document.getElementById(id); el.value=''; el.classList.remove('filled'); });
+  const s = getSettings();
+  if (s.defaultTireMargin) document.getElementById('f_margin').value = s.defaultTireMargin;
+}
+
+// ===== STATS =====
+function renderStats() {
+  const db       = getDB(DB_KEY);
+  const types    = db.length;
+  const inStock  = db.filter(t=>(parseFloat(t.quantity)||0)>0).length;
+  const outStock = db.filter(t=>(parseFloat(t.quantity)||0)===0).length;
+  const totalQty = db.reduce((s,t)=>s+(parseFloat(t.quantity)||0),0);
+  const thisMonth = todayStr().slice(3); // "MM/YYYY"
+  const soldQty = db.reduce((s,t) =>
+    s + (t.salesHistory||[]).filter(x=>x.date.slice(3)===thisMonth).reduce((a,b)=>a+b.qty,0), 0);
+  const soldRev = db.reduce((s,t) => {
+    const qty = (t.salesHistory||[]).filter(x=>x.date.slice(3)===thisMonth).reduce((a,b)=>a+b.qty,0);
+    return s + qty * (parseFloat(t.sellPrice)||0);
+  }, 0);
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card blue"><span class="num">${types}</span><div class="lbl">סוגי צמיג</div></div>
+    <div class="stat-card"><span class="num">${totalQty}</span><div class="lbl">יחידות במלאי</div></div>
+    <div class="stat-card orange"><span class="num">${inStock}</span><div class="lbl">סוגים במלאי</div></div>
+    <div class="stat-card red"><span class="num">${outStock}</span><div class="lbl">סוגים שאזלו</div></div>
+    <div class="stat-card"><span class="num">${soldQty}</span><div class="lbl">יח' נמכרו החודש</div></div>
+    <div class="stat-card blue"><span class="num">₪${Math.round(soldRev).toLocaleString('he-IL')}</span><div class="lbl">הכנסות החודש</div></div>
+  `;
+}
+
+// ===== BRAND DATALIST =====
+function buildBrandList() {
+  const db = getDB(DB_KEY);
+  const brands = [...new Set(db.map(t=>t.brand).filter(Boolean))].sort();
+  document.getElementById('brandList').innerHTML = brands.map(b=>`<option value="${b}">`).join('');
+}
+
+// ===== RENDER TABLE =====
+function renderTable() {
+  const db      = getDB(DB_KEY);
+  const search  = document.getElementById('searchInput').value.toLowerCase();
+  const widthF  = document.getElementById('filterWidth').value;
+  const profF   = document.getElementById('filterProfile').value;
+  const rimF    = document.getElementById('filterRim').value;
+  const stockF  = document.getElementById('filterStock').value;
+
+  const filtered = db.filter(t => {
+    if (widthF  && t.width   !== parseInt(widthF))  return false;
+    if (profF   && t.profile !== parseInt(profF))   return false;
+    if (rimF    && t.rim     !== parseInt(rimF))     return false;
+    if (stockF === 'out'     && (parseFloat(t.quantity)||0) !== 0) return false;
+    if (stockF === 'instock' && (parseFloat(t.quantity)||0) === 0) return false;
+    if (search) {
+      const hay = [t.brand, tireSize(t), t.location, t.notes].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  // Sort: size then brand
+  filtered.sort((a,b) => {
+    const sa = tireSize(a), sb = tireSize(b);
+    return sa !== sb ? sa.localeCompare(sb) : a.brand.localeCompare(b.brand);
+  });
+
+  const body  = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+
+  if (filtered.length === 0) { body.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+
+  const thisMonth = todayStr().slice(3); // "MM/YYYY"
+  body.innerHTML = filtered.map(t => {
+    const qty    = parseFloat(t.quantity)||0;
+    const isOut  = qty === 0;
+    const qtyBadge = isOut
+      ? `<span class="badge badge-red">אזל</span>`
+      : qty <= 2
+        ? `<span class="badge badge-orange">${qty}</span>`
+        : `<span class="badge badge-green">${qty}</span>`;
+
+    const marginPct = t.margin ? t.margin + '%' :
+      (t.costPrice>0&&t.sellPrice>0 ? Math.round((t.sellPrice/t.costPrice-1)*100)+'%' : '—');
+
+    const soldThisMonth = (t.salesHistory||[])
+      .filter(s => s.date.slice(3) === thisMonth)
+      .reduce((a, s) => a + s.qty, 0);
+    const soldBadge = soldThisMonth > 0
+      ? `<span class="badge badge-blue">${soldThisMonth} יח'</span>`
+      : `<span style="color:var(--text-muted)">—</span>`;
+
+    return `<tr>
+      <td class="tire-brand">${t.brand}</td>
+      <td class="tire-size">${tireSize(t)}</td>
+      <td style="color:var(--text-muted);font-size:12px">${[t.loadIdx,t.speedIdx].filter(Boolean).join(' / ') || '—'}</td>
+      <td class="no-print">${t.costPrice?`₪${t.costPrice.toLocaleString('he-IL',{minimumFractionDigits:2})}<br><small style="color:var(--text-muted)">${(t.costPrice*1.18).toLocaleString('he-IL',{minimumFractionDigits:2})} עם מע"מ</small>`:'—'}</td>
+      <td class="no-print">${marginPct}</td>
+      <td style="font-weight:900;color:var(--primary)">${t.sellPrice?'₪'+t.sellPrice.toLocaleString('he-IL',{minimumFractionDigits:2}):'—'}</td>
+      <td class="no-print">${qtyBadge}</td>
+      <td class="no-print">${soldBadge}</td>
+      <td class="no-print" style="font-size:12px;color:var(--text-muted)">${t.location||'—'}</td>
+      <td class="no-print" style="font-size:12px;color:var(--text-muted)">${t.notes||'—'}</td>
+      <td class="no-print" style="white-space:nowrap">
+        <button class="btn-icon" title="עדכן כמות" onclick="openStockUpdate(${t.id})">🔢</button>
+        <button class="btn-icon" title="ערוך"       onclick="openEdit(${t.id})">✏️</button>
+        <button class="btn-icon" title="מחק"        onclick="deleteTire(${t.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== PRINT PRICE LIST =====
+function printPriceList() {
+  const s = getSettings();
+  // Populate print header
+  document.getElementById('ph_name').textContent  = s.businessName || 'מחירון צמיגים';
+  document.getElementById('ph_sub').textContent   = s.businessSub  || (s.businessPhone || '');
+  const logo = document.getElementById('ph_logo');
+  if (s.logoBase64) { logo.src=s.logoBase64; logo.style.display=''; }
+  const intro = document.getElementById('printIntro');
+  intro.textContent = 'מחירון צמיגים – ' + todayStr() + ' | המחירים כוללים מע"מ ועשויים להשתנות';
+  intro.style.display = '';
+  // Hide no-print, show print header
+  window.print();
+}
+
+// ===== STOCK UPDATE MODAL =====
+let _stockId = null;
+function openStockUpdate(id) {
+  const t = getDB(DB_KEY).find(x=>x.id===id); if(!t) return;
+  _stockId = id;
+  document.getElementById('stock_name').textContent    = t.brand + ' ' + tireSize(t);
+  document.getElementById('stock_current').textContent = parseFloat(t.quantity)||0;
+  document.getElementById('stock_add').value = '';
+  document.getElementById('stock_sub').value = '';
+  document.getElementById('stock_set').value = '';
+  document.getElementById('stock_preview').textContent = '';
+  document.getElementById('stockModal').classList.add('open');
+  document.getElementById('stock_add').focus();
+}
+function updateStockPreview() {
+  const cur  = parseFloat(document.getElementById('stock_current').textContent)||0;
+  const add  = parseFloat(document.getElementById('stock_add').value);
+  const sub  = parseFloat(document.getElementById('stock_sub').value);
+  const set  = parseFloat(document.getElementById('stock_set').value);
+  if (!isNaN(add) && document.getElementById('stock_add').value !== '') {
+    document.getElementById('stock_preview').innerHTML =
+      `כמות חדשה: <strong style="color:var(--primary);font-size:16px">${cur + add} יח'</strong>`;
+  } else if (!isNaN(sub) && document.getElementById('stock_sub').value !== '') {
+    const newQ = Math.max(0, cur - sub);
+    document.getElementById('stock_preview').innerHTML =
+      `כמות חדשה: <strong style="color:var(--danger);font-size:16px">${newQ} יח'</strong>`;
+  } else if (!isNaN(set) && document.getElementById('stock_set').value !== '') {
+    document.getElementById('stock_preview').innerHTML =
+      `כמות חדשה: <strong style="color:var(--accent);font-size:16px">${set} יח'</strong>`;
+  } else {
+    document.getElementById('stock_preview').textContent = '';
+  }
+}
+function saveStock() {
+  if(!_stockId) return;
+  const cur = parseFloat(document.getElementById('stock_current').textContent)||0;
+  const add = document.getElementById('stock_add').value;
+  const sub = document.getElementById('stock_sub').value;
+  const set = document.getElementById('stock_set').value;
+  let newQty, soldQty = 0;
+  if (add !== '') {
+    newQty = cur + (parseFloat(add)||0);
+  } else if (sub !== '') {
+    soldQty = parseFloat(sub)||0;
+    newQty = Math.max(0, cur - soldQty);
+  } else if (set !== '') {
+    newQty = parseFloat(set)||0;
+  } else {
+    return showToast('יש להזין כמות','error');
+  }
+  if (newQty < 0) newQty = 0;
+  const db = getDB(DB_KEY);
+  const idx = db.findIndex(x=>x.id===_stockId);
+  db[idx].quantity = newQty;
+  if (soldQty > 0) {
+    if (!db[idx].salesHistory) db[idx].salesHistory = [];
+    db[idx].salesHistory.push({ date: todayStr(), qty: soldQty });
+  }
+  setDB(DB_KEY, db);
+  closeStockModal();
+  renderStats(); renderTable();
+  showToast('המלאי עודכן ✓','success');
+}
+function closeStockModal() {
+  document.getElementById('stockModal').classList.remove('open');
+  _stockId = null;
+}
+
+// ===== EDIT =====
+function openEdit(id) {
+  const t = getDB(DB_KEY).find(x=>x.id===id); if(!t) return;
+  editId = id;
+  document.getElementById('e_brand').value    = t.brand    || '';
+  document.getElementById('e_width').value    = t.width    || '';
+  document.getElementById('e_profile').value  = t.profile  || '';
+  document.getElementById('e_rim').value      = t.rim      || '';
+  document.getElementById('e_loadIdx').value  = t.loadIdx  || '';
+  document.getElementById('e_speedIdx').value = t.speedIdx || '';
+  document.getElementById('e_costPrice').value= t.costPrice|| '';
+  updateVat('e_costPrice','e_costVat');
+  document.getElementById('e_margin').value   = t.margin   || '';
+  document.getElementById('e_sellPrice').value= t.sellPrice|| '';
+  document.getElementById('e_quantity').value = t.quantity || '';
+  document.getElementById('e_location').value = t.location || '';
+  document.getElementById('e_notes').value    = t.notes    || '';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeModal() { document.getElementById('editModal').classList.remove('open'); editId=null; }
+function saveEdit() {
+  if (!editId) return;
+  const db=getDB(DB_KEY), idx=db.findIndex(x=>x.id===editId);
+  if (idx===-1) return;
+  const cost   = parseFloat(document.getElementById('e_costPrice').value)||0;
+  const margin = parseFloat(document.getElementById('e_margin').value)||0;
+  const sell   = parseFloat(document.getElementById('e_sellPrice').value) || (cost>0?cost*(1+margin/100):0);
+  db[idx] = { ...db[idx],
+    brand:    document.getElementById('e_brand').value.trim(),
+    width:    parseInt(document.getElementById('e_width').value)||0,
+    profile:  parseInt(document.getElementById('e_profile').value)||0,
+    rim:      parseInt(document.getElementById('e_rim').value)||0,
+    loadIdx:  document.getElementById('e_loadIdx').value.trim(),
+    speedIdx: document.getElementById('e_speedIdx').value.trim(),
+    costPrice:cost, margin, sellPrice:sell,
+    quantity: parseFloat(document.getElementById('e_quantity').value)||0,
+    location: document.getElementById('e_location').value.trim(),
+    notes:    document.getElementById('e_notes').value.trim()
+  };
+  setDB(DB_KEY,db); closeModal(); buildBrandList(); renderStats(); renderTable();
+  showToast('הצמיג עודכן ✓','success');
+}
+
+// ===== DELETE =====
+function deleteTire(id) {
+  const t = getDB(DB_KEY).find(x=>x.id===id);
+  showConfirm(`למחוק "${t?.brand||''} ${t?tireSize(t):''}?"`, () => {
+    setDB(DB_KEY, getDB(DB_KEY).filter(x=>x.id!==id));
+    buildBrandList(); renderStats(); renderTable();
+    showToast('נמחק ✓');
+  });
+}
+
+// ===== EXPORT =====
+function exportTires() {
+  const db = getDB(DB_KEY); if(!db.length) return showToast('אין נתונים','error');
+  const headers = ['מותג','רוחב','פרופיל','קוטר','מידה','אינדקס עומס','אינדקס מהירות','מחיר קנייה','% רווח','מחיר מכירה','כמות','מיקום','הערות'];
+  const rows = db.map(t=>[t.brand,t.width,t.profile,t.rim,tireSize(t),t.loadIdx,t.speedIdx,t.costPrice,t.margin,t.sellPrice,t.quantity,t.location,t.notes]);
+  exportToExcel([headers,...rows], 'מלאי-צמיגים-אוטוליין', 'צמיגים');
+}
+
+// ===== IMPORT =====
+function importTires(input) {
+  const file = input.files[0]; if(!file) return;
+  importFromExcel(file, rows => {
+    if(rows.length<2) return showToast('הקובץ ריק','error');
+    const db = getDB(DB_KEY); let count=0;
+    rows.slice(1).forEach((r,i)=>{
+      if(!r[0]||!r[1]) return;
+      const cost=parseFloat(r[7])||0, mg=parseFloat(r[8])||0;
+      const sell=parseFloat(r[9])||(cost>0&&mg>0?cost*(1+mg/100):0);
+      db.push({
+        id:nowId()+count, brand:String(r[0]),
+        width:parseInt(r[1])||0, profile:parseInt(r[2])||0, rim:parseInt(r[3])||0,
+        loadIdx:r[5]||'', speedIdx:r[6]||'',
+        costPrice:cost, margin:mg, sellPrice:sell,
+        quantity:parseFloat(r[10])||0,
+        location:r[11]||'', notes:r[12]||''
+      });
+      count++;
+    });
+    setDB(DB_KEY,db); buildBrandList(); renderStats(); renderTable();
+    showToast(`יובאו ${count} צמיגים ✓`,'success');
+  });
+  input.value='';
+}
+</script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</body>
+</html>

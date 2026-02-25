@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אוטוליין – ראשי</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .welcome { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 18px; margin-bottom: 28px;
+    }
+    .module-card {
+      background: white; border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 24px;
+      text-decoration: none; color: var(--text);
+      display: flex; flex-direction: column; gap: 10px;
+      transition: all 0.2s; border-right: 5px solid var(--primary);
+    }
+    .module-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .module-card.blue  { border-right-color: var(--accent); }
+    .module-card.orange{ border-right-color: var(--warning); }
+    .module-card.gray  { border-right-color: var(--border-dark); }
+    .module-card .mod-icon { font-size: 36px; }
+    .module-card h2 { font-size: 17px; font-weight: 900; margin: 0; }
+    .module-card p { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5; }
+    .module-card .mod-stat {
+      font-size: 22px; font-weight: 900; color: var(--primary); margin-top: 4px;
+    }
+    .module-card.blue  .mod-stat { color: var(--accent); }
+    .module-card.orange .mod-stat { color: var(--warning); }
+
+    .section-title { font-size: 14px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .alerts-box { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 24px; }
+    .alert-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .alert-item:last-child { border-bottom: none; }
+    .alert-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); flex-shrink: 0; }
+    .alert-dot.orange { background: var(--warning); }
+
+    .date-chip {
+      background: var(--primary-light); color: var(--primary-dark);
+      padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" src="" alt="לוגו">
+    <div class="header-title">
+      <h1>אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+  <span class="date-chip" id="todayChip"></span>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+  <p class="welcome">ברוך הבא! בחר מודול להמשיך.</p>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Modules -->
+  <div class="section-title">מודולים</div>
+  <div class="modules-grid">
+    <a href="הוצאות.html" class="module-card">
+      <div class="mod-icon">💰</div>
+      <h2>הוצאות</h2>
+      <p>מעקב הוצאות משרד ופנצריה, תיעוד קבלות וחשבוניות</p>
+      <div class="mod-stat" id="statExpenses">—</div>
+    </a>
+    <a href="מוצרים.html" class="module-card blue">
+      <div class="mod-icon">📦</div>
+      <h2>מלאי מוצרים</h2>
+      <p>ניהול מלאי מוצרים, מחירי קנייה ומכירה, התראות מלאי נמוך</p>
+      <div class="mod-stat" id="statProducts">—</div>
+    </a>
+    <a href="צמיגים.html" class="module-card orange">
+      <div class="mod-icon">🔵</div>
+      <h2>מלאי צמיגים</h2>
+      <p>מלאי ומחירון צמיגים לפי מותג, מידה ועונה. הדפסת מחירון ללקוחות</p>
+      <div class="mod-stat" id="statTires">—</div>
+    </a>
+    <a href="הצעות-מחיר.html" class="module-card blue">
+      <div class="mod-icon">💬</div>
+      <h2>הצעות מחיר</h2>
+      <p>בקשות הצעות מחיר לצמיגים וחלקים, מעקב רווחיות</p>
+      <div class="mod-stat" id="statQuotes">—</div>
+    </a>
+    <a href="ספקים.html" class="module-card orange">
+      <div class="mod-icon">🏭</div>
+      <h2>ספקים</h2>
+      <p>ניהול ספקים, אנשי קשר, חובות וזיכויים</p>
+      <div class="mod-stat" id="statSuppliers">—</div>
+    </a>
+    <a href="בדיקות-קניה.html" class="module-card gray">
+      <div class="mod-icon">📝</div>
+      <h2>בדיקות קניה</h2>
+      <p>מעקב בדיקות רכב לפני קניה, הדפסת דוחות A4</p>
+      <div class="mod-stat" id="statChecks">—</div>
+    </a>
+  </div>
+
+  <!-- Alerts -->
+  <div class="section-title">התראות</div>
+  <div class="alerts-box">
+    <div id="alertsList">
+      <div class="empty-state" style="padding:20px">
+        <p>✅ אין התראות פעילות</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+document.getElementById('todayChip').textContent = todayStr();
+
+function loadDashboard() {
+  const expenses = getDB('pnc_expenses');
+  const products = getDB('pnc_products');
+  const tires    = getDB('pnc_tires');
+  const checks   = (() => { try { return JSON.parse(localStorage.getItem('mualem_db_v3')) || []; } catch { return []; } })();
+
+  // This month expenses
+  const now = new Date();
+  const thisMonth = String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear();
+  const monthExp = expenses.filter(e => (e.date || '').includes('/' + thisMonth.replace('/','/').slice(0,2) + '/') || (e.date || '').endsWith(thisMonth.slice(-4)));
+  // simpler: filter where date contains /MM/YYYY
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const yyyy = now.getFullYear();
+  const expThisMonth = expenses.filter(e => {
+    const p = (e.date || '').split('/');
+    return p.length === 3 && p[1] === mm && p[2] === String(yyyy);
+  });
+  const totalExpMonth = expThisMonth.reduce((s,e) => s + (parseFloat(e.amount) || 0), 0);
+
+  const quotesT = getDB('pnc_quotes_tires');
+  const quotesP = getDB('pnc_quotes_parts');
+  const suppliers = getDB('pnc_suppliers');
+
+  document.getElementById('statExpenses').textContent  = '₪' + totalExpMonth.toLocaleString('he-IL') + ' החודש';
+  document.getElementById('statProducts').textContent  = products.length + ' פריטים';
+  document.getElementById('statTires').textContent     = tires.length + ' סוגי צמיג';
+  document.getElementById('statQuotes').textContent    = (quotesT.filter(x=>x.status==='open').length + quotesP.filter(x=>x.status==='open').length) + ' בטיפול';
+  document.getElementById('statSuppliers').textContent = suppliers.length + ' ספקים';
+  document.getElementById('statChecks').textContent    = checks.length + ' בדיקות';
+
+  // Alerts
+  const alerts = [];
+  // Low stock products
+  products.forEach(p => {
+    const qty = parseFloat(p.quantity) || 0;
+    const min = parseFloat(p.minQuantity) || 0;
+    if (min > 0 && qty <= min) {
+      alerts.push({ color: qty === 0 ? '' : 'orange', text: `מלאי נמוך: ${p.name} – נותרו ${qty} ${p.unit || 'יח׳'}` });
+    }
+  });
+  // Low stock tires
+  tires.forEach(t => {
+    const qty = parseFloat(t.quantity) || 0;
+    if (qty === 0) {
+      alerts.push({ color: '', text: `צמיג אזל: ${t.brand} ${t.width}/${t.profile}R${t.rim}` });
+    } else if (qty <= 2) {
+      alerts.push({ color: 'orange', text: `מלאי נמוך: ${t.brand} ${t.width}/${t.profile}R${t.rim} – נותרו ${qty}` });
+    }
+  });
+
+  const list = document.getElementById('alertsList');
+  if (alerts.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px"><p>✅ אין התראות פעילות</p></div>';
+  } else {
+    list.innerHTML = alerts.map(a =>
+      `<div class="alert-item">
+         <div class="alert-dot ${a.color}"></div>
+         <span>${a.text}</span>
+       </div>`
+    ).join('');
+  }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
