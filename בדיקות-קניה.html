@@ -115,7 +115,7 @@
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white; font-family: 'Heebo', Arial, sans-serif; }
-            .container, .app-header, .toast { display: none !important; }
+            .container, .app-header, .main-nav, .toast { display: none !important; }
             .printable-content { display: block; }
 
             .page { width: 210mm; height: 296mm; padding: 10mm 15mm; page-break-after: always; box-sizing: border-box; display: flex; flex-direction: column; position: relative; }
@@ -163,7 +163,7 @@
     </style>
 </head>
 <body>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=1.1">
 <style>
   /* הסתרת הכותרת הישנה */
   div.app-header { display: none !important; }
