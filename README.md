@@ -173,19 +173,19 @@
 
 1. שנה את מספר הגרסה בכל קבצי ה-HTML:
    ```html
-   <link rel="stylesheet" href="style.css?v=1.2">
-   <script src="shared.js?v=1.2"></script>
+   <link rel="stylesheet" href="style.css?v=1.3">
+   <script src="shared.js?v=1.3"></script>
    ```
 
 2. עדכן את שם ה-cache ב-`sw.js`:
    ```js
-   const CACHE = 'autoline-v3';
+   const CACHE = 'autoline-v4';
    ```
 
 3. עדכן גם ב-SHELL של `sw.js`:
    ```js
-   './style.css?v=1.2',
-   './shared.js?v=1.2',
+   './style.css?v=1.3',
+   './shared.js?v=1.3',
    ```
 
 זה מבטיח שמשתמשים קיימים יקבלו את הגרסה החדשה ולא גרסה ישנה מה-cache.

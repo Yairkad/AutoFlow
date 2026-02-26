@@ -3,13 +3,13 @@
 //  Offline-first caching strategy
 // =============================================
 
-const CACHE = 'autoline-v2';
+const CACHE = 'autoline-v3';
 
 const SHELL = [
   './',
   './index.html',
-  './style.css?v=1.1',
-  './shared.js?v=1.1',
+  './style.css?v=1.2',
+  './shared.js?v=1.2',
   './manifest.json',
   './הוצאות.html',
   './מוצרים.html',

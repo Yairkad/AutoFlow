@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – הגדרות</title>
-  <link rel="stylesheet" href="style.css?v=1.1">
+  <link rel="stylesheet" href="style.css?v=1.2">
   <style>
     .settings-section { background:white; border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; margin-bottom:20px; }
     .settings-section h3 { font-size:15px; font-weight:700; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border); }
@@ -112,6 +112,10 @@
       <strong>השאר ריק</strong> כדי לבטל את ההגנה.
     </p>
     <div class="grid-inputs" style="max-width:400px">
+      <div class="field" id="s_pinCurrentWrap" style="display:none">
+        <label>קוד נוכחי</label>
+        <input type="password" id="s_pinCurrent" inputmode="numeric" maxlength="8" placeholder="••••" oninput="markFilled(this)">
+      </div>
       <div class="field">
         <label>קוד חדש (4–8 ספרות)</label>
         <input type="password" id="s_pinNew" inputmode="numeric" maxlength="8" placeholder="••••" oninput="markFilled(this)">
@@ -250,7 +254,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.1"></script>
+<script src="shared.js?v=1.2"></script>
 <script>
 
 const GAS_CODE = `// ====== Google Apps Script – אוטוליין ======
@@ -500,16 +504,29 @@ function loadDataCounts() {
 function loadPinStatus() {
   const pin = (getSettings().adminPin || '').trim();
   const el = document.getElementById('pinStatus');
+  const wrap = document.getElementById('s_pinCurrentWrap');
   if (el) el.textContent = pin ? '✅ קוד פעיל (' + pin.length + ' תווים)' : '🔓 אין קוד מוגדר';
+  if (wrap) wrap.style.display = pin ? '' : 'none';
 }
 
 function savePin() {
+  const existingPin = (getSettings().adminPin || '').trim();
   const p1 = document.getElementById('s_pinNew').value.trim();
   const p2 = document.getElementById('s_pinConfirm').value.trim();
-  if (!p1) { showToast('הכנס קוד', 'error'); return; }
+  if (!p1) { showToast('הכנס קוד חדש', 'error'); return; }
   if (!/^\d{4,8}$/.test(p1)) { showToast('הקוד חייב להיות 4–8 ספרות בלבד', 'error'); return; }
   if (p1 !== p2) { showToast('הקודים אינם תואמים', 'error'); return; }
+  if (existingPin) {
+    const current = document.getElementById('s_pinCurrent').value.trim();
+    if (current !== existingPin) {
+      showToast('קוד נוכחי שגוי', 'error');
+      document.getElementById('s_pinCurrent').value = '';
+      document.getElementById('s_pinCurrent').focus();
+      return;
+    }
+  }
   const s = getSettings(); s.adminPin = p1; saveSettings(s);
+  document.getElementById('s_pinCurrent').value = '';
   document.getElementById('s_pinNew').value = '';
   document.getElementById('s_pinConfirm').value = '';
   loadPinStatus();

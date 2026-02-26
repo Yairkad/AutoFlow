@@ -119,6 +119,7 @@
             .printable-content { display: block; }
 
             .page { width: 210mm; height: 296mm; padding: 10mm 15mm; page-break-after: always; box-sizing: border-box; display: flex; flex-direction: column; position: relative; }
+            .page:last-child { page-break-after: avoid; }
             .page-num { position: absolute; bottom: 8mm; left: 15mm; font-size: 10px; color: #999; }
             .bsd { text-align: right; font-weight: bold; font-size: 11px; margin-bottom: 3px; }
 
@@ -163,7 +164,7 @@
     </style>
 </head>
 <body>
-<link rel="stylesheet" href="style.css?v=1.1">
+<link rel="stylesheet" href="style.css?v=1.2">
 <style>
   /* הסתרת הכותרת הישנה */
   div.app-header { display: none !important; }
