@@ -162,3 +162,77 @@ document.addEventListener('DOMContentLoaded', () => {
   highlightNav();
   loadHeaderBranding();
 });
+
+// =============================================
+//  GOOGLE SHEETS SYNC
+//  מבוסס על Google Apps Script Web App.
+//  הדרכה: הגדרות → סנכרון ענן
+// =============================================
+
+function getSyncUrl() {
+  return (getSettings().gasUrl || '').trim();
+}
+
+async function syncPushAll() {
+  const url = getSyncUrl();
+  if (!url) { showToast('לא הוגדר לינק סנכרון – פתח הגדרות', 'error'); return false; }
+  const payload = {
+    type: '__all__',
+    data: {
+      expenses:    getDB('pnc_expenses'),
+      products:    getDB('pnc_products'),
+      tires:       getDB('pnc_tires'),
+      quotesTires: getDB('pnc_quotes_tires'),
+      quotesParts: getDB('pnc_quotes_parts'),
+      suppliers:   getDB('pnc_suppliers'),
+      checks:      (() => { try { return JSON.parse(localStorage.getItem('mualem_db_v3')) || []; } catch { return []; } })()
+    }
+  };
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    showToast('הנתונים עודכנו בענן ✓', 'success');
+    return true;
+  } catch (e) {
+    showToast('שגיאה בסנכרון לענן', 'error');
+    return false;
+  }
+}
+
+async function syncPullAll() {
+  const url = getSyncUrl();
+  if (!url) { showToast('לא הוגדר לינק סנכרון – פתח הגדרות', 'error'); return false; }
+  try {
+    const res = await fetch(url + '?action=getAll', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const remote = await res.json();
+    if (remote.expenses)    setDB('pnc_expenses',     remote.expenses);
+    if (remote.products)    setDB('pnc_products',     remote.products);
+    if (remote.tires)       setDB('pnc_tires',        remote.tires);
+    if (remote.quotesTires) setDB('pnc_quotes_tires', remote.quotesTires);
+    if (remote.quotesParts) setDB('pnc_quotes_parts', remote.quotesParts);
+    if (remote.suppliers)   setDB('pnc_suppliers',    remote.suppliers);
+    if (remote.checks)      setDB('mualem_db_v3',     remote.checks);
+    showToast('נתונים עודכנו מהענן ✓', 'success');
+    return true;
+  } catch (e) {
+    showToast('שגיאה במשיכת נתונים: ' + e.message, 'error');
+    return false;
+  }
+}
+
+function autoSync() {
+  if (!getSyncUrl()) return;
+  setTimeout(() => syncPushAll().catch(() => {}), 800);
+}
+
+// ===== SERVICE WORKER (PWA) =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}

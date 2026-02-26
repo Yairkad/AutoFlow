@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a9e5c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="אוטוליין">
+  <link rel="manifest" href="manifest.json">
   <title>אוטוליין – הגדרות</title>
   <link rel="stylesheet" href="style.css">
   <style>
@@ -14,6 +20,14 @@
     .stat-counts { display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; }
     .count-chip { background:var(--bg); border-radius:8px; padding:8px 14px; font-size:13px; }
     .count-chip strong { display:block; font-size:20px; font-weight:900; color:var(--primary); }
+    .sync-status { display:flex; align-items:center; gap:8px; font-size:13px; margin-top:12px; }
+    .sync-dot { width:10px; height:10px; border-radius:50%; background:var(--border-dark); flex-shrink:0; }
+    .sync-dot.green { background:var(--primary); }
+    .sync-dot.red { background:var(--danger); }
+    .gas-instructions { background:var(--bg); border-radius:8px; padding:16px; margin-top:16px; font-size:13px; line-height:1.7; }
+    .gas-instructions ol { padding-right:20px; }
+    .gas-instructions code { background:#e2e8f0; border-radius:4px; padding:2px 6px; font-family:monospace; font-size:12px; display:block; margin:6px 0; white-space:pre-wrap; word-break:break-all; }
+    details summary { cursor:pointer; font-weight:700; font-size:14px; color:var(--primary); }
   </style>
 </head>
 <body>
@@ -127,6 +141,56 @@
     </div>
   </div>
 
+  <!-- Cloud Sync -->
+  <div class="settings-section">
+    <h3>☁️ סנכרון ענן – Google Sheets</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+      שמור את כל הנתונים ב-Google Sheets וסנכרן בין מכשירים. מתאים לאתר שפרסת ב-GitHub Pages.
+    </p>
+
+    <div class="field" style="max-width:560px">
+      <label>כתובת Google Apps Script (Web App URL)</label>
+      <input type="url" id="s_gasUrl" placeholder="https://script.google.com/macros/s/..." oninput="markFilled(this)">
+    </div>
+
+    <div class="sync-status">
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncStatusText">לא מוגדר</span>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+      <button class="btn btn-primary" style="max-width:200px" onclick="saveGasUrl()">💾 שמור כתובת</button>
+      <button class="btn btn-accent" onclick="doSyncPush()">⬆️ שלח לענן</button>
+      <button class="btn btn-secondary" onclick="doSyncPull()">⬇️ משוך מהענן</button>
+      <button class="btn btn-secondary" onclick="testSync()">🔗 בדוק חיבור</button>
+    </div>
+
+    <details style="margin-top:20px">
+      <summary>📋 הדרכה: איך להגדיר את Google Apps Script</summary>
+      <div class="gas-instructions">
+        <ol>
+          <li>פתח <strong>Google Sheets</strong> וצור גיליון חדש – קרא לו <em>אוטוליין</em></li>
+          <li>בתפריט עליון: <strong>הרחבות → Apps Script</strong></li>
+          <li>מחק את הקוד הקיים והדבק את הקוד הבא:</li>
+        </ol>
+        <code id="gasCodeBlock"></code>
+        <ol start="4">
+          <li>לחץ <strong>פרוס (Deploy) → פריסה חדשה</strong></li>
+          <li>סוג: <strong>Web app</strong></li>
+          <li>הרץ בשם: <strong>Me</strong></li>
+          <li>מי יכול לגשת: <strong>Anyone</strong></li>
+          <li>לחץ <strong>Deploy</strong> ואשר הרשאות</li>
+          <li>העתק את הכתובת (Web app URL) והדבק בשדה למעלה</li>
+        </ol>
+        <p style="margin-top:10px;color:var(--text-muted)">
+          ⚠️ הנתונים נשמרים בגיליון שלך בלבד – Google לא רואה אותם.
+          כל מכשיר שיכנס לאתר יוכל לשלוח/לקבל נתונים דרך אותו גיליון.
+        </p>
+        <button class="btn btn-secondary btn-sm" onclick="copyGasCode()">📋 העתק קוד</button>
+      </div>
+    </details>
+  </div>
+
   <!-- Danger Zone -->
   <div class="settings-section danger-zone">
     <h3>⚠️ אזור מסוכן – מחיקת נתונים</h3>
@@ -159,10 +223,138 @@
 
 <script src="shared.js"></script>
 <script>
+
+const GAS_CODE = `// ====== Google Apps Script – אוטוליין ======
+// פרוס כ-Web App: הרץ בשם Me, גישה ל-Anyone
+
+function doGet(e) {
+  var action = (e.parameter || {}).action || '';
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('_autoline_data') || ss.insertSheet('_autoline_data');
+  var headers = ContentService.createTextOutput;
+
+  // Return all data
+  var data = sheet.getDataRange().getValues();
+  var result = {};
+  for (var i = 0; i < data.length; i++) {
+    try { result[data[i][0]] = JSON.parse(data[i][1]); } catch(ex) {}
+  }
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var payload = JSON.parse(e.postData.contents);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('_autoline_data') || ss.insertSheet('_autoline_data');
+
+  var dataMap = payload.type === '__all__' ? payload.data : {};
+  if (payload.type !== '__all__') dataMap[payload.type] = payload.data;
+
+  // Read existing rows
+  var existing = {};
+  var rows = sheet.getDataRange().getValues();
+  for (var i = 0; i < rows.length; i++) {
+    existing[rows[i][0]] = i + 1; // 1-indexed row number
+  }
+
+  for (var key in dataMap) {
+    var val = JSON.stringify(dataMap[key]);
+    if (existing[key]) {
+      sheet.getRange(existing[key], 2).setValue(val);
+    } else {
+      sheet.appendRow([key, val]);
+      existing[key] = sheet.getLastRow();
+    }
+  }
+
+  // Update human-readable sheet
+  updateReadableSheets(ss, dataMap);
+
+  return ContentService.createTextOutput('ok');
+}
+
+function updateReadableSheets(ss, dataMap) {
+  var sheetNames = {
+    expenses: 'הוצאות', products: 'מוצרים', tires: 'צמיגים',
+    suppliers: 'ספקים', quotesTires: 'הצעות-צמיגים', quotesParts: 'הצעות-חלקים'
+  };
+  for (var key in sheetNames) {
+    if (!dataMap[key] || !dataMap[key].length) continue;
+    var sheetName = sheetNames[key];
+    var s = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+    s.clearContents();
+    var headers = Object.keys(dataMap[key][0]);
+    var values = [headers].concat(dataMap[key].map(function(row) {
+      return headers.map(function(h) { return row[h] !== undefined ? row[h] : ''; });
+    }));
+    s.getRange(1, 1, values.length, headers.length).setValues(values);
+  }
+}`;
+
 document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('gasCodeBlock');
+  if (el) el.textContent = GAS_CODE;
   loadSettingsForm();
   loadDataCounts();
+  updateSyncStatus();
 });
+
+function updateSyncStatus() {
+  const url = (getSettings().gasUrl || '').trim();
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncStatusText');
+  if (!url) {
+    dot.className = 'sync-dot';
+    txt.textContent = 'לא מוגדר';
+  } else {
+    dot.className = 'sync-dot green';
+    txt.textContent = 'מוגדר: ' + url.slice(0, 60) + (url.length > 60 ? '...' : '');
+  }
+}
+
+function saveGasUrl() {
+  const s = getSettings();
+  s.gasUrl = document.getElementById('s_gasUrl').value.trim();
+  saveSettings(s);
+  updateSyncStatus();
+  showToast('כתובת GAS נשמרה ✓', 'success');
+}
+
+async function doSyncPush() {
+  showToast('שולח נתונים לענן...');
+  await syncPushAll();
+}
+
+async function doSyncPull() {
+  showToast('מושך נתונים מהענן...');
+  const ok = await syncPullAll();
+  if (ok) { loadDataCounts(); }
+}
+
+async function testSync() {
+  const url = (getSettings().gasUrl || '').trim();
+  if (!url) { showToast('הכנס כתובת GAS תחילה', 'error'); return; }
+  showToast('בודק חיבור...');
+  try {
+    const res = await fetch(url + '?action=getAll', { cache: 'no-store' });
+    if (res.ok) {
+      showToast('החיבור תקין ✓', 'success');
+      document.getElementById('syncDot').className = 'sync-dot green';
+    } else {
+      showToast('שגיאה: HTTP ' + res.status, 'error');
+      document.getElementById('syncDot').className = 'sync-dot red';
+    }
+  } catch(e) {
+    showToast('לא ניתן להתחבר – בדוק URL', 'error');
+    document.getElementById('syncDot').className = 'sync-dot red';
+  }
+}
+
+function copyGasCode() {
+  navigator.clipboard.writeText(GAS_CODE).then(() => showToast('קוד הועתק ✓', 'success'));
+}
 
 function loadSettingsForm() {
   const s = getSettings();
@@ -173,6 +365,7 @@ function loadSettingsForm() {
   document.getElementById('s_taxId').value        = s.taxId           || '';
   document.getElementById('s_tireMargin').value   = s.defaultTireMargin    || '';
   document.getElementById('s_productMargin').value= s.defaultProductMargin || '';
+  document.getElementById('s_gasUrl').value       = s.gasUrl          || '';
   if (s.logoBase64) {
     const img = document.getElementById('logoPreview');
     img.src = s.logoBase64; img.style.display = '';

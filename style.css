@@ -284,16 +284,78 @@ body {
 .confirm-box .btns { display: flex; gap: 10px; justify-content: center; }
 
 /* ===== RESPONSIVE ===== */
+
+/* Tablet */
+@media (max-width: 900px) {
+  .container { padding: 18px 16px; }
+  .grid-inputs { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .modal { max-width: 96vw; }
+}
+
+/* Mobile */
 @media (max-width: 640px) {
-  .app-header { padding: 10px 14px; }
-  .container { padding: 14px 12px; }
-  .grid-inputs { grid-template-columns: 1fr 1fr; }
-  .main-nav { padding: 6px 10px; }
-  .nav-link { padding: 7px 10px; font-size: 13px; }
+  /* Header */
+  .app-header { padding: 10px 12px; }
+  .header-title h1 { font-size: 15px; }
+  .header-title p { display: none; }
+
+  /* Nav – scrollable row, icons only */
+  .main-nav {
+    padding: 6px 8px;
+    gap: 2px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .main-nav::-webkit-scrollbar { display: none; }
+  .nav-link { padding: 8px 10px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
   .nav-link span.label { display: none; }
+
+  /* Layout */
+  .container { padding: 12px 10px; }
+  .page-title { font-size: 18px; margin-bottom: 14px; }
+
+  /* Grid */
+  .grid-inputs { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-inputs.narrow { grid-template-columns: 1fr 1fr; }
+
+  /* Cards */
+  .card-header { padding: 12px 14px; flex-wrap: wrap; }
+  .card-body { padding: 12px 14px; }
+  .action-area { padding: 10px 14px; gap: 8px; }
+
+  /* Stats */
   .stats-row { gap: 8px; }
-  .stat-card { min-width: 100px; padding: 12px 14px; }
-  .card-body { padding: 14px 16px; }
-  .action-area { padding: 12px 16px; }
-  .search-wrap { padding: 10px 14px; }
+  .stat-card { min-width: 90px; padding: 10px 12px; }
+  .stat-card .num { font-size: 18px; }
+
+  /* Search */
+  .search-wrap { padding: 10px 12px; gap: 8px; }
+  .search-input { font-size: 16px; } /* prevent iOS zoom */
+  .filter-select { font-size: 16px; }
+
+  /* Buttons */
+  .btn { padding: 9px 16px; font-size: 14px; }
+  .btn-primary { flex: unset; width: 100%; justify-content: center; }
+
+  /* Modal */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal { border-radius: var(--radius) var(--radius) 0 0; max-height: 92vh; }
+
+  /* Toast */
+  .toast { left: 12px; right: 12px; transform: translateX(0) translateY(80px); width: auto; }
+  .toast.show { transform: translateX(0) translateY(0); }
+
+  /* Confirm */
+  .confirm-box { padding: 24px 18px; }
+
+  /* Fields – prevent iOS zoom on focus */
+  .field input, .field select, .field textarea { font-size: 16px; }
+}
+
+/* Very small screens */
+@media (max-width: 380px) {
+  .grid-inputs { grid-template-columns: 1fr; }
+  .stats-row { flex-direction: column; }
 }
