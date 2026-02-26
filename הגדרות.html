@@ -104,6 +104,30 @@
     </div>
   </div>
 
+  <!-- PIN / Security -->
+  <div class="settings-section">
+    <h3>🔐 קוד מנהל (PIN)</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+      הגדר קוד מספרי שיידרש לפני מחיקת נתונים, שחזור גיבוי ומשיכה מהענן.<br>
+      <strong>השאר ריק</strong> כדי לבטל את ההגנה.
+    </p>
+    <div class="grid-inputs" style="max-width:400px">
+      <div class="field">
+        <label>קוד חדש (4–8 ספרות)</label>
+        <input type="password" id="s_pinNew" inputmode="numeric" maxlength="8" placeholder="••••" oninput="markFilled(this)">
+      </div>
+      <div class="field">
+        <label>אישור קוד</label>
+        <input type="password" id="s_pinConfirm" inputmode="numeric" maxlength="8" placeholder="••••" oninput="markFilled(this)">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-primary" style="max-width:180px" onclick="savePin()">🔐 שמור PIN</button>
+      <button class="btn btn-danger btn-sm" onclick="removePin()">🔓 הסר PIN</button>
+      <span id="pinStatus" style="font-size:13px;color:var(--text-muted)"></span>
+    </div>
+  </div>
+
   <!-- Defaults -->
   <div class="settings-section">
     <h3>🔵 ברירות מחדל</h3>
@@ -136,7 +160,7 @@
       <button class="btn btn-accent" onclick="backupAll()">📥 הורד גיבוי JSON</button>
       <label class="btn btn-secondary" style="cursor:pointer">
         📤 שחזר מגיבוי
-        <input type="file" accept=".json" style="display:none" onchange="restoreAll(this.files[0])">
+        <input type="file" accept=".json" style="display:none" onchange="restoreWithPin(this)">
       </label>
     </div>
   </div>
@@ -197,12 +221,17 @@
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
       פעולות אלו בלתי הפיכות! מומלץ לגבות לפני.
     </p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_expenses','הוצאות')">🗑 מחק כל ההוצאות</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_products','מוצרים')">🗑 מחק כל המוצרים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_tires','צמיגים')">🗑 מחק כל הצמיגים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('mualem_db_v3','בדיקות קניה')">🗑 מחק כל הבדיקות</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_expenses','הוצאות')">🗑 הוצאות</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_products','מוצרים')">🗑 מוצרים</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_tires','צמיגים')">🗑 צמיגים</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_quotes_tires','הצעות מחיר צמיגים')">🗑 הצעות צמיגים</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_quotes_parts','הצעות מחיר חלקים')">🗑 הצעות חלקים</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_suppliers','ספקים')">🗑 ספקים</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('mualem_db_v3','בדיקות קניה')">🗑 בדיקות קניה</button>
     </div>
+    <hr style="border:none;border-top:1px solid var(--danger-light);margin-bottom:14px">
+    <button class="btn btn-danger" onclick="clearAllData()" style="font-size:14px">💣 מחק את כל הנתונים (איפוס מלא)</button>
   </div>
 </div>
 
@@ -299,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettingsForm();
   loadDataCounts();
   updateSyncStatus();
+  loadPinStatus();
 });
 
 function updateSyncStatus() {
@@ -325,12 +355,6 @@ function saveGasUrl() {
 async function doSyncPush() {
   showToast('שולח נתונים לענן...');
   await syncPushAll();
-}
-
-async function doSyncPull() {
-  showToast('מושך נתונים מהענן...');
-  const ok = await syncPullAll();
-  if (ok) { loadDataCounts(); }
 }
 
 async function testSync() {
@@ -416,6 +440,13 @@ function removeLogo() {
   showToast('הלוגו הוסר ✓');
 }
 
+function restoreWithPin(input) {
+  const file = input.files[0];
+  if (!file) return;
+  requirePin(() => restoreAll(file));
+  input.value = ''; // reset so same file can be chosen again
+}
+
 function loadDataCounts() {
   const counts = [
     { label:'הוצאות',        key:'pnc_expenses',      color:'' },
@@ -432,11 +463,60 @@ function loadDataCounts() {
   }).join('');
 }
 
+// ===== PIN SETUP =====
+function loadPinStatus() {
+  const pin = (getSettings().adminPin || '').trim();
+  const el = document.getElementById('pinStatus');
+  if (el) el.textContent = pin ? '✅ קוד פעיל (' + pin.length + ' תווים)' : '🔓 אין קוד מוגדר';
+}
+
+function savePin() {
+  const p1 = document.getElementById('s_pinNew').value.trim();
+  const p2 = document.getElementById('s_pinConfirm').value.trim();
+  if (!p1) { showToast('הכנס קוד', 'error'); return; }
+  if (!/^\d{4,8}$/.test(p1)) { showToast('הקוד חייב להיות 4–8 ספרות בלבד', 'error'); return; }
+  if (p1 !== p2) { showToast('הקודים אינם תואמים', 'error'); return; }
+  const s = getSettings(); s.adminPin = p1; saveSettings(s);
+  document.getElementById('s_pinNew').value = '';
+  document.getElementById('s_pinConfirm').value = '';
+  loadPinStatus();
+  showToast('קוד מנהל נשמר ✓', 'success');
+}
+
+function removePin() {
+  requirePin(() => {
+    const s = getSettings(); delete s.adminPin; saveSettings(s);
+    loadPinStatus();
+    showToast('קוד מנהל הוסר ✓');
+  });
+}
+
+// ===== CRITICAL ACTIONS (PIN-GATED) =====
 function clearModule(key, label) {
-  showConfirm(`למחוק את כל רשומות ${label}? פעולה זו בלתי הפיכה!`, () => {
-    setDB(key, []);
-    loadDataCounts();
-    showToast(`${label} נמחקו ✓`);
+  requirePin(() => {
+    showConfirm(`למחוק את כל רשומות ${label}? פעולה זו בלתי הפיכה!`, () => {
+      setDB(key, []);
+      loadDataCounts();
+      showToast(`${label} נמחקו ✓`);
+    });
+  });
+}
+
+function clearAllData() {
+  requirePin(() => {
+    showConfirm('למחוק את כל הנתונים? הוצאות, מוצרים, צמיגים, הצעות, ספקים ובדיקות – הכל! פעולה זו בלתי הפיכה לחלוטין!', () => {
+      ['pnc_expenses','pnc_products','pnc_tires','pnc_quotes_tires','pnc_quotes_parts','pnc_suppliers','mualem_db_v3'].forEach(k => setDB(k, []));
+      loadDataCounts();
+      showToast('כל הנתונים נמחקו ✓');
+    });
+  });
+}
+
+async function doSyncPull() {
+  requirePin(async () => {
+    showToast('מושך נתונים מהענן...');
+    const ok = await syncPullAll();
+    if (ok) { loadDataCounts(); }
   });
 }
 

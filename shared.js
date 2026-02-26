@@ -236,3 +236,80 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
+
+// =============================================
+//  PIN PROTECTION
+//  requirePin(callback) – בדוק PIN לפני פעולה קריטית.
+//  אם אין PIN מוגדר – הפעולה עוברת ישירות.
+// =============================================
+
+(function injectPinModal() {
+  const html = `
+  <div id="pinOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:600;align-items:center;justify-content:center">
+    <div style="background:white;border-radius:16px;padding:32px 28px;max-width:320px;width:90%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.22);direction:rtl">
+      <div style="font-size:42px;margin-bottom:12px">🔐</div>
+      <h3 style="font-size:17px;font-weight:800;margin:0 0 8px">נדרש קוד מנהל</h3>
+      <p style="font-size:13px;color:#64748b;margin:0 0 18px">הכנס את הקוד לאישור הפעולה</p>
+      <input id="pinInput" type="password" inputmode="numeric" maxlength="8"
+        style="width:100%;padding:13px;text-align:center;font-size:22px;letter-spacing:8px;border:2px solid #e2e8f0;border-radius:10px;outline:none;font-family:monospace;background:#fafbfc;box-sizing:border-box"
+        placeholder="••••">
+      <p id="pinError" style="color:#dc2626;font-size:12px;font-weight:600;margin:8px 0 0;min-height:18px"></p>
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button id="pinCancelBtn" style="flex:1;padding:11px;border:1.5px solid #e2e8f0;background:white;border-radius:9px;cursor:pointer;font-family:inherit;font-weight:600;font-size:14px">ביטול</button>
+        <button id="pinConfirmBtn" style="flex:1;padding:11px;background:#1a9e5c;color:white;border:none;border-radius:9px;cursor:pointer;font-family:inherit;font-weight:700;font-size:14px">אישור ✓</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    const overlay  = document.getElementById('pinOverlay');
+    const input    = document.getElementById('pinInput');
+    const errorEl  = document.getElementById('pinError');
+    const confirmBtn = document.getElementById('pinConfirmBtn');
+    const cancelBtn  = document.getElementById('pinCancelBtn');
+
+    function closePin() {
+      overlay.style.display = 'none';
+      window._pinCb = null;
+    }
+
+    function tryConfirm() {
+      const s = getSettings();
+      if (input.value === String(s.adminPin || '')) {
+        closePin();
+        if (window._pinCb) window._pinCb();
+      } else {
+        errorEl.textContent = 'קוד שגוי – נסה שוב';
+        input.style.borderColor = '#dc2626';
+        input.value = '';
+        input.focus();
+        setTimeout(() => { errorEl.textContent = ''; input.style.borderColor = '#e2e8f0'; }, 2000);
+      }
+    }
+
+    confirmBtn.addEventListener('click', tryConfirm);
+    cancelBtn.addEventListener('click', closePin);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') tryConfirm(); });
+
+    // Close on backdrop click
+    overlay.addEventListener('click', e => { if (e.target === overlay) closePin(); });
+  });
+})();
+
+function requirePin(cb) {
+  const pin = (getSettings().adminPin || '').trim();
+  if (!pin) { cb(); return; }  // No PIN set → pass through
+
+  const overlay = document.getElementById('pinOverlay');
+  if (!overlay) { cb(); return; }  // Modal not loaded yet (shouldn't happen)
+
+  overlay.style.display = 'flex';
+  const input = document.getElementById('pinInput');
+  document.getElementById('pinError').textContent = '';
+  input.style.borderColor = '#e2e8f0';
+  input.value = '';
+  setTimeout(() => input.focus(), 80);
+  window._pinCb = cb;
+}
