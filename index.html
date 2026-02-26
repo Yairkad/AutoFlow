@@ -37,6 +37,8 @@
     }
     .module-card.blue  .mod-stat { color: var(--accent); }
     .module-card.orange .mod-stat { color: var(--warning); }
+    .module-card.red   { border-right-color: var(--danger); }
+    .module-card.red   .mod-stat { color: var(--danger); }
 
     .section-title { font-size: 14px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -128,6 +130,24 @@
       <p>מעקב בדיקות רכב לפני קניה, הדפסת דוחות A4</p>
       <div class="mod-stat" id="statChecks">—</div>
     </a>
+    <a href="תזכורות.html" class="module-card red">
+      <div class="mod-icon">🔔</div>
+      <h2>תזכורות</h2>
+      <p>משימות ותזכורות עם עדיפות ותאריך יעד, התראות על פריטים באיחור</p>
+      <div class="mod-stat" id="statReminders">—</div>
+    </a>
+    <a href="חשבונות.html" class="module-card blue">
+      <div class="mod-icon">🧾</div>
+      <h2>חשבונות</h2>
+      <p>ניהול חשבוניות חודשיות, מעקב תשלומים וחייבים</p>
+      <div class="mod-stat" id="statInvoices">—</div>
+    </a>
+    <a href="רכבים.html" class="module-card orange">
+      <div class="mod-icon">🚗</div>
+      <h2>מלאי רכבים</h2>
+      <p>ניהול קנייה ומכירה של רכבים, מעקב רווחיות ותמונות</p>
+      <div class="mod-stat" id="statCars">—</div>
+    </a>
   </div>
 
   <!-- Alerts -->
@@ -170,15 +190,54 @@ function loadDashboard() {
   const quotesP = getDB('pnc_quotes_parts');
   const suppliers = getDB('pnc_suppliers');
 
+  // Reminders
+  const reminders = getDB('pnc_reminders');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const openRems    = reminders.filter(r => !r.done);
+  const overdueRems = reminders.filter(r => !r.done && r.due && new Date(r.due) < today);
+  const highRems    = reminders.filter(r => !r.done && r.priority === 'high' && !(r.due && new Date(r.due) < today));
+
+  // Invoices (current month)
+  const tenants  = getDB('pnc_tenants');
+  const payments = getDB('pnc_payments');
+  const curPeriod = String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear();
+  const curPmts   = payments.filter(p => p.period === curPeriod);
+  const unpaidTenants = tenants.filter(t => {
+    const pmt = curPmts.find(p => p.tenantId === t.id);
+    return !pmt || !pmt.paid;
+  });
+
+  // Cars inventory
+  const carsInv  = getDB('pnc_cars_inventory');
+  const availCars = carsInv.filter(c => c.status === 'available');
+
   document.getElementById('statExpenses').textContent  = '₪' + totalExpMonth.toLocaleString('he-IL') + ' החודש';
   document.getElementById('statProducts').textContent  = products.length + ' פריטים';
   document.getElementById('statTires').textContent     = tires.length + ' סוגי צמיג';
   document.getElementById('statQuotes').textContent    = (quotesT.filter(x=>x.status==='open').length + quotesP.filter(x=>x.status==='open').length) + ' בטיפול';
   document.getElementById('statSuppliers').textContent = suppliers.length + ' ספקים';
   document.getElementById('statChecks').textContent    = checks.length + ' בדיקות';
+  document.getElementById('statReminders').textContent = openRems.length + ' פתוחות' + (overdueRems.length > 0 ? ` · ${overdueRems.length} באיחור` : '');
+  document.getElementById('statInvoices').textContent  = unpaidTenants.length > 0 ? unpaidTenants.length + ' ממתינים לתשלום' : '✓ הכל שולם';
+  document.getElementById('statCars').textContent      = availCars.length + ' זמינים' + (carsInv.length > availCars.length ? ` / ${carsInv.length} סה״כ` : '');
 
   // Alerts
   const alerts = [];
+
+  // Overdue reminders (most urgent – red)
+  overdueRems.forEach(r => {
+    alerts.push({ color: '', text: `🔔 תזכורת באיחור: ${r.text}` });
+  });
+  // High priority open reminders (orange)
+  highRems.forEach(r => {
+    alerts.push({ color: 'orange', text: `🔔 תזכורת דחופה: ${r.text}` });
+  });
+  // Unpaid invoices current month
+  unpaidTenants.forEach(t => {
+    const total = (t.items||[]).reduce((s,item)=>s+(parseFloat(item.amount)||0),0);
+    alerts.push({ color: 'orange', text: `🧾 חשבון לא שולם: ${t.name} – ₪${total.toLocaleString('he-IL')} (${curPeriod})` });
+  });
+
   // Low stock products
   products.forEach(p => {
     const qty = parseFloat(p.quantity) || 0;

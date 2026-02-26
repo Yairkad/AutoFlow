@@ -236,6 +236,9 @@
       <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_quotes_parts','הצעות מחיר חלקים')">🗑 הצעות חלקים</button>
       <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_suppliers','ספקים')">🗑 ספקים</button>
       <button class="btn btn-danger btn-sm" onclick="clearModule('mualem_db_v3','בדיקות קניה')">🗑 בדיקות קניה</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_cars_inventory','מלאי רכבים')">🗑 מלאי רכבים</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_cars_buys','קנייה רכבים')">🗑 קנייה רכבים</button>
+      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_cars_sells','מכירה רכבים')">🗑 מכירה רכבים</button>
     </div>
     <hr style="border:none;border-top:1px solid var(--danger-light);margin-bottom:14px">
     <button class="btn btn-danger" onclick="clearAllData()" style="font-size:14px">💣 מחק את כל הנתונים (איפוס מלא)</button>
@@ -526,7 +529,10 @@ function loadDataCounts() {
     { label:'הצעות צמיגים', key:'pnc_quotes_tires',  color:'' },
     { label:'הצעות חלקים',  key:'pnc_quotes_parts',  color:'' },
     { label:'ספקים',         key:'pnc_suppliers',     color:'orange' },
-    { label:'בדיקות',        key:'mualem_db_v3',      color:'' },
+    { label:'בדיקות',        key:'mualem_db_v3',          color:'' },
+    { label:'מלאי רכבים',   key:'pnc_cars_inventory',    color:'orange' },
+    { label:'קנייה רכבים',  key:'pnc_cars_buys',         color:'' },
+    { label:'מכירה רכבים',  key:'pnc_cars_sells',        color:'' },
   ];
   document.getElementById('dataCounts').innerHTML = counts.map(c => {
     const db = getDB(c.key);
@@ -589,7 +595,7 @@ function clearModule(key, label) {
 function clearAllData() {
   requirePin(() => {
     showConfirm('למחוק את כל הנתונים? הוצאות, מוצרים, צמיגים, הצעות, ספקים ובדיקות – הכל! פעולה זו בלתי הפיכה לחלוטין!', () => {
-      ['pnc_expenses','pnc_products','pnc_tires','pnc_quotes_tires','pnc_quotes_parts','pnc_suppliers','mualem_db_v3'].forEach(k => setDB(k, []));
+      ['pnc_expenses','pnc_products','pnc_tires','pnc_quotes_tires','pnc_quotes_parts','pnc_suppliers','mualem_db_v3','pnc_cars_inventory','pnc_cars_buys','pnc_cars_sells'].forEach(k => setDB(k, []));
       loadDataCounts();
       showToast('כל הנתונים נמחקו ✓');
     });
