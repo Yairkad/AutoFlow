@@ -70,9 +70,9 @@
   <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
   
   <a href="עובדים.html" class="nav-link">👷 <span class="label">עובדים</span></a>
-  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
-  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
-  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
@@ -108,7 +108,7 @@
       <div class="grid-inputs">
         <div class="field">
           <label>תאריך <span class="required-star">*</span></label>
-          <input type="text" id="f_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+          <input type="text" id="f_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)">
         </div>
         <div class="field">
           <label>מקור <span class="required-star">*</span></label>
@@ -295,7 +295,7 @@
       <div class="grid-inputs">
         <div class="field">
           <label>תאריך <span class="required-star">*</span></label>
-          <input type="text" id="inc_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+          <input type="text" id="inc_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)">
         </div>
         <div class="field">
           <label>קטגוריה</label>
@@ -455,7 +455,7 @@
     </div>
     <div class="modal-body">
       <div class="grid-inputs">
-        <div class="field"><label>תאריך</label><input type="text" id="e_date" oninput="markFilled(this)"></div>
+        <div class="field"><label>תאריך</label><input type="text" id="e_date" oninput="markFilled(this)" onblur="this.value=normDate(this.value)"></div>
         <div class="field">
           <label>מקור</label>
           <select id="e_source" onchange="updateEditCategories(); markFilled(this)">

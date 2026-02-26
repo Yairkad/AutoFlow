@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
-  <title>אוטוליין – מלאי צמיגים</title>
+  <title>אוטוליין – צמיגים</title>
   <link rel="stylesheet" href="style.css?v=1.7">
   <style>
     .tire-size { font-weight:900; font-size:15px; color:var(--accent); letter-spacing:0.5px; }
@@ -57,9 +57,9 @@
   <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
   
   <a href="עובדים.html" class="nav-link">👷 <span class="label">עובדים</span></a>
-  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
-  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
-  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
@@ -68,7 +68,7 @@
 </nav>
 
 <div class="container">
-  <div class="page-title"><span class="icon">🔵</span> מלאי צמיגים</div>
+  <div class="page-title"><span class="icon">🔵</span> צמיגים</div>
 
   <!-- Stats -->
   <div class="stats-row" id="statsRow"></div>
@@ -245,24 +245,24 @@
         <div id="stock_current" style="font-size:32px;font-weight:900;color:var(--accent)">0</div>
         <div style="font-size:12px;color:var(--text-muted)">יחידות</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <div class="field">
-          <label style="color:var(--primary)">➕ קיבלתי</label>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <label style="color:var(--primary);font-weight:700;font-size:13px;width:110px;flex-shrink:0">➕ קיבלתי הזמנה</label>
           <input type="number" id="stock_add" placeholder="0" min="0" step="1"
             oninput="stock_sub.value='';stock_set.value=''; updateStockPreview()"
-            style="border-color:var(--primary);font-size:18px;font-weight:700;text-align:center">
+            style="flex:1;border:2px solid var(--primary);border-radius:10px;font-size:22px;font-weight:700;text-align:center;padding:8px">
         </div>
-        <div class="field">
-          <label style="color:var(--danger)">➖ מכרתי</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <label style="color:var(--danger);font-weight:700;font-size:13px;width:110px;flex-shrink:0">➖ מכרתי</label>
           <input type="number" id="stock_sub" placeholder="0" min="0" step="1"
             oninput="stock_add.value='';stock_set.value=''; updateStockPreview()"
-            style="border-color:var(--danger);font-size:18px;font-weight:700;text-align:center">
+            style="flex:1;border:2px solid var(--danger);border-radius:10px;font-size:22px;font-weight:700;text-align:center;padding:8px">
         </div>
-        <div class="field">
-          <label style="color:var(--accent)">= קבע ידנית</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <label style="color:var(--accent);font-weight:700;font-size:13px;width:110px;flex-shrink:0">= קבע ידנית</label>
           <input type="number" id="stock_set" placeholder="" min="0" step="1"
             oninput="stock_add.value='';stock_sub.value=''; updateStockPreview()"
-            style="border-color:var(--accent);font-size:18px;font-weight:700;text-align:center">
+            style="flex:1;border:2px solid var(--accent);border-radius:10px;font-size:22px;font-weight:700;text-align:center;padding:8px">
         </div>
       </div>
       <div id="stock_preview" style="text-align:center;margin-top:12px;font-size:13px;color:var(--text-muted)"></div>
@@ -509,11 +509,12 @@ function renderTable() {
       <td class="no-print">${soldBadge}</td>
       <td class="no-print" style="font-size:12px;color:var(--text-muted)">${t.location||'—'}</td>
       <td class="no-print" style="font-size:12px;color:var(--text-muted)">${t.notes||'—'}</td>
-      <td class="no-print" style="white-space:nowrap">
-        <button class="btn-icon" title="עדכן כמות" onclick="openStockUpdate(${t.id})">🔢</button>
-        <button class="btn-icon" title="ערוך"       onclick="openEdit(${t.id})">✏️</button>
-        <button class="btn-icon" title="מחק"        onclick="deleteTire(${t.id})">🗑️</button>
-      </td>
+      <td class="no-print"><div style="display:flex;gap:4px;align-items:center;flex-wrap:nowrap">
+        <button class="btn-icon" title="הגיע הזמנה – הוסף לכמות" onclick="openStockUpdate(${t.id},'stock_add')" style="color:var(--primary)">➕</button>
+        <button class="btn-icon" title="נמכר – הפחת מהכמות"      onclick="openStockUpdate(${t.id},'stock_sub')" style="color:var(--danger)">➖</button>
+        <button class="btn-icon" title="ערוך"                     onclick="openEdit(${t.id})">✏️</button>
+        <button class="btn-icon" title="מחק"                      onclick="deleteTire(${t.id})">🗑️</button>
+      </div></td>
     </tr>`;
   }).join('');
 }
@@ -535,7 +536,7 @@ function printPriceList() {
 
 // ===== STOCK UPDATE MODAL =====
 let _stockId = null;
-function openStockUpdate(id) {
+function openStockUpdate(id, focusField) {
   const t = getDB(DB_KEY).find(x=>x.id===id); if(!t) return;
   _stockId = id;
   document.getElementById('stock_name').textContent    = t.brand + ' ' + tireSize(t);
@@ -545,7 +546,7 @@ function openStockUpdate(id) {
   document.getElementById('stock_set').value = '';
   document.getElementById('stock_preview').textContent = '';
   document.getElementById('stockModal').classList.add('open');
-  document.getElementById('stock_add').focus();
+  document.getElementById(focusField||'stock_add').focus();
 }
 function updateStockPreview() {
   const cur  = parseFloat(document.getElementById('stock_current').textContent)||0;

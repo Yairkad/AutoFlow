@@ -55,9 +55,9 @@
   <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
   
   <a href="עובדים.html" class="nav-link">👷 <span class="label">עובדים</span></a>
-  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
-  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
-  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
@@ -111,14 +111,6 @@
           <input type="text" id="f_address" placeholder="רחוב, עיר" oninput="markFilled(this)">
         </div>
         <div class="field">
-          <label>חוב / זיכוי (₪) <small style="font-weight:400;color:var(--text-muted)">חיובי = אנחנו חייבים לספק</small></label>
-          <input type="number" id="f_balance" placeholder="0.00" step="0.01" oninput="markFilled(this)">
-        </div>
-        <div class="field">
-          <label>תנאי תשלום</label>
-          <input type="text" id="f_terms" placeholder="למשל: שוטף+30" oninput="markFilled(this)">
-        </div>
-        <div class="field">
           <label>הערות</label>
           <input type="text" id="f_notes" placeholder="הערה חופשית" oninput="markFilled(this)">
         </div>
@@ -160,8 +152,7 @@
             <th>קטגוריה</th>
             <th>איש קשר</th>
             <th>טלפון</th>
-            <th>תנאי תשלום</th>
-            <th>חוב / זיכוי</th>
+            <th>חשבוניות פתוחות</th>
             <th>הערות</th>
             <th class="no-print"></th>
           </tr>
@@ -192,8 +183,6 @@
         <div class="field"><label>טלפון נוסף</label><input type="text" id="e_phone2" oninput="markFilled(this)"></div>
         <div class="field"><label>אימייל</label><input type="text" id="e_email" oninput="markFilled(this)"></div>
         <div class="field"><label>כתובת</label><input type="text" id="e_address" oninput="markFilled(this)"></div>
-        <div class="field"><label>חוב / זיכוי (₪)</label><input type="number" id="e_balance" step="0.01" oninput="markFilled(this)"></div>
-        <div class="field"><label>תנאי תשלום</label><input type="text" id="e_terms" oninput="markFilled(this)"></div>
         <div class="field"><label>הערות</label><input type="text" id="e_notes" oninput="markFilled(this)"></div>
       </div>
     </div>
@@ -249,8 +238,6 @@ function saveSupplier() {
     phone2:   document.getElementById('f_phone2').value.trim(),
     email:    document.getElementById('f_email').value.trim(),
     address:  document.getElementById('f_address').value.trim(),
-    balance:  parseFloat(document.getElementById('f_balance').value)||0,
-    terms:    document.getElementById('f_terms').value.trim(),
     notes:    document.getElementById('f_notes').value.trim()
   };
   const db = getDB(DB_KEY);
@@ -264,23 +251,22 @@ function saveSupplier() {
 }
 
 function clearForm() {
-  ['f_company','f_category','f_contact','f_phone','f_phone2','f_email','f_address','f_balance','f_terms','f_notes']
+  ['f_company','f_category','f_contact','f_phone','f_phone2','f_email','f_address','f_notes']
     .forEach(id => { const el=document.getElementById(id); el.value=''; el.classList.remove('filled'); });
 }
 
 // ===== STATS =====
 function renderStats() {
   const db = getDB(DB_KEY);
-  const suppDebts   = getDB('pnc_supplier_debts');
+  const suppDebts    = getDB('pnc_supplier_debts');
   const openInvoices = suppDebts.filter(d => !d.paid);
-  const totalInvoices = openInvoices.reduce((s,d) => s + (parseFloat(d.amount)||0), 0);
-  const totalDebt   = db.filter(s=>s.balance>0).reduce((s,x)=>s+x.balance, 0);
-  const totalCredit = db.filter(s=>s.balance<0).reduce((s,x)=>s+Math.abs(x.balance), 0);
+  const totalInvoices= openInvoices.reduce((s,d) => s + (parseFloat(d.amount)||0), 0);
+  const suppWithOpen = new Set(openInvoices.map(d => (d.supplierName||'').toLowerCase())).size;
   document.getElementById('statsRow').innerHTML = `
     <div class="stat-card"><span class="num">${db.length}</span><div class="lbl">סה"כ ספקים</div></div>
-    <div class="stat-card red"><span class="num">₪${totalInvoices.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">חשבוניות פתוחות</div></div>
+    <div class="stat-card red"><span class="num">₪${totalInvoices.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">לתשלום (חשבוניות פתוחות)</div></div>
     <div class="stat-card orange"><span class="num">${openInvoices.length}</span><div class="lbl">חשבוניות ממתינות</div></div>
-    <div class="stat-card"><span class="num">₪${(totalDebt - totalCredit).toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">יתרה ידנית</div></div>
+    <div class="stat-card"><span class="num">${suppWithOpen}</span><div class="lbl">ספקים עם חוב פתוח</div></div>
   `;
 }
 
@@ -299,25 +285,18 @@ function renderTable() {
   if (!filtered.length) { body.innerHTML=''; empty.style.display=''; return; }
   empty.style.display = 'none';
   body.innerHTML = filtered.map(s => {
-    const bal = parseFloat(s.balance)||0;
-    const balHtml = bal > 0
-      ? `<span class="debt-positive">חוב: ₪${bal.toLocaleString('he-IL',{minimumFractionDigits:2})}</span>`
-      : bal < 0
-        ? `<span class="debt-negative">זיכוי: ₪${Math.abs(bal).toLocaleString('he-IL',{minimumFractionDigits:2})}</span>`
-        : `<span class="debt-zero">—</span>`;
     // Open invoices from חובות module for this supplier
-    const openInv = suppDebts.filter(d => !d.paid && (d.supplierName||'').toLowerCase() === (s.company||'').toLowerCase());
+    const openInv  = suppDebts.filter(d => !d.paid && (d.supplierName||'').toLowerCase() === (s.company||'').toLowerCase());
     const invTotal = openInv.reduce((sum,d) => sum + (parseFloat(d.amount)||0), 0);
     const invHtml  = openInv.length
-      ? `<br><a href="חובות.html" style="font-size:11px;color:var(--danger);font-weight:700;text-decoration:none">📄 ${openInv.length} חשבוניות פתוחות: ₪${invTotal.toLocaleString('he-IL',{maximumFractionDigits:0})}</a>`
-      : '';
+      ? `<a href="חובות.html" style="font-size:12px;color:var(--danger);font-weight:700;text-decoration:none">📄 ${openInv.length} חשבוניות · ₪${invTotal.toLocaleString('he-IL',{maximumFractionDigits:0})}</a>`
+      : `<span class="debt-zero">—</span>`;
     return `<tr>
       <td style="font-weight:700">${s.company}</td>
       <td>${s.category||'—'}</td>
       <td>${s.contact||'—'}</td>
       <td>${s.phone||'—'}${s.phone2?`<br><small style="color:var(--text-muted)">${s.phone2}</small>`:''}</td>
-      <td>${s.terms||'—'}</td>
-      <td>${balHtml}${invHtml}</td>
+      <td>${invHtml}</td>
       <td style="font-size:12px;color:var(--text-muted)">${s.notes||'—'}</td>
       <td class="no-print" style="white-space:nowrap">
         <button class="btn-icon" title="ערוך"  onclick="openEdit(${s.id})">✏️</button>
@@ -338,8 +317,6 @@ function openEdit(id) {
   document.getElementById('e_phone2').value   = s.phone2   || '';
   document.getElementById('e_email').value    = s.email    || '';
   document.getElementById('e_address').value  = s.address  || '';
-  document.getElementById('e_balance').value  = s.balance  || '';
-  document.getElementById('e_terms').value    = s.terms    || '';
   document.getElementById('e_notes').value    = s.notes    || '';
   document.getElementById('editModal').classList.add('open');
 }
@@ -356,8 +333,6 @@ function saveEdit() {
     phone2:   document.getElementById('e_phone2').value.trim(),
     email:    document.getElementById('e_email').value.trim(),
     address:  document.getElementById('e_address').value.trim(),
-    balance:  parseFloat(document.getElementById('e_balance').value)||0,
-    terms:    document.getElementById('e_terms').value.trim(),
     notes:    document.getElementById('e_notes').value.trim()
   };
   setDB(DB_KEY,db); closeModal(); buildCatList(); renderStats(); renderTable();
@@ -387,8 +362,8 @@ function printSuppliers() {
 // ===== EXPORT =====
 function exportSuppliers() {
   const db = getDB(DB_KEY); if(!db.length) return showToast('אין נתונים','error');
-  const hdrs = ['שם חברה','קטגוריה','איש קשר','טלפון','טלפון נוסף','אימייל','כתובת','חוב/זיכוי','תנאי תשלום','הערות'];
-  const rows = db.map(s=>[s.company,s.category,s.contact,s.phone,s.phone2,s.email,s.address,s.balance,s.terms,s.notes]);
+  const hdrs = ['שם חברה','קטגוריה','איש קשר','טלפון','טלפון נוסף','אימייל','כתובת','הערות'];
+  const rows = db.map(s=>[s.company,s.category,s.contact,s.phone,s.phone2,s.email,s.address,s.notes]);
   exportToExcel([hdrs,...rows],'ספקים-אוטוליין','ספקים');
 }
 </script>

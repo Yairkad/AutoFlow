@@ -83,6 +83,17 @@
       padding:7px 8px; border:1px solid var(--border); border-radius:8px;
       font-family:inherit; font-size:13px; width:100%; box-sizing:border-box;
     }
+
+    /* ===== CONFIRM DIALOG (enhanced) ===== */
+    .confirm-overlay { padding: 20px; backdrop-filter: blur(3px); }
+    .confirm-box { animation: cfmIn .15s ease; }
+    @keyframes cfmIn { from { transform: scale(.9); opacity:0 } to { transform: scale(1); opacity:1 } }
+
+    /* ===== ACTION BUTTONS ROW ===== */
+    .action-btns { display:flex; gap:5px; align-items:center; flex-wrap:nowrap; }
+
+    /* ===== CREDIT BADGE ===== */
+    .val.credit { color: #7c3aed; }
   </style>
 </head>
 <body>
@@ -103,9 +114,9 @@
   <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
   <a href="חובות.html"          class="nav-link active">💳 <span class="label">חובות</span></a>
   <a href="עובדים.html"         class="nav-link">👷 <span class="label">עובדים</span></a>
-  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
-  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
-  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
@@ -130,6 +141,8 @@
     <div class="search-bar">
       <input type="text" id="custSearch" placeholder="חפש לפי שם..." oninput="renderCustomers()">
       <button class="btn btn-primary" onclick="openCustModal()">+ הוסף חוב</button>
+      <button class="btn btn-secondary" onclick="exportCustExcel()">📊 Excel</button>
+      <button class="btn btn-secondary" onclick="printDebts('customers')">🖨️ הדפסה</button>
     </div>
     <div id="custList"></div>
     <div id="custEmpty" class="empty-state" style="display:none">
@@ -144,7 +157,11 @@
       <input type="text" id="suppSearch" placeholder="חפש לפי שם ספק / מספר חשבונית..."
         oninput="renderSupplierDebts()"
         style="flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px">
-      <button class="btn btn-primary" onclick="openSuppModal()">+ הוסף חוב לספק</button>
+      <div class="action-btns">
+        <button class="btn btn-primary" onclick="openSuppModal()">+ הוסף חוב לספק</button>
+        <button class="btn btn-secondary" onclick="exportSuppExcel()">📊 Excel</button>
+        <button class="btn btn-secondary" onclick="printDebts('suppliers')">🖨️ הדפסה</button>
+      </div>
     </div>
     <div class="table-wrap">
       <table class="data-table">
@@ -180,7 +197,7 @@
         </div>
         <div class="field">
           <label>תאריך</label>
-          <input type="text" id="c_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+          <input type="text" id="c_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)">
         </div>
         <div class="field">
           <label>סכום חוב (₪) *</label>
@@ -219,7 +236,7 @@
         </div>
         <div class="field">
           <label>תאריך תשלום</label>
-          <input type="text" id="p_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+          <input type="text" id="p_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)">
         </div>
         <div class="field" style="grid-column:1/-1">
           <label>הערה (אמצעי תשלום, הערה)</label>
@@ -254,11 +271,11 @@
         </div>
         <div class="field">
           <label>תאריך חשבונית</label>
-          <input type="text" id="s_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+          <input type="text" id="s_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)">
         </div>
         <div class="field">
           <label>לתשלום עד</label>
-          <input type="text" id="s_due" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+          <input type="text" id="s_due" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)">
         </div>
         <div class="field">
           <label>סכום (₪) *</label>
@@ -280,17 +297,19 @@
 <!-- Confirm -->
 <div id="confirmOverlay" class="confirm-overlay">
   <div class="confirm-box">
-    <div class="confirm-icon">🗑️</div>
+    <div class="big-icon" id="confirmIcon">🗑️</div>
     <p id="confirmMsg"></p>
-    <div class="confirm-btns">
+    <div class="btns">
       <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
-      <button class="btn btn-danger" onclick="confirmYes()">מחק</button>
+      <button class="btn btn-danger" id="confirmYesBtn" onclick="confirmYes()">מחק</button>
     </div>
   </div>
 </div>
 
 <div id="toast" class="toast"></div>
 
+<!-- SheetJS -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script src="shared.js?v=1.7"></script>
 <script>
 const DB_CDEBTS = 'pnc_customer_debts';
@@ -384,14 +403,17 @@ function renderCustomers() {
           style="border:none;background:none;cursor:pointer;color:var(--danger);padding:0 4px;font-size:13px">✕</button>
       </div>`).join('');
 
+    const credit = parseFloat(debt.credit)||0;
+
     return `<div class="debt-card ${status}">
       <div class="debt-header">
         <div>
           <div class="debt-name">${debt.name}</div>
           <div class="debt-meta">${debt.date||''}${debt.phone?' · 📞 '+debt.phone:''}${debt.desc?' · '+debt.desc:''}</div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <div class="action-btns">
           <span class="status-badge ${status}">${STATUS_HE[status]}</span>
+          ${status !== 'paid' ? `<button class="btn btn-primary btn-sm" onclick="openPayModal(${debt.id})">💵 תשלום</button>` : ''}
           <button class="btn btn-secondary btn-sm" onclick="openCustModal(${debt.id})">✏️</button>
           <button class="btn btn-danger btn-sm" onclick="deleteCustDebt(${debt.id})">🗑️</button>
         </div>
@@ -409,13 +431,13 @@ function renderCustomers() {
           <div class="val ${balance>0?'warning':'primary'}">₪${balance.toLocaleString('he-IL',{minimumFractionDigits:2})}</div>
           <div class="lbl">יתרה לתשלום</div>
         </div>
+        ${credit > 0.001 ? `<div class="debt-amount-item">
+          <div class="val credit">₪${credit.toLocaleString('he-IL',{minimumFractionDigits:2})}</div>
+          <div class="lbl">יתרת זיכוי</div>
+        </div>` : ''}
       </div>
       ${payRows ? `<div class="payments-list"><div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px">היסטוריית תשלומים:</div>${payRows}</div>` : ''}
       ${debt.notes ? `<div style="font-size:12px;color:var(--text-muted);margin-top:6px">${debt.notes}</div>` : ''}
-      ${status !== 'paid' ? `
-        <div style="margin-top:10px">
-          <button class="btn btn-primary btn-sm" onclick="openPayModal(${debt.id})">💵 רשום תשלום</button>
-        </div>` : ''}
     </div>`;
   }).join('');
 }
@@ -498,22 +520,46 @@ function closePayModal() { document.getElementById('payModal').classList.remove(
 function savePayment() {
   const amount = parseFloat(document.getElementById('p_amount').value);
   if (!amount || amount <= 0) { showToast('הכנס סכום תשלום', 'error'); return; }
+  const date  = normDate(document.getElementById('p_date').value.trim()) || todayStr();
+  const notes = document.getElementById('p_notes').value.trim();
+
   const db  = getDB(DB_CDEBTS);
   const idx = db.findIndex(x => x.id === _payTargetId);
   if (idx === -1) return;
-  if (!db[idx].payments) db[idx].payments = [];
-  db[idx].payments.push({
-    id:     nowId(),
-    amount,
-    date:   document.getElementById('p_date').value.trim() || todayStr(),
-    notes:  document.getElementById('p_notes').value.trim()
-  });
-  setDB(DB_CDEBTS, db);
-  closePayModal();
-  renderStats();
-  renderCustomers();
-  showToast('תשלום נרשם ✓', 'success');
-  autoSync();
+
+  const balance = _custBalance(db[idx]);
+
+  const doSave = (credit) => {
+    const db2  = getDB(DB_CDEBTS);
+    const idx2 = db2.findIndex(x => x.id === _payTargetId);
+    if (idx2 === -1) return;
+    if (!db2[idx2].payments) db2[idx2].payments = [];
+    db2[idx2].payments.push({ id: nowId(), amount, date, notes });
+    if (credit > 0.001) db2[idx2].credit = (parseFloat(db2[idx2].credit)||0) + credit;
+    setDB(DB_CDEBTS, db2);
+    closePayModal();
+    renderStats(); renderCustomers();
+    showToast(credit > 0.001
+      ? `תשלום נרשם · יתרת זיכוי ₪${credit.toLocaleString('he-IL',{minimumFractionDigits:2})} נוצרה ✓`
+      : 'תשלום נרשם ✓', 'success');
+    autoSync();
+  };
+
+  if (amount > balance + 0.001) {
+    const credit = amount - balance;
+    document.getElementById('confirmIcon').textContent = '💵';
+    document.getElementById('confirmYesBtn').textContent = 'כן, שמור';
+    showConfirm(
+      `הסכום (₪${amount.toLocaleString('he-IL',{minimumFractionDigits:2})}) גדול מהחוב הנותר (₪${balance.toLocaleString('he-IL',{minimumFractionDigits:2})}). יתרת זיכוי של ₪${credit.toLocaleString('he-IL',{minimumFractionDigits:2})} תיוצר ללקוח. להמשיך?`,
+      () => {
+        document.getElementById('confirmIcon').textContent = '🗑️';
+        document.getElementById('confirmYesBtn').textContent = 'מחק';
+        doSave(credit);
+      }
+    );
+    return;
+  }
+  doSave(0);
 }
 
 function deletePayment(debtId, payId) {
@@ -563,11 +609,11 @@ function renderSupplierDebts() {
         ? `<span style="background:#dcfce7;color:#166534;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700">✅ שולם ${d.paidDate?'('+d.paidDate+')':''}</span>`
         : `<span style="background:#fee2e2;color:#dc2626;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700">ממתין</span>`
       }</td>
-      <td style="white-space:nowrap">
+      <td><div class="action-btns">
         ${!d.paid ? `<button class="btn btn-primary btn-sm" onclick="markSuppPaid(${d.id})">✅ שולם</button>` : ''}
         <button class="btn btn-secondary btn-sm" onclick="openSuppModal(${d.id})">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="deleteSuppDebt(${d.id})">🗑️</button>
-      </td>
+      </div></td>
     </tr>`;
   }).join('');
 }
@@ -652,6 +698,105 @@ function deleteSuppDebt(id) {
     renderStats(); renderSupplierDebts();
     showToast('חוב נמחק ✓'); autoSync();
   });
+}
+
+// ===== EXCEL EXPORT =====
+function exportCustExcel() {
+  const debts = getDB(DB_CDEBTS);
+  if (!debts.length) { showToast('אין נתונים לייצוא', 'error'); return; }
+  const rows = debts.map(d => {
+    const paidSum = (d.payments||[]).reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
+    const balance = Math.max(0, (parseFloat(d.amount)||0) - paidSum);
+    return {
+      'שם לקוח':   d.name    || '',
+      'טלפון':     d.phone   || '',
+      'תאריך':     d.date    || '',
+      'תיאור':     d.desc    || '',
+      'חוב מקורי': parseFloat(d.amount) || 0,
+      'שולם':      paidSum,
+      'יתרה':      balance,
+      'זיכוי':     parseFloat(d.credit) || 0,
+      'סטטוס':     STATUS_HE[_custStatus(d)],
+      'הערות':     d.notes   || ''
+    };
+  });
+  exportToExcel(rows, 'חובות-לקוחות', 'חובות לקוחות');
+}
+
+function exportSuppExcel() {
+  const debts = getDB(DB_SDEBTS);
+  if (!debts.length) { showToast('אין נתונים לייצוא', 'error'); return; }
+  const rows = debts.map(d => ({
+    'תאריך':        d.date         || '',
+    'ספק':          d.supplierName || '',
+    'חשבונית':      d.invoiceNum   || '',
+    'סכום':         parseFloat(d.amount) || 0,
+    'לתשלום עד':   d.dueDate      || '',
+    'סטטוס':        d.paid ? 'שולם' : 'ממתין',
+    'תאריך תשלום': d.paidDate     || '',
+    'הערות':        d.notes        || ''
+  }));
+  exportToExcel(rows, 'חובות-ספקים', 'חובות לספקים');
+}
+
+// ===== PRINT =====
+function printDebts(tab) {
+  const biz = getSettings().bizName || 'אוטוליין';
+  let title, tableHtml;
+
+  if (tab === 'customers') {
+    const debts = getDB(DB_CDEBTS);
+    title = 'חובות לקוחות';
+    tableHtml = `<table>
+      <thead><tr><th>שם לקוח</th><th>תאריך</th><th>תיאור</th><th>חוב מקורי</th><th>שולם</th><th>יתרה</th><th>זיכוי</th><th>סטטוס</th></tr></thead>
+      <tbody>${debts.map(d => {
+        const paidSum = (d.payments||[]).reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
+        const balance = Math.max(0, (parseFloat(d.amount)||0) - paidSum);
+        const credit  = parseFloat(d.credit)||0;
+        const st = _custStatus(d);
+        return `<tr>
+          <td>${d.name||''}</td><td>${d.date||''}</td><td>${d.desc||''}</td>
+          <td>₪${(parseFloat(d.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+          <td>₪${paidSum.toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+          <td>${balance>0?'₪'+balance.toLocaleString('he-IL',{minimumFractionDigits:2}):'—'}</td>
+          <td>${credit>0?'₪'+credit.toLocaleString('he-IL',{minimumFractionDigits:2}):'—'}</td>
+          <td>${STATUS_HE[st]}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  } else {
+    const debts = getDB(DB_SDEBTS);
+    title = 'חובות לספקים';
+    tableHtml = `<table>
+      <thead><tr><th>תאריך</th><th>ספק</th><th>חשבונית</th><th>סכום</th><th>לתשלום עד</th><th>סטטוס</th></tr></thead>
+      <tbody>${debts.map(d => `<tr>
+        <td>${d.date||''}</td><td>${d.supplierName||''}</td><td>${d.invoiceNum||''}</td>
+        <td>₪${(parseFloat(d.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+        <td>${d.dueDate||''}</td>
+        <td>${d.paid?'שולם':'ממתין'}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="he" dir="rtl"><head>
+    <meta charset="UTF-8"><title>${title}</title>
+    <style>
+      body { font-family: 'Arial', sans-serif; font-size: 13px; margin: 20px; }
+      h2 { margin-bottom: 4px; } .sub { color:#666; font-size:12px; margin-bottom:14px; }
+      table { width:100%; border-collapse:collapse; }
+      th,td { border:1px solid #ccc; padding:6px 10px; text-align:right; }
+      th { background:#f0f0f0; font-weight:700; }
+      tr:nth-child(even) { background:#fafafa; }
+    </style>
+  </head><body>
+    <h2>${biz} – ${title}</h2>
+    <div class="sub">הודפס: ${todayStr()}</div>
+    ${tableHtml}
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
 }
 
 // ===== INIT =====

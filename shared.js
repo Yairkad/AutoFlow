@@ -39,6 +39,19 @@ function todayStr() {
   return [String(d.getDate()).padStart(2,'0'), String(d.getMonth()+1).padStart(2,'0'), d.getFullYear()].join('/');
 }
 function nowId() { return Date.now(); }
+// ===== DATE NORMALIZE =====
+// Converts "3/3/24", "3.3.2024", "3-3-24" → "03/03/2024"
+function normDate(s) {
+  if (!s || !s.trim()) return '';
+  const parts = s.trim().split(/[\/\.\-]/);
+  if (parts.length !== 3) return s;
+  let [d, m, y] = parts.map(p => p.trim());
+  if (!d || !m || !y) return s;
+  if (y.length === 2) y = '20' + y;
+  d = d.padStart(2, '0');
+  m = m.padStart(2, '0');
+  return `${d}/${m}/${y}`;
+}
 function monthLabel(dateStr) {
   // dateStr = DD/MM/YYYY
   const p = dateStr ? dateStr.split('/') : [];

@@ -91,9 +91,9 @@
   <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
   
   <a href="עובדים.html" class="nav-link">👷 <span class="label">עובדים</span></a>
-  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
-  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
-  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
@@ -119,7 +119,7 @@
       </div>
       <div class="card-body">
         <div class="grid-inputs">
-          <div class="field"><label>תאריך <span class="required-star">*</span></label><input type="text" id="tf_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
+          <div class="field"><label>תאריך <span class="required-star">*</span></label><input type="text" id="tf_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)"></div>
           <div class="field"><label>שם הפונה <span class="required-star">*</span></label><input type="text" id="tf_name" placeholder="שם הלקוח" oninput="markFilled(this)"></div>
           <div class="field"><label>טלפון</label><input type="text" id="tf_phone" placeholder="050-0000000" oninput="markFilled(this)"></div>
           <div class="field"><label>מס' רכב</label><input type="text" id="tf_plate" placeholder="12-345-67" oninput="markFilled(this)"></div>
@@ -210,7 +210,7 @@
       </div>
       <div class="card-body">
         <div class="grid-inputs">
-          <div class="field"><label>תאריך <span class="required-star">*</span></label><input type="text" id="pf_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
+          <div class="field"><label>תאריך <span class="required-star">*</span></label><input type="text" id="pf_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)"></div>
           <div class="field"><label>שם הפונה <span class="required-star">*</span></label><input type="text" id="pf_name" placeholder="שם הלקוח" oninput="markFilled(this)"></div>
           <div class="field"><label>טלפון</label><input type="text" id="pf_phone" placeholder="050-0000000" oninput="markFilled(this)"></div>
           <div class="field"><label>מס' רכב</label><input type="text" id="pf_plate" placeholder="12-345-67" oninput="markFilled(this)"></div>
@@ -686,7 +686,7 @@ function openEditTire(id) {
   const opts = OFFER_TYPES.map(t=>`<option value="${t}">${t}</option>`).join('');
   document.getElementById('editModalBody').innerHTML = `
     <div class="grid-inputs">
-      <div class="field"><label>תאריך</label><input type="text" id="ef_date" value="${x.date||''}"></div>
+      <div class="field"><label>תאריך</label><input type="text" id="ef_date" value="${x.date||''}" onblur="this.value=normDate(this.value)"></div>
       <div class="field"><label>שם פונה</label><input type="text" id="ef_name" value="${x.name||''}"></div>
       <div class="field"><label>טלפון</label><input type="text" id="ef_phone" value="${x.phone||''}"></div>
       <div class="field"><label>רכב</label><input type="text" id="ef_plate" value="${x.plate||''}"></div>
@@ -726,7 +726,7 @@ function openEditPart(id) {
   document.getElementById('editModalTitle').textContent = 'עריכת הצעה – חלקים';
   document.getElementById('editModalBody').innerHTML = `
     <div class="grid-inputs">
-      <div class="field"><label>תאריך</label><input type="text" id="ef_date" value="${x.date||''}"></div>
+      <div class="field"><label>תאריך</label><input type="text" id="ef_date" value="${x.date||''}" onblur="this.value=normDate(this.value)"></div>
       <div class="field"><label>שם פונה</label><input type="text" id="ef_name" value="${x.name||''}"></div>
       <div class="field"><label>טלפון</label><input type="text" id="ef_phone" value="${x.phone||''}"></div>
       <div class="field"><label>רכב</label><input type="text" id="ef_plate" value="${x.plate||''}"></div>

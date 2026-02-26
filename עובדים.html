@@ -75,6 +75,37 @@
     .salary-summary { display:flex; gap:20px; align-items:center; flex-wrap:wrap; font-size:13px; }
     .salary-summary strong { font-weight:900; }
 
+    /* ===== MAIN TAB BAR — segmented control ===== */
+    .tab-bar {
+      display: inline-flex;
+      background: #e8f5ee;
+      border-radius: 14px;
+      padding: 4px;
+      gap: 2px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      padding: 9px 28px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: 'Heebo', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary-dark, #166534);
+      transition: all 0.18s;
+      white-space: nowrap;
+      opacity: 0.65;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(26,158,92,.30);
+      opacity: 1;
+    }
+    .tab-btn:not(.active):hover { opacity: 1; background: rgba(26,158,92,.12); }
+
     /* Pay type tabs */
     .pay-type-tabs {
       display:flex; gap:0; border:1.5px solid var(--border);
@@ -125,9 +156,9 @@
   <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
   <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
   <a href="עובדים.html"         class="nav-link active">👷 <span class="label">עובדים</span></a>
-  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
-  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
-  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
@@ -190,7 +221,7 @@
 
 <!-- Modal: Employee -->
 <div id="empModal" class="modal-overlay">
-  <div class="modal" style="max-width:560px">
+  <div class="modal" style="max-width:620px">
     <div class="modal-header">
       <h3 id="empModalTitle">עובד חדש</h3>
       <button class="modal-close" onclick="closeEmpModal()">✕</button>
@@ -200,6 +231,8 @@
         <button class="pay-type-tab active" id="ptMonthly" onclick="setPayType('monthly')">שכר חודשי קבוע</button>
         <button class="pay-type-tab" id="ptHourly" onclick="setPayType('hourly')">שכר שעתי</button>
       </div>
+
+      <!-- ── פרטים בסיסיים ── -->
       <div class="grid-inputs">
         <div class="field">
           <label>שם העובד *</label>
@@ -234,6 +267,74 @@
           <textarea id="e_notes" placeholder="פרטים נוספים..." rows="2" oninput="markFilled(this)"></textarea>
         </div>
       </div>
+
+      <!-- ── פרטי חשבון בנק ── -->
+      <details style="margin-top:14px;border:1.5px solid var(--border);border-radius:10px;overflow:hidden">
+        <summary style="cursor:pointer;padding:10px 14px;font-size:13px;font-weight:700;user-select:none;background:#f8fafc;list-style:none;display:flex;align-items:center;gap:6px">
+          💳 פרטי חשבון בנק <span style="font-weight:400;font-size:12px;color:var(--text-muted);margin-right:4px">(להעברות ותשלומים)</span>
+        </summary>
+        <div class="grid-inputs" style="padding:14px 14px 8px">
+          <div class="field">
+            <label>שם בנק</label>
+            <input type="text" id="e_bank" placeholder="לאומי, הפועלים..." oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>מספר סניף</label>
+            <input type="text" id="e_bankBranch" placeholder="123" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>מספר חשבון</label>
+            <input type="text" id="e_bankAccount" placeholder="12345678" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>שם בעל החשבון</label>
+            <input type="text" id="e_bankHolder" placeholder="אם שונה משם העובד" oninput="markFilled(this)">
+          </div>
+        </div>
+      </details>
+
+      <!-- ── פרטים אישיים ── -->
+      <details style="margin-top:10px;border:1.5px solid var(--border);border-radius:10px;overflow:hidden">
+        <summary style="cursor:pointer;padding:10px 14px;font-size:13px;font-weight:700;user-select:none;background:#f8fafc;list-style:none;display:flex;align-items:center;gap:6px">
+          👤 פרטים אישיים <span style="font-weight:400;font-size:12px;color:var(--text-muted);margin-right:4px">(כתובת, ת.ז., מידות בגדים)</span>
+        </summary>
+        <div class="grid-inputs" style="padding:14px 14px 8px">
+          <div class="field">
+            <label>מספר ת.ז.</label>
+            <input type="text" id="e_idNum" placeholder="000000000" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>תאריך לידה</label>
+            <input type="date" id="e_birthDate" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>אימייל</label>
+            <input type="email" id="e_email" placeholder="name@example.com" oninput="markFilled(this)">
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>כתובת מגורים</label>
+            <input type="text" id="e_address" placeholder="רחוב, מספר, עיר" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>מידת חולצה</label>
+            <select id="e_shirtSize">
+              <option value="">—</option>
+              <option value="XS">XS</option><option value="S">S</option>
+              <option value="M">M</option><option value="L">L</option>
+              <option value="XL">XL</option><option value="XXL">XXL</option>
+              <option value="XXXL">XXXL</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>מידת מכנסיים</label>
+            <input type="text" id="e_pantsSize" placeholder="32, 34, L..." oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>מידת נעליים</label>
+            <input type="number" id="e_shoeSize" placeholder="42" min="35" max="50" oninput="markFilled(this)">
+          </div>
+        </div>
+      </details>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeEmpModal()">ביטול</button>
@@ -440,12 +541,16 @@ function renderEmployees() {
 function openAddEmp() {
   _editEmpId = null;
   document.getElementById('empModalTitle').textContent = 'עובד חדש';
-  ['e_name','e_role','e_phone','e_baseSalary','e_hourlyRate','e_notes'].forEach(id => {
+  ['e_name','e_role','e_phone','e_baseSalary','e_hourlyRate','e_notes',
+   'e_bank','e_bankBranch','e_bankAccount','e_bankHolder',
+   'e_idNum','e_email','e_address','e_pantsSize','e_shoeSize'].forEach(id => {
     const el = document.getElementById(id);
     el.value = '';
     el.classList.remove('filled');
   });
   document.getElementById('e_startDate').value = '';
+  document.getElementById('e_birthDate').value = '';
+  document.getElementById('e_shirtSize').value = '';
   document.getElementById('e_active').checked = true;
   setPayType('monthly');
   document.getElementById('empModal').classList.add('open');
@@ -456,14 +561,27 @@ function openEditEmp(id) {
   if (!e) return;
   _editEmpId = id;
   document.getElementById('empModalTitle').textContent = 'עריכת עובד';
-  document.getElementById('e_name').value       = e.name       || '';
-  document.getElementById('e_role').value       = e.role       || '';
-  document.getElementById('e_phone').value      = e.phone      || '';
-  document.getElementById('e_baseSalary').value = e.baseSalary || '';
-  document.getElementById('e_hourlyRate').value = e.hourlyRate || '';
-  document.getElementById('e_notes').value      = e.notes      || '';
-  document.getElementById('e_active').checked   = !!e.active;
-  document.getElementById('e_startDate').value  = _displayToDateInput(e.startDate);
+  document.getElementById('e_name').value        = e.name        || '';
+  document.getElementById('e_role').value        = e.role        || '';
+  document.getElementById('e_phone').value       = e.phone       || '';
+  document.getElementById('e_baseSalary').value  = e.baseSalary  || '';
+  document.getElementById('e_hourlyRate').value  = e.hourlyRate  || '';
+  document.getElementById('e_notes').value       = e.notes       || '';
+  document.getElementById('e_active').checked    = !!e.active;
+  document.getElementById('e_startDate').value   = _displayToDateInput(e.startDate);
+  // Bank
+  document.getElementById('e_bank').value        = e.bank        || '';
+  document.getElementById('e_bankBranch').value  = e.bankBranch  || '';
+  document.getElementById('e_bankAccount').value = e.bankAccount || '';
+  document.getElementById('e_bankHolder').value  = e.bankHolder  || '';
+  // Personal
+  document.getElementById('e_idNum').value       = e.idNum       || '';
+  document.getElementById('e_email').value       = e.email       || '';
+  document.getElementById('e_address').value     = e.address     || '';
+  document.getElementById('e_birthDate').value   = _displayToDateInput(e.birthDate);
+  document.getElementById('e_shirtSize').value   = e.shirtSize   || '';
+  document.getElementById('e_pantsSize').value   = e.pantsSize   || '';
+  document.getElementById('e_shoeSize').value    = e.shoeSize    || '';
   setPayType(e.payType || 'monthly');
   document.getElementById('empModal').classList.add('open');
 }
@@ -496,6 +614,19 @@ function saveEmp() {
     baseSalary:  parseFloat(document.getElementById('e_baseSalary').value) || 0,
     hourlyRate:  parseFloat(document.getElementById('e_hourlyRate').value) || 0,
     notes:       document.getElementById('e_notes').value.trim(),
+    // Bank
+    bank:        document.getElementById('e_bank').value.trim(),
+    bankBranch:  document.getElementById('e_bankBranch').value.trim(),
+    bankAccount: document.getElementById('e_bankAccount').value.trim(),
+    bankHolder:  document.getElementById('e_bankHolder').value.trim(),
+    // Personal
+    idNum:       document.getElementById('e_idNum').value.trim(),
+    email:       document.getElementById('e_email').value.trim(),
+    address:     document.getElementById('e_address').value.trim(),
+    birthDate:   _dateInputToDisplay(document.getElementById('e_birthDate').value),
+    shirtSize:   document.getElementById('e_shirtSize').value,
+    pantsSize:   document.getElementById('e_pantsSize').value.trim(),
+    shoeSize:    document.getElementById('e_shoeSize').value.trim(),
   };
 
   const db = getDB(DB_EMPLOYEES);

@@ -271,17 +271,23 @@ body {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.5); z-index: 300;
   align-items: center; justify-content: center;
+  padding: 20px;
 }
 .confirm-overlay.open { display: flex; }
 .confirm-box {
   background: white; border-radius: var(--radius);
-  padding: 32px 28px; max-width: 360px; width: 90%;
+  padding: 32px 28px; max-width: 360px; width: 100%;
   text-align: center; box-shadow: var(--shadow-lg);
+  animation: cfmIn .15s ease;
 }
-.confirm-box .big-icon { font-size: 42px; margin-bottom: 14px; }
+@keyframes cfmIn { from { transform: scale(.9); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+.confirm-box .big-icon,
+.confirm-box .confirm-icon { font-size: 42px; margin-bottom: 14px; }
 .confirm-box h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
 .confirm-box p { font-size: 14px; color: var(--text-muted); margin-bottom: 22px; }
-.confirm-box .btns { display: flex; gap: 10px; justify-content: center; }
+/* Support both class names: btns (new) and confirm-btns (old) */
+.confirm-box .btns,
+.confirm-box .confirm-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
 /* ===== RESPONSIVE ===== */
 

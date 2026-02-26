@@ -68,6 +68,8 @@
     .badge-available { background:#dcfce7; color:#166534; }
     .badge-reserved  { background:#fef9c3; color:#854d0e; }
     .badge-sold      { background:#f1f5f9; color:#475569; }
+    .badge-business  { background:#e0e7ff; color:#3730a3; }
+    .car-card.business { border-color:#6366f1; }
 
     /* Card body */
     .car-body { padding:14px 16px; flex:1; display:flex; flex-direction:column; gap:6px; }
@@ -153,6 +155,16 @@
     .cond-fair     { color:#b45309; font-weight:700; }
     .cond-poor     { color:#dc2626; font-weight:700; }
 
+    /* ===== MODAL BOX (scrollable) ===== */
+    .modal-box {
+      background: white; border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal-box .modal-header { flex-shrink: 0; position: sticky; top: 0; z-index: 1; }
+    .modal-box .modal-body   { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+    .modal-box .modal-footer { flex-shrink: 0; }
+
     /* ===== SELL MODAL ===== */
     #sellModal .modal-box { max-width:500px; width:95%; }
 
@@ -191,9 +203,9 @@
   <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
   
   <a href="עובדים.html" class="nav-link">👷 <span class="label">עובדים</span></a>
-  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
-  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
-  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
@@ -226,6 +238,7 @@
         <button class="filter-chip active" onclick="setInvFilter('all',this)">הכל</button>
         <button class="filter-chip" onclick="setInvFilter('available',this)">🟢 למכירה</button>
         <button class="filter-chip" onclick="setInvFilter('reserved',this)">🟡 שמור</button>
+        <button class="filter-chip" onclick="setInvFilter('business',this)">🔧 בשימוש העסק</button>
         <button class="filter-chip" onclick="setInvFilter('sold',this)">⚫ נמכר</button>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
@@ -301,7 +314,7 @@
         <thead><tr>
           <th>תאריך מכירה</th><th>יצרן / דגם</th><th>שנה</th><th>לוחית</th>
           <th>מחיר קנייה</th><th>מחיר מכירה</th><th>רווח</th>
-          <th>נמכר ל-</th><th>אמצעי תשלום</th><th>הערות</th>
+          <th>נמכר ל-</th><th>אמצעי תשלום</th><th>הערות</th><th>פעולות</th>
         </tr></thead>
         <tbody id="sellTableBody"></tbody>
       </table>
@@ -315,27 +328,49 @@
 
 <!-- ===== INVENTORY FORM MODAL ===== -->
 <div id="invModal" class="modal-overlay" style="display:none">
-  <div class="modal-box" style="max-width:700px;width:95%">
+  <div class="modal-box" style="max-width:720px;width:96%">
     <div class="modal-header">
       <h3 id="invModalTitle">הוסף רכב למלאי</h3>
       <button class="modal-close" onclick="closeInvForm()">✕</button>
     </div>
-    <div class="modal-body">
-      <div class="form-section-title">פרטי הרכב</div>
-      <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
-        <div class="field"><label>יצרן *</label>
-          <input type="text" id="i_make" list="makesList" oninput="markFilled(this)"></div>
-        <div class="field"><label>דגם *</label>
-          <input type="text" id="i_model" oninput="markFilled(this)"></div>
-        <div class="field"><label>שנה</label>
-          <input type="number" id="i_year" min="1990" max="2030" oninput="markFilled(this)"></div>
-        <div class="field"><label>לוחית רישוי</label>
-          <input type="text" id="i_plate" style="direction:ltr;text-align:right" oninput="markFilled(this)"></div>
-        <div class="field"><label>ק"מ</label>
-          <input type="number" id="i_km" min="0" oninput="markFilled(this)"></div>
-        <div class="field"><label>צבע</label>
-          <input type="text" id="i_color" oninput="markFilled(this)"></div>
-        <div class="field"><label>מצב</label>
+    <div class="modal-body" style="padding:20px 24px">
+
+      <!-- ── Row 1: יצרן + דגם (2 cols) ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="field">
+          <label>יצרן <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="i_make" list="makesList" placeholder="Toyota, Hyundai..." oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>דגם <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="i_model" placeholder="Corolla, i35..." oninput="markFilled(this)">
+        </div>
+      </div>
+
+      <!-- ── Row 2: שנה + לוחית + ק"מ + צבע ── -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:12px">
+        <div class="field">
+          <label>שנה</label>
+          <input type="number" id="i_year" min="1990" max="2030" placeholder="2020" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>לוחית רישוי</label>
+          <input type="text" id="i_plate" style="direction:ltr;text-align:right" placeholder="12-345-67" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>ק"מ</label>
+          <input type="number" id="i_km" min="0" placeholder="80000" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>צבע</label>
+          <input type="text" id="i_color" placeholder="לבן, שחור..." oninput="markFilled(this)">
+        </div>
+      </div>
+
+      <!-- ── Row 3: מצב + סטטוס + תאריך + איש קשר ── -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:12px">
+        <div class="field">
+          <label>מצב</label>
           <select id="i_condition">
             <option value="new">חדש</option>
             <option value="like-new">כמו חדש</option>
@@ -344,40 +379,68 @@
             <option value="poor">לשיפוץ</option>
           </select>
         </div>
-        <div class="field"><label>סטטוס</label>
+        <div class="field">
+          <label>סטטוס</label>
           <select id="i_status">
             <option value="available">למכירה</option>
             <option value="reserved">שמור</option>
+            <option value="business">בשימוש העסק</option>
             <option value="sold">נמכר</option>
           </select>
         </div>
-        <div class="field"><label>מחיר קנייה (₪)</label>
-          <input type="number" id="i_buyPrice" min="0" oninput="markFilled(this)"></div>
-        <div class="field"><label>מחיר מבוקש (₪)</label>
-          <input type="number" id="i_askPrice" min="0" oninput="markFilled(this)"></div>
-        <div class="field"><label>תאריך הוספה</label>
-          <input type="text" id="i_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
-        <div class="field"><label>איש קשר / מוכר</label>
-          <input type="text" id="i_contact" oninput="markFilled(this)"></div>
+        <div class="field">
+          <label>תאריך הוספה</label>
+          <input type="text" id="i_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)">
+        </div>
+        <div class="field">
+          <label>איש קשר / מוכר</label>
+          <input type="text" id="i_contact" oninput="markFilled(this)">
+        </div>
       </div>
 
-      <div class="form-section-title" style="margin-top:10px">טסט, ביטוח ובעלות (לרכב עסקי)</div>
-      <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
-        <div class="field"><label>תוקף טסט</label>
-          <input type="text" id="i_testDate" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
-        <div class="field"><label>תוקף ביטוח</label>
-          <input type="text" id="i_insurDate" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
-        <div class="field"><label>שם הבעלים (אם לא העסק)</label>
-          <input type="text" id="i_owner" placeholder="השאר ריק אם שייך לעסק" oninput="markFilled(this)"></div>
+      <!-- ── Row 4: מחירים (2 cols, highlighted) ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;background:#f0fdf4;border-radius:10px;padding:12px 14px;border:1px solid #bbf7d0">
+        <div class="field">
+          <label style="color:var(--primary)">💰 מחיר קנייה (₪)</label>
+          <input type="number" id="i_buyPrice" min="0" placeholder="0" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label style="color:var(--primary)">🏷️ מחיר מבוקש (₪)</label>
+          <input type="number" id="i_askPrice" min="0" placeholder="0" oninput="markFilled(this)">
+        </div>
       </div>
 
-      <div class="field" style="margin-top:8px"><label>הערות</label>
-        <textarea id="i_notes" rows="2" oninput="markFilled(this)"></textarea>
+      <!-- ── Section: טסט/ביטוח/בעלות ── -->
+      <details style="margin-bottom:12px">
+        <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text-muted);padding:6px 0;user-select:none">
+          🔧 טסט, ביטוח ובעלות <span style="font-weight:400;opacity:.7">(לחץ להרחבה)</span>
+        </summary>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:10px">
+          <div class="field">
+            <label>תוקף טסט</label>
+            <input type="text" id="i_testDate" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)">
+          </div>
+          <div class="field">
+            <label>תוקף ביטוח</label>
+            <input type="text" id="i_insurDate" placeholder="DD/MM/YYYY" oninput="markFilled(this)" onblur="this.value=normDate(this.value)">
+          </div>
+          <div class="field">
+            <label>שם הבעלים</label>
+            <input type="text" id="i_owner" placeholder="ריק = שייך לעסק" oninput="markFilled(this)">
+          </div>
+        </div>
+      </details>
+
+      <!-- ── הערות ── -->
+      <div class="field" style="margin-bottom:14px">
+        <label>הערות</label>
+        <textarea id="i_notes" rows="2" style="resize:vertical" oninput="markFilled(this)"></textarea>
       </div>
 
-      <div class="form-section-title" style="margin-top:12px">תמונות</div>
+      <!-- ── תמונות ── -->
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">📷 תמונות</div>
       <div class="photo-upload-area no-print" onclick="document.getElementById('photoInput').click()">
-        <div style="font-size:32px">📷</div>
+        <div style="font-size:28px">📷</div>
         <p>לחץ להוספת תמונות</p>
         <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="handlePhotos(this)">
       </div>
@@ -434,13 +497,13 @@
             <option value="poor">לשיפוץ</option>
           </select>
         </div>
-        <div class="field"><label id="b_priceLabel">מחיר מבוקש (₪)</label>
+        <div class="field"><label id="b_priceLabel">מחיר שהמוכר מבקש (₪)<br><small style="font-weight:400;color:var(--text-muted)">כמה ביקשו / שילמנו</small></label>
           <input type="number" id="b_price" min="0" oninput="markFilled(this)"></div>
         <div class="field"><label id="b_sellerLabel">שם מוכר / מציע</label>
           <input type="text" id="b_sellerName" oninput="markFilled(this)"></div>
         <div class="field"><label>טלפון</label>
           <input type="tel" id="b_sellerPhone" oninput="markFilled(this)"></div>
-        <div class="field"><label>מחיר מבוקש למכירה (₪)</label>
+        <div class="field"><label>מחיר מכירה מבוקש (₪)<br><small style="font-weight:400;color:var(--text-muted)">מה נרצה לקבל בעת המכירה</small></label>
           <input type="number" id="b_askPrice" min="0" oninput="markFilled(this)"></div>
       </div>
       <div class="field" style="margin-top:8px"><label>הערות</label>
@@ -484,7 +547,7 @@
 <div id="reserveModal" class="modal-overlay" style="display:none">
   <div class="modal-box" style="max-width:420px;width:95%">
     <div class="modal-header">
-      <h3>🟡 שמור רכב למתעניין</h3>
+      <h3>🟡 הוסף מתעניין</h3>
       <button class="modal-close" onclick="document.getElementById('reserveModal').style.display='none'">✕</button>
     </div>
     <div class="modal-body">
@@ -602,14 +665,23 @@ let sellTargetId   = null;
 let reserveTargetId= null;
 let approveBuyId   = null;
 let buyType        = 'offer';   // 'offer' | 'bought'
+let editBuyId      = null;
+let editSellId     = null;
 let lightboxPhotos = [];
 let lightboxIndex  = 0;
 
 // ===== LABEL MAPS =====
 const COND_LABEL = { 'new':'חדש', 'like-new':'כמו חדש', 'good':'טוב', 'fair':'סביר', 'poor':'לשיפוץ' };
 const COND_CLASS = { 'new':'cond-new', 'like-new':'cond-like-new', 'good':'cond-good', 'fair':'cond-fair', 'poor':'cond-poor' };
-const STAT_LABEL = { available:'למכירה', reserved:'שמור', sold:'נמכר' };
-const STAT_BADGE = { available:'badge-available', reserved:'badge-reserved', sold:'badge-sold' };
+const STAT_LABEL = { available:'למכירה', reserved:'שמור', business:'בשימוש העסק', sold:'נמכר' };
+const STAT_BADGE = { available:'badge-available', reserved:'badge-reserved', business:'badge-business', sold:'badge-sold' };
+
+// ===== BACKWARD COMPAT: get interested buyers array =====
+function _getBuyers(car) {
+  if (car.interestedBuyers && car.interestedBuyers.length) return car.interestedBuyers;
+  if (car.interestedBuyer && car.interestedBuyer.name) return [{ ...car.interestedBuyer, id: car.interestedBuyer.id || car.id }];
+  return [];
+}
 
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -617,6 +689,12 @@ function esc(s) {
 function kmFmt(km) {
   const n = parseInt(km);
   return (!n && n!==0) ? '—' : n.toLocaleString('he-IL') + ' ק"מ';
+}
+// Car prices shown without agoras (₪25,000 not ₪25,000.00)
+function fmtPrice(n) {
+  const v = parseFloat(n);
+  if (!v && v !== 0) return '—';
+  return '₪' + v.toLocaleString('he-IL', { maximumFractionDigits: 0 });
 }
 
 // Returns CSS class for test/insurance date chip based on days remaining
@@ -673,7 +751,7 @@ function importFromExcel(input) {
       }
 
       const COND_MAP = { 'חדש':'new','כמו חדש':'like-new','טוב':'good','סביר':'fair','לשיפוץ':'poor' };
-      const STAT_MAP = { 'למכירה':'available','זמין':'available','שמור':'reserved','נמכר':'sold' };
+      const STAT_MAP = { 'למכירה':'available','זמין':'available','שמור':'reserved','בשימוש העסק':'business','נמכר':'sold' };
 
       const cars = getDB(DB_INV);
       let added = 0;
@@ -724,12 +802,13 @@ function renderStats() {
   const sells = getDB(DB_SELLS);
   const avail = inv.filter(c => c.status === 'available');
   const resv  = inv.filter(c => c.status === 'reserved');
+  const biz   = inv.filter(c => c.status === 'business');
   const totalAsk = avail.reduce((s,c) => s + (parseFloat(c.askPrice)||0), 0);
   const totalProfit = sells.reduce((s,r) => s + ((parseFloat(r.salePrice)||0) - (parseFloat(r.buyPrice)||0)), 0);
   document.getElementById('statsRow').innerHTML = `
     <div class="stat-card">
       <div class="stat-label">במלאי</div>
-      <div class="stat-value">${avail.length + resv.length}</div>
+      <div class="stat-value">${avail.length + resv.length + biz.length}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">למכירה</div>
@@ -739,6 +818,10 @@ function renderStats() {
       <div class="stat-label">שמורים</div>
       <div class="stat-value" style="color:var(--warning)">${resv.length}</div>
     </div>
+    ${biz.length ? `<div class="stat-card">
+      <div class="stat-label">בשימוש העסק</div>
+      <div class="stat-value" style="color:#6366f1">${biz.length}</div>
+    </div>` : ''}
     <div class="stat-card">
       <div class="stat-label">שווי מלאי</div>
       <div class="stat-value" style="color:var(--accent)">${formatCurrency(totalAsk)}</div>
@@ -811,32 +894,40 @@ function renderCards(cars) {
       <div class="car-body">
         <h3 class="car-title">${esc(car.make)} ${esc(car.model)}</h3>
         <div class="car-sub">${[car.year, car.plate ? esc(car.plate) : '', car.color ? esc(car.color) : ''].filter(Boolean).join(' • ')}</div>
-        <div class="car-price">${car.askPrice ? formatCurrency(car.askPrice) : '—'}</div>
+        <div class="car-price">${car.askPrice ? fmtPrice(car.askPrice) : '—'}</div>
         <div class="car-details-row">
           ${car.km ? `<span class="car-chip">📍 ${kmFmt(car.km)}</span>` : ''}
           ${car.condition ? `<span class="car-chip ${COND_CLASS[car.condition]}">${COND_LABEL[car.condition]}</span>` : ''}
-          ${car.buyPrice ? `<span class="car-chip" style="color:var(--text-muted)">קנייה: ${formatCurrency(car.buyPrice)}</span>` : ''}
+          ${car.buyPrice ? `<span class="car-chip" style="color:var(--text-muted)">קנייה: ${fmtPrice(car.buyPrice)}</span>` : ''}
         </div>
         ${car.notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">${esc(car.notes)}</div>` : ''}
         ${(car.testDate||car.insurDate) ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
           ${car.testDate ? `<span class="date-chip ${_dateChipClass(car.testDate)}">🔧 טסט: ${car.testDate}</span>` : ''}
           ${car.insurDate ? `<span class="date-chip ${_dateChipClass(car.insurDate)}">🛡️ ביטוח: ${car.insurDate}</span>` : ''}
         </div>` : ''}
-        ${car.status==='reserved' && car.interestedBuyer && car.interestedBuyer.name ? `
-          <div style="margin-top:8px;background:#fef9c3;border-radius:8px;padding:7px 10px;font-size:11px;line-height:1.6">
-            <strong>🟡 מתעניין:</strong> ${esc(car.interestedBuyer.name)}
-            ${car.interestedBuyer.phone ? ` · ${esc(car.interestedBuyer.phone)}` : ''}
-            ${car.interestedBuyer.price ? `<br>💰 הציע: ${formatCurrency(car.interestedBuyer.price)}` : ''}
-            ${car.interestedBuyer.notes ? `<br>${esc(car.interestedBuyer.notes)}` : ''}
-          </div>` : ''}
+        ${(() => {
+          const buyers = _getBuyers(car);
+          if (!buyers.length) return '';
+          return `<div style="margin-top:8px;background:#fef9c3;border-radius:8px;padding:7px 10px;font-size:11px">
+            <div style="font-weight:700;margin-bottom:4px">🟡 מתעניינים (${buyers.length}):</div>
+            ${buyers.map((b,bi) => `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;padding-bottom:3px;${bi<buyers.length-1?'border-bottom:1px solid #fde68a':''}">
+              <div style="line-height:1.5">
+                <strong>${esc(b.name||'ללא שם')}</strong>${b.phone?' · '+esc(b.phone):''}
+                ${b.price?`<br>💰 הציע: ${fmtPrice(b.price)}`:''}
+                ${b.notes?`<br>${esc(b.notes)}`:''}
+              </div>
+              <button onclick="deleteInterestedBuyer(${car.id},${bi})" title="הסר מתעניין"
+                style="border:none;background:none;cursor:pointer;color:#b45309;font-size:13px;padding:0 4px;flex-shrink:0">✕</button>
+            </div>`).join('')}
+          </div>`;
+        })()}
       </div>
       <div class="car-actions no-print">
         <button onclick="openInvForm(${car.id})">✏️</button>
         ${car.status!=='sold'
           ? `<button class="btn-sell" onclick="openSellModal(${car.id})">מכור ✓</button>`
           : `<button class="btn-reopen" onclick="changeStatus(${car.id},'available')">החזר</button>`}
-        ${car.status==='available' ? `<button class="btn-reserve" onclick="changeStatus(${car.id},'reserved')">🟡 שמור</button>` : ''}
-        ${car.status==='reserved'  ? `<button onclick="openReserveModal(${car.id})" style="background:#fef9c3;border-color:#eab308;font-size:11px">✏️ מתעניין</button><button onclick="changeStatus(${car.id},'available')" style="font-size:11px">בטל</button>` : ''}
+        ${car.status!=='sold' ? `<button class="btn-reserve" onclick="openReserveModal(${car.id})" title="הוסף מתעניין">🟡 מתעניין</button>` : ''}
         <button onclick="deleteInvCar(${car.id})" style="color:var(--danger);border-color:var(--danger)">🗑️</button>
       </div>
     </div>`;
@@ -853,8 +944,8 @@ function renderTable(cars) {
       <td>${car.km ? parseInt(car.km).toLocaleString('he-IL') : '—'}</td>
       <td>${esc(car.color||'—')}</td>
       <td class="${COND_CLASS[car.condition]}">${COND_LABEL[car.condition]||'—'}</td>
-      <td>${car.buyPrice ? formatCurrency(car.buyPrice) : '—'}</td>
-      <td>${car.askPrice ? formatCurrency(car.askPrice) : '—'}</td>
+      <td>${car.buyPrice ? fmtPrice(car.buyPrice) : '—'}</td>
+      <td>${car.askPrice ? fmtPrice(car.askPrice) : '—'}</td>
       <td><span class="car-status-badge ${STAT_BADGE[car.status]}" style="position:static;display:inline-block">${STAT_LABEL[car.status]}</span></td>
       <td>
         <button class="btn btn-outline" style="padding:4px 8px;font-size:12px" onclick="openInvForm(${car.id})">✏️</button>
@@ -1012,7 +1103,8 @@ function saveInventoryCar() {
     testDate:  document.getElementById('i_testDate').value.trim(),
     insurDate: document.getElementById('i_insurDate').value.trim(),
     owner:     document.getElementById('i_owner').value.trim(),
-    photos:    [...formPhotos]
+    photos:    [...formPhotos],
+    interestedBuyers: editInvId ? (_getBuyers(cars.find(c=>c.id===editInvId)||{})) : []
   };
 
   if (editInvId) {
@@ -1035,7 +1127,6 @@ function changeStatus(id, s) {
   const c = cars.find(x => x.id === id);
   if (!c) return;
   c.status = s;
-  if (s !== 'reserved') c.interestedBuyer = null; // clear buyer info when un-reserving
   setDB(DB_INV, cars);
   renderInventory();
   showToast('סטטוס עודכן ✓','success');
@@ -1047,34 +1138,56 @@ function openReserveModal(id) {
   reserveTargetId = id;
   const car = getDB(DB_INV).find(c => c.id === id);
   if (!car) return;
+  const buyers = _getBuyers(car);
   document.getElementById('reserveCarSummary').innerHTML =
-    `🚗 <strong>${esc(car.make)} ${esc(car.model)}</strong>${car.year?' ('+car.year+')':''} — ${car.askPrice?formatCurrency(car.askPrice):'מחיר לא מוגדר'}`;
-  // Pre-fill if already reserved
-  const b = car.interestedBuyer || {};
-  document.getElementById('rv_name').value  = b.name  || '';
-  document.getElementById('rv_phone').value = b.phone || '';
-  document.getElementById('rv_price').value = b.price || '';
-  document.getElementById('rv_date').value  = b.date  || todayStr();
-  document.getElementById('rv_notes').value = b.notes || '';
+    `🚗 <strong>${esc(car.make)} ${esc(car.model)}</strong>${car.year?' ('+car.year+')':''} — ${car.askPrice?fmtPrice(car.askPrice):'מחיר לא מוגדר'}`
+    + (buyers.length ? `<br><small style="color:#92400e">${buyers.length} מתעניינ${buyers.length===1?'י':'ים'} רשומ${buyers.length===1?'':'ים'}</small>` : '');
+  // Clear form for NEW buyer entry
+  document.getElementById('rv_name').value  = '';
+  document.getElementById('rv_phone').value = '';
+  document.getElementById('rv_price').value = '';
+  document.getElementById('rv_date').value  = todayStr();
+  document.getElementById('rv_notes').value = '';
   document.getElementById('reserveModal').style.display = 'flex';
 }
 function saveReservation() {
+  const name = document.getElementById('rv_name').value.trim();
   const cars = getDB(DB_INV);
   const car = cars.find(c => c.id === reserveTargetId);
   if (!car) return;
-  car.status = 'reserved';
-  car.interestedBuyer = {
-    name:  document.getElementById('rv_name').value.trim(),
+  // Ensure interestedBuyers array (migrate old single buyer if needed)
+  if (!car.interestedBuyers) car.interestedBuyers = _getBuyers(car);
+  car.interestedBuyer = null; // clear legacy field
+  car.interestedBuyers.push({
+    id:    nowId(),
+    name:  name,
     phone: document.getElementById('rv_phone').value.trim(),
     price: document.getElementById('rv_price').value.trim(),
-    date:  document.getElementById('rv_date').value.trim() || todayStr(),
+    date:  normDate(document.getElementById('rv_date').value.trim()) || todayStr(),
     notes: document.getElementById('rv_notes').value.trim()
-  };
+  });
+  // Set status to reserved if not sold/business
+  if (car.status === 'available') car.status = 'reserved';
   setDB(DB_INV, cars);
   document.getElementById('reserveModal').style.display = 'none';
   reserveTargetId = null;
   renderInventory();
-  showToast('הרכב שמור למתעניין ✓', 'success');
+  showToast('מתעניין נוסף ✓', 'success');
+  autoSync();
+}
+
+function deleteInterestedBuyer(carId, buyerIdx) {
+  const cars = getDB(DB_INV);
+  const car  = cars.find(c => c.id === carId);
+  if (!car) return;
+  if (!car.interestedBuyers) car.interestedBuyers = _getBuyers(car);
+  car.interestedBuyer = null;
+  car.interestedBuyers.splice(buyerIdx, 1);
+  // If no more buyers and status is reserved → revert to available
+  if (!car.interestedBuyers.length && car.status === 'reserved') car.status = 'available';
+  setDB(DB_INV, cars);
+  renderInventory();
+  showToast('מתעניין הוסר ✓', 'success');
   autoSync();
 }
 
@@ -1105,17 +1218,35 @@ function setBuyType(type) {
   document.getElementById('buySubmitBtn').textContent    = isOffer ? '💾 שמור הצעה' : '💾 שמור + הוסף למלאי';
 }
 
-function openBuyForm() {
-  buyType = 'offer';
-  ['b_make','b_model','b_year','b_plate','b_km','b_price','b_sellerName','b_sellerPhone','b_askPrice','b_notes'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('b_condition').value = 'good';
-  document.getElementById('b_date').value = todayStr();
-  setBuyType('offer');
+function openBuyForm(id) {
+  editBuyId = id || null;
+  if (id) {
+    const b = getDB(DB_BUYS).find(x => x.id === id);
+    if (!b) return;
+    document.getElementById('b_make').value        = b.make || '';
+    document.getElementById('b_model').value       = b.model || '';
+    document.getElementById('b_year').value        = b.year || '';
+    document.getElementById('b_plate').value       = b.plate || '';
+    document.getElementById('b_km').value          = b.km || '';
+    document.getElementById('b_price').value       = b.price || '';
+    document.getElementById('b_sellerName').value  = b.sellerName || '';
+    document.getElementById('b_sellerPhone').value = b.sellerPhone || '';
+    document.getElementById('b_askPrice').value    = b.askPrice || '';
+    document.getElementById('b_notes').value       = b.notes || '';
+    document.getElementById('b_condition').value   = b.condition || 'good';
+    document.getElementById('b_date').value        = b.date || todayStr();
+    setBuyType(b.status === 'bought' ? 'bought' : 'offer');
+  } else {
+    ['b_make','b_model','b_year','b_plate','b_km','b_price','b_sellerName','b_sellerPhone','b_askPrice','b_notes'].forEach(fid => {
+      document.getElementById(fid).value = '';
+    });
+    document.getElementById('b_condition').value = 'good';
+    document.getElementById('b_date').value = todayStr();
+    setBuyType('offer');
+  }
   document.getElementById('buyModal').style.display = 'flex';
 }
-function closeBuyForm() { document.getElementById('buyModal').style.display = 'none'; }
+function closeBuyForm() { document.getElementById('buyModal').style.display = 'none'; editBuyId = null; }
 
 function saveBuy() {
   const make  = document.getElementById('b_make').value.trim();
@@ -1141,11 +1272,16 @@ function saveBuy() {
   };
 
   const buys = getDB(DB_BUYS);
-  buys.unshift(buyRec);
+  if (editBuyId) {
+    const idx = buys.findIndex(x => x.id === editBuyId);
+    if (idx >= 0) { buyRec.id = editBuyId; buys[idx] = buyRec; }
+  } else {
+    buys.unshift(buyRec);
+  }
   setDB(DB_BUYS, buys);
 
-  // Only add to inventory if actually bought
-  if (buyType === 'bought') {
+  // Only add to inventory if actually bought (and not editing an existing record)
+  if (buyType === 'bought' && !editBuyId) {
     _addBuyToInventory(buyRec);
     closeBuyForm();
     renderBuys();
@@ -1153,7 +1289,7 @@ function saveBuy() {
   } else {
     closeBuyForm();
     renderBuys();
-    showToast('ההצעה נשמרה ✓', 'success');
+    showToast(editBuyId ? 'הרישום עודכן ✓' : 'ההצעה נשמרה ✓', 'success');
   }
   autoSync();
 }
@@ -1187,7 +1323,7 @@ function openApproveBuy(id) {
   const b = getDB(DB_BUYS).find(x => x.id === id);
   if (!b) return;
   document.getElementById('approveBuySummary').innerHTML =
-    `🚗 <strong>${esc(b.make)} ${esc(b.model)}</strong>${b.year?' ('+b.year+')':''}<br>מוכר: ${esc(b.sellerName||'—')} · הצעת מחיר: ${b.price?formatCurrency(b.price):'לא הוזן'}`;
+    `🚗 <strong>${esc(b.make)} ${esc(b.model)}</strong>${b.year?' ('+b.year+')':''}<br>מוכר: ${esc(b.sellerName||'—')} · הצעת מחיר: ${b.price?fmtPrice(b.price):'לא הוזן'}`;
   document.getElementById('ap_date').value  = todayStr();
   document.getElementById('ap_price').value = b.price || '';
   document.getElementById('ap_notes').value = '';
@@ -1230,13 +1366,14 @@ function renderBuys() {
       <td>${b.year||'—'}</td>
       <td style="direction:ltr;text-align:right">${esc(b.plate||'—')}</td>
       <td>${b.km ? parseInt(b.km).toLocaleString('he-IL') : '—'}</td>
-      <td style="font-weight:700;color:${isOffer?'var(--warning)':'var(--danger)'}">${b.price?formatCurrency(b.price):'—'}</td>
+      <td style="font-weight:700;color:${isOffer?'var(--warning)':'var(--danger)'}">${b.price?fmtPrice(b.price):'—'}</td>
       <td>${esc(b.sellerName||'—')}${b.sellerPhone?`<br><small style="color:var(--text-muted)">${esc(b.sellerPhone)}</small>`:''}</td>
       <td>${esc(b.notes||'—')}</td>
-      <td style="white-space:nowrap">
-        ${isOffer ? `<button class="btn btn-primary" style="padding:4px 8px;font-size:11px;margin-left:4px" onclick="openApproveBuy(${b.id})">✅ אשר קנייה</button>` : ''}
+      <td><div style="display:flex;gap:4px;align-items:center;flex-wrap:nowrap">
+        ${isOffer ? `<button class="btn btn-primary" style="padding:4px 8px;font-size:11px" onclick="openApproveBuy(${b.id})">✅ אשר קנייה</button>` : ''}
+        <button class="btn btn-outline" style="padding:4px 8px;font-size:12px" onclick="openBuyForm(${b.id})">✏️</button>
         <button class="btn btn-outline" style="padding:4px 8px;font-size:12px;color:var(--danger);border-color:var(--danger)" onclick="deleteBuy(${b.id})">🗑️</button>
-      </td>
+      </div></td>
     </tr>`;
   }).join('');
 }
@@ -1266,18 +1403,42 @@ function openSellModal(invId) {
   const car = getDB(DB_INV).find(c => c.id === invId);
   if (!car) return;
   document.getElementById('sellCarSummary').innerHTML =
-    `🚗 <strong>${esc(car.make)} ${esc(car.model)}</strong>${car.year?' ('+car.year+')':''} — מחיר קנייה: ${car.buyPrice?formatCurrency(car.buyPrice):'לא ידוע'}`;
+    `🚗 <strong>${esc(car.make)} ${esc(car.model)}</strong>${car.year?' ('+car.year+')':''} — מחיר קנייה: ${car.buyPrice?fmtPrice(car.buyPrice):'לא ידוע'}`;
   document.getElementById('s_date').value  = todayStr();
   document.getElementById('s_price').value = car.askPrice || '';
   ['s_buyerName','s_buyerPhone','s_notes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('s_payment').value = 'מזומן';
   document.getElementById('sellModal').style.display = 'flex';
 }
-function closeSellModal() { document.getElementById('sellModal').style.display = 'none'; sellTargetId = null; }
+function closeSellModal() { document.getElementById('sellModal').style.display = 'none'; sellTargetId = null; editSellId = null; }
 
 function confirmSell() {
   const price = document.getElementById('s_price').value.trim();
   if (!price) { showToast('יש להזין מחיר מכירה', 'error'); return; }
+
+  const sells = getDB(DB_SELLS);
+
+  if (editSellId) {
+    // Edit mode: update existing sell record, don't change inventory status
+    const idx = sells.findIndex(x => x.id === editSellId);
+    if (idx < 0) return;
+    const existing = sells[idx];
+    existing.saleDate   = document.getElementById('s_date').value.trim() || todayStr();
+    existing.salePrice  = price;
+    existing.profit     = (parseFloat(price)||0) - (parseFloat(existing.buyPrice)||0);
+    existing.buyerName  = document.getElementById('s_buyerName').value.trim();
+    existing.buyerPhone = document.getElementById('s_buyerPhone').value.trim();
+    existing.payment    = document.getElementById('s_payment').value;
+    existing.notes      = document.getElementById('s_notes').value.trim();
+    setDB(DB_SELLS, sells);
+    closeSellModal();
+    renderStats();
+    if (currentTab === 'inventory') renderInventory();
+    if (currentTab === 'sell') renderSells();
+    showToast('המכירה עודכנה ✓', 'success');
+    autoSync();
+    return;
+  }
 
   const inv = getDB(DB_INV);
   const car = inv.find(c => c.id === sellTargetId);
@@ -1301,7 +1462,6 @@ function confirmSell() {
   };
 
   // Save sale record
-  const sells = getDB(DB_SELLS);
   sells.unshift(saleRec);
   setDB(DB_SELLS, sells);
 
@@ -1315,6 +1475,42 @@ function confirmSell() {
   if (currentTab === 'sell') renderSells();
   showToast('המכירה נרשמה ✓', 'success');
   autoSync();
+}
+
+function openEditSell(id) {
+  const sells = getDB(DB_SELLS);
+  const r = sells.find(x => x.id === id);
+  if (!r) return;
+  editSellId   = id;
+  sellTargetId = r.invId || null;
+  document.getElementById('sellCarSummary').innerHTML =
+    `🚗 <strong>${esc(r.make)} ${esc(r.model)}</strong>${r.year?' ('+r.year+')':''} — מחיר קנייה: ${r.buyPrice?fmtPrice(r.buyPrice):'לא ידוע'}`;
+  document.getElementById('s_date').value       = r.saleDate || todayStr();
+  document.getElementById('s_price').value      = r.salePrice || '';
+  document.getElementById('s_buyerName').value  = r.buyerName || '';
+  document.getElementById('s_buyerPhone').value = r.buyerPhone || '';
+  document.getElementById('s_payment').value    = r.payment || 'מזומן';
+  document.getElementById('s_notes').value      = r.notes || '';
+  document.getElementById('sellModal').style.display = 'flex';
+}
+
+function deleteSell(id) {
+  showConfirm('למחוק את רשומת המכירה? הרכב יחזור לסטטוס "זמין" במלאי.', () => {
+    const sells = getDB(DB_SELLS);
+    const r = sells.find(x => x.id === id);
+    if (!r) return;
+    // Revert inventory car status to available
+    if (r.invId) {
+      const inv = getDB(DB_INV);
+      const car = inv.find(c => c.id === r.invId);
+      if (car) { car.status = 'available'; setDB(DB_INV, inv); }
+    }
+    setDB(DB_SELLS, sells.filter(x => x.id !== id));
+    renderSells();
+    renderStats();
+    showToast('רשומת המכירה נמחקה ✓', 'success');
+    autoSync();
+  });
 }
 
 function renderSells() {
@@ -1348,12 +1544,16 @@ function renderSells() {
       <td>${esc(s.make)} ${esc(s.model)}</td>
       <td>${s.year||'—'}</td>
       <td style="direction:ltr;text-align:right">${esc(s.plate||'—')}</td>
-      <td>${s.buyPrice ? formatCurrency(s.buyPrice) : '—'}</td>
-      <td style="font-weight:700;color:var(--primary)">${formatCurrency(s.salePrice)}</td>
-      <td style="font-weight:700;color:${profit>=0?'var(--primary)':'var(--danger)'}">${formatCurrency(profit)}</td>
+      <td>${s.buyPrice ? fmtPrice(s.buyPrice) : '—'}</td>
+      <td style="font-weight:700;color:var(--primary)">${fmtPrice(s.salePrice)}</td>
+      <td style="font-weight:700;color:${profit>=0?'var(--primary)':'var(--danger)'}">${fmtPrice(profit)}</td>
       <td>${esc(s.buyerName||'—')}${s.buyerPhone?`<br><small style="color:var(--text-muted)">${esc(s.buyerPhone)}</small>`:''}</td>
       <td>${esc(s.payment||'—')}</td>
       <td>${esc(s.notes||'—')}</td>
+      <td><div style="display:flex;gap:4px;align-items:center">
+        <button class="btn btn-outline" style="padding:4px 8px;font-size:12px" onclick="openEditSell(${s.id})">✏️</button>
+        <button class="btn btn-outline" style="padding:4px 8px;font-size:12px;color:var(--danger);border-color:var(--danger)" onclick="deleteSell(${s.id})">🗑️</button>
+      </div></td>
     </tr>`;
   }).join('');
 }
