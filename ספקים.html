@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – ספקים</title>
-  <link rel="stylesheet" href="style.css?v=1.6">
+  <link rel="stylesheet" href="style.css?v=1.7">
   <style>
     .debt-positive { color:var(--danger); font-weight:700; }
     .debt-negative { color:var(--primary); font-weight:700; }
@@ -52,6 +52,9 @@
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
   <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+  
+  <a href="עובדים.html" class="nav-link">👷 <span class="label">עובדים</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
   <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
@@ -216,7 +219,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.6"></script>
+<script src="shared.js?v=1.7"></script>
 <script>
 const DB_KEY = 'pnc_suppliers';
 let editId = null;
@@ -268,20 +271,23 @@ function clearForm() {
 // ===== STATS =====
 function renderStats() {
   const db = getDB(DB_KEY);
+  const suppDebts   = getDB('pnc_supplier_debts');
+  const openInvoices = suppDebts.filter(d => !d.paid);
+  const totalInvoices = openInvoices.reduce((s,d) => s + (parseFloat(d.amount)||0), 0);
   const totalDebt   = db.filter(s=>s.balance>0).reduce((s,x)=>s+x.balance, 0);
   const totalCredit = db.filter(s=>s.balance<0).reduce((s,x)=>s+Math.abs(x.balance), 0);
-  const withDebt    = db.filter(s=>s.balance>0).length;
   document.getElementById('statsRow').innerHTML = `
     <div class="stat-card"><span class="num">${db.length}</span><div class="lbl">סה"כ ספקים</div></div>
-    <div class="stat-card red"><span class="num">₪${totalDebt.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">סה"כ חוב לספקים</div></div>
-    <div class="stat-card"><span class="num">₪${totalCredit.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">סה"כ זיכוי מספקים</div></div>
-    <div class="stat-card orange"><span class="num">${withDebt}</span><div class="lbl">ספקים עם חוב</div></div>
+    <div class="stat-card red"><span class="num">₪${totalInvoices.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">חשבוניות פתוחות</div></div>
+    <div class="stat-card orange"><span class="num">${openInvoices.length}</span><div class="lbl">חשבוניות ממתינות</div></div>
+    <div class="stat-card"><span class="num">₪${(totalDebt - totalCredit).toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">יתרה ידנית</div></div>
   `;
 }
 
 // ===== RENDER TABLE =====
 function renderTable() {
-  const db     = getDB(DB_KEY);
+  const db         = getDB(DB_KEY);
+  const suppDebts  = getDB('pnc_supplier_debts');
   const search = document.getElementById('searchInput').value.toLowerCase();
   const filtered = db.filter(s => {
     if (!search) return true;
@@ -299,13 +305,19 @@ function renderTable() {
       : bal < 0
         ? `<span class="debt-negative">זיכוי: ₪${Math.abs(bal).toLocaleString('he-IL',{minimumFractionDigits:2})}</span>`
         : `<span class="debt-zero">—</span>`;
+    // Open invoices from חובות module for this supplier
+    const openInv = suppDebts.filter(d => !d.paid && (d.supplierName||'').toLowerCase() === (s.company||'').toLowerCase());
+    const invTotal = openInv.reduce((sum,d) => sum + (parseFloat(d.amount)||0), 0);
+    const invHtml  = openInv.length
+      ? `<br><a href="חובות.html" style="font-size:11px;color:var(--danger);font-weight:700;text-decoration:none">📄 ${openInv.length} חשבוניות פתוחות: ₪${invTotal.toLocaleString('he-IL',{maximumFractionDigits:0})}</a>`
+      : '';
     return `<tr>
       <td style="font-weight:700">${s.company}</td>
       <td>${s.category||'—'}</td>
       <td>${s.contact||'—'}</td>
       <td>${s.phone||'—'}${s.phone2?`<br><small style="color:var(--text-muted)">${s.phone2}</small>`:''}</td>
       <td>${s.terms||'—'}</td>
-      <td>${balHtml}</td>
+      <td>${balHtml}${invHtml}</td>
       <td style="font-size:12px;color:var(--text-muted)">${s.notes||'—'}</td>
       <td class="no-print" style="white-space:nowrap">
         <button class="btn-icon" title="ערוך"  onclick="openEdit(${s.id})">✏️</button>

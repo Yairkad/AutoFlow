@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a9e5c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="אוטוליין">
+  <link rel="manifest" href="manifest.json">
+  <title>אוטוליין – חובות</title>
+  <link rel="stylesheet" href="style.css?v=1.7">
+  <style>
+    .tab-bar { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
+    .tab-btn {
+      padding:9px 20px; border-radius:20px; border:1.5px solid var(--border);
+      background:white; cursor:pointer; font-family:inherit; font-size:13px;
+      font-weight:700; color:var(--text-muted); transition:all .2s;
+    }
+    .tab-btn.active { background:var(--primary); color:white; border-color:var(--primary); }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    /* ===== DEBT CARD ===== */
+    .debt-card {
+      background:white; border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px 20px; margin-bottom:12px;
+      border-right:4px solid var(--border);
+      transition:box-shadow .15s;
+    }
+    .debt-card.open    { border-right-color: var(--danger); }
+    .debt-card.partial { border-right-color: var(--warning); }
+    .debt-card.paid    { border-right-color: var(--primary); opacity:.8; }
+
+    .debt-header { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+    .debt-name   { font-size:16px; font-weight:900; }
+    .debt-meta   { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+    .debt-amount-row {
+      display:flex; gap:16px; margin-bottom:10px; flex-wrap:wrap;
+    }
+    .debt-amount-item { text-align:center; }
+    .debt-amount-item .val { font-size:18px; font-weight:900; }
+    .debt-amount-item .lbl { font-size:11px; color:var(--text-muted); }
+    .val.danger  { color:var(--danger); }
+    .val.primary { color:var(--primary); }
+    .val.warning { color:var(--warning); }
+
+    .payments-list { margin-top:8px; }
+    .payment-entry {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:5px 10px; background:#f8fafc; border-radius:6px; margin-bottom:4px;
+      font-size:12px;
+    }
+    .payment-entry .p-amount { font-weight:700; color:var(--primary); }
+
+    .status-badge {
+      padding:2px 10px; border-radius:10px; font-size:11px; font-weight:700;
+    }
+    .status-badge.open    { background:#fee2e2; color:#dc2626; }
+    .status-badge.partial { background:#fef9c3; color:#92400e; }
+    .status-badge.paid    { background:#dcfce7; color:#166534; }
+
+    /* ===== SEARCH ===== */
+    .search-bar {
+      display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center;
+    }
+    .search-bar input {
+      flex:1; min-width:200px; padding:8px 12px;
+      border:1.5px solid var(--border); border-radius:10px;
+      font-family:inherit; font-size:13px;
+    }
+    .search-bar input:focus { outline:none; border-color:var(--primary); }
+
+    /* ===== PAYMENT LOG ===== */
+    .payment-row-modal {
+      display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:end;
+      margin-bottom:6px;
+    }
+    .payment-row-modal label { font-size:11px; color:var(--text-muted); display:block; margin-bottom:2px; }
+    .payment-row-modal input {
+      padding:7px 8px; border:1px solid var(--border); border-radius:8px;
+      font-family:inherit; font-size:13px; width:100%; box-sizing:border-box;
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" src="" alt="לוגו">
+    <div class="header-title">
+      <h1>אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link active">💳 <span class="label">חובות</span></a>
+  <a href="עובדים.html"         class="nav-link">👷 <span class="label">עובדים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+  <div class="page-title">
+    <h2>💳 חובות</h2>
+  </div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('customers',this)">👥 חובות לקוחות</button>
+    <button class="tab-btn"        onclick="switchTab('suppliers',this)">🏭 חובות לספקים</button>
+  </div>
+
+  <!-- ===== TAB: CUSTOMERS ===== -->
+  <div class="tab-content active" id="tab-customers">
+    <div class="search-bar">
+      <input type="text" id="custSearch" placeholder="חפש לפי שם..." oninput="renderCustomers()">
+      <button class="btn btn-primary" onclick="openCustModal()">+ הוסף חוב</button>
+    </div>
+    <div id="custList"></div>
+    <div id="custEmpty" class="empty-state" style="display:none">
+      <div class="emoji">👥</div><p>אין חובות לקוחות פתוחים</p>
+      <button class="btn btn-primary" onclick="openCustModal()">הוסף חוב ראשון</button>
+    </div>
+  </div>
+
+  <!-- ===== TAB: SUPPLIERS ===== -->
+  <div class="tab-content" id="tab-suppliers">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <input type="text" id="suppSearch" placeholder="חפש לפי שם ספק / מספר חשבונית..."
+        oninput="renderSupplierDebts()"
+        style="flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px">
+      <button class="btn btn-primary" onclick="openSuppModal()">+ הוסף חוב לספק</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>תאריך</th><th>ספק</th><th>חשבונית</th><th>סכום</th><th>לתשלום עד</th><th>סטטוס</th><th>פעולות</th>
+        </tr></thead>
+        <tbody id="suppTableBody"></tbody>
+      </table>
+    </div>
+    <div id="suppEmpty" class="empty-state" style="display:none">
+      <div class="emoji">🏭</div><p>אין חובות לספקים</p>
+      <button class="btn btn-primary" onclick="openSuppModal()">הוסף חוב ראשון</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CUSTOMER DEBT MODAL ===== -->
+<div id="custModal" class="modal-overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3 id="custModalTitle">חוב לקוח חדש</h3>
+      <button class="modal-close" onclick="closeCustModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+        <div class="field">
+          <label>שם לקוח *</label>
+          <input type="text" id="c_name" placeholder="שם מלא" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>טלפון</label>
+          <input type="tel" id="c_phone" placeholder="050-0000000" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>תאריך</label>
+          <input type="text" id="c_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>סכום חוב (₪) *</label>
+          <input type="number" id="c_amount" min="0" step="0.01" oninput="markFilled(this)">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>תיאור (מה נרכש/מה השירות)</label>
+          <input type="text" id="c_desc" placeholder="לדוגמה: צמיגים 4 יח׳ + החלפה" oninput="markFilled(this)">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>הערות</label>
+          <input type="text" id="c_notes" placeholder="הערות נוספות..." oninput="markFilled(this)">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCustModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveCustDebt()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD PAYMENT MODAL ===== -->
+<div id="payModal" class="modal-overlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>💵 רישום תשלום</h3>
+      <button class="modal-close" onclick="closePayModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="payDebtSummary" style="background:#f8fafc;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;font-weight:600"></div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr">
+        <div class="field">
+          <label>סכום תשלום (₪) *</label>
+          <input type="number" id="p_amount" min="0.01" step="0.01" placeholder="0.00" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>תאריך תשלום</label>
+          <input type="text" id="p_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>הערה (אמצעי תשלום, הערה)</label>
+          <input type="text" id="p_notes" placeholder="מזומן / העברה / צ'ק..." oninput="markFilled(this)">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePayModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="savePayment()">💾 שמור תשלום</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SUPPLIER DEBT MODAL ===== -->
+<div id="suppModal" class="modal-overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3 id="suppModalTitle">חוב לספק חדש</h3>
+      <button class="modal-close" onclick="closeSuppModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+        <div class="field">
+          <label>שם ספק *</label>
+          <input type="text" id="s_name" list="suppNamesList" placeholder="בחר ספק..." oninput="markFilled(this)">
+          <datalist id="suppNamesList"></datalist>
+        </div>
+        <div class="field">
+          <label>מספר חשבונית</label>
+          <input type="text" id="s_invoice" placeholder="12345" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>תאריך חשבונית</label>
+          <input type="text" id="s_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>לתשלום עד</label>
+          <input type="text" id="s_due" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>סכום (₪) *</label>
+          <input type="number" id="s_amount" min="0" step="0.01" oninput="markFilled(this)">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>הערות</label>
+          <input type="text" id="s_notes" placeholder="הערות נוספות..." oninput="markFilled(this)">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeSuppModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveSuppDebt()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <p id="confirmMsg"></p>
+    <div class="confirm-btns">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmYes()">מחק</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="shared.js?v=1.7"></script>
+<script>
+const DB_CDEBTS = 'pnc_customer_debts';
+const DB_SDEBTS = 'pnc_supplier_debts';
+
+let activeTab     = 'customers';
+let _editCustId   = null;
+let _editSuppId   = null;
+let _payTargetId  = null;
+
+// ===== TABS =====
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  renderStats();
+  if (tab === 'customers') renderCustomers();
+  else renderSupplierDebts();
+}
+
+// ===== HELPERS =====
+function _custBalance(debt) {
+  const paid = (debt.payments||[]).reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
+  return Math.max(0, (parseFloat(debt.amount)||0) - paid);
+}
+function _custStatus(debt) {
+  const bal  = _custBalance(debt);
+  const tot  = parseFloat(debt.amount)||0;
+  const paid = (debt.payments||[]).reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
+  if (bal <= 0) return 'paid';
+  if (paid > 0) return 'partial';
+  return 'open';
+}
+const STATUS_HE = { open:'לא שולם', partial:'שולם חלקית', paid:'שולם' };
+
+// ===== STATS =====
+function renderStats() {
+  const cdebts = getDB(DB_CDEBTS);
+  const sdebts = getDB(DB_SDEBTS);
+
+  const openCust  = cdebts.filter(d => _custStatus(d) !== 'paid');
+  const totalCust = openCust.reduce((s,d) => s + _custBalance(d), 0);
+  const openSupp  = sdebts.filter(d => !d.paid);
+  const totalSupp = openSupp.reduce((s,d) => s + (parseFloat(d.amount)||0), 0);
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card ${openCust.length>0?'danger':''}">
+      <div class="stat-value">${openCust.length}</div>
+      <div class="stat-label">לקוחות עם חוב</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-value">₪${totalCust.toLocaleString('he-IL',{maximumFractionDigits:0})}</div>
+      <div class="stat-label">חוב לקוחות</div>
+    </div>
+    <div class="stat-card ${openSupp.length>0?'danger':''}">
+      <div class="stat-value">${openSupp.length}</div>
+      <div class="stat-label">חשבוניות פתוחות</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-value">₪${totalSupp.toLocaleString('he-IL',{maximumFractionDigits:0})}</div>
+      <div class="stat-label">חוב לספקים</div>
+    </div>
+  `;
+}
+
+// ===== CUSTOMER DEBTS =====
+function renderCustomers() {
+  const all    = getDB(DB_CDEBTS);
+  const q      = (document.getElementById('custSearch').value||'').trim().toLowerCase();
+  const list   = document.getElementById('custList');
+  const empty  = document.getElementById('custEmpty');
+
+  let debts = all;
+  if (q) debts = debts.filter(d => (d.name||'').toLowerCase().includes(q) || (d.phone||'').includes(q));
+
+  if (!debts.length) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  list.innerHTML = debts.map(debt => {
+    const status  = _custStatus(debt);
+    const balance = _custBalance(debt);
+    const paid    = (debt.payments||[]).reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
+
+    const payRows = (debt.payments||[]).map(p =>
+      `<div class="payment-entry">
+        <span>${p.date||'—'} ${p.notes?'· '+p.notes:''}</span>
+        <span class="p-amount">+₪${(parseFloat(p.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</span>
+        <button onclick="deletePayment(${debt.id},${p.id})" title="מחק תשלום"
+          style="border:none;background:none;cursor:pointer;color:var(--danger);padding:0 4px;font-size:13px">✕</button>
+      </div>`).join('');
+
+    return `<div class="debt-card ${status}">
+      <div class="debt-header">
+        <div>
+          <div class="debt-name">${debt.name}</div>
+          <div class="debt-meta">${debt.date||''}${debt.phone?' · 📞 '+debt.phone:''}${debt.desc?' · '+debt.desc:''}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="status-badge ${status}">${STATUS_HE[status]}</span>
+          <button class="btn btn-secondary btn-sm" onclick="openCustModal(${debt.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCustDebt(${debt.id})">🗑️</button>
+        </div>
+      </div>
+      <div class="debt-amount-row">
+        <div class="debt-amount-item">
+          <div class="val danger">₪${(parseFloat(debt.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</div>
+          <div class="lbl">חוב מקורי</div>
+        </div>
+        <div class="debt-amount-item">
+          <div class="val primary">₪${paid.toLocaleString('he-IL',{minimumFractionDigits:2})}</div>
+          <div class="lbl">שולם</div>
+        </div>
+        <div class="debt-amount-item">
+          <div class="val ${balance>0?'warning':'primary'}">₪${balance.toLocaleString('he-IL',{minimumFractionDigits:2})}</div>
+          <div class="lbl">יתרה לתשלום</div>
+        </div>
+      </div>
+      ${payRows ? `<div class="payments-list"><div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px">היסטוריית תשלומים:</div>${payRows}</div>` : ''}
+      ${debt.notes ? `<div style="font-size:12px;color:var(--text-muted);margin-top:6px">${debt.notes}</div>` : ''}
+      ${status !== 'paid' ? `
+        <div style="margin-top:10px">
+          <button class="btn btn-primary btn-sm" onclick="openPayModal(${debt.id})">💵 רשום תשלום</button>
+        </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ===== CUSTOMER DEBT MODAL =====
+function openCustModal(id) {
+  _editCustId = id || null;
+  document.getElementById('custModalTitle').textContent = id ? 'עריכת חוב לקוח' : 'חוב לקוח חדש';
+  if (id) {
+    const d = getDB(DB_CDEBTS).find(x => x.id === id);
+    if (!d) return;
+    document.getElementById('c_name').value   = d.name   || '';
+    document.getElementById('c_phone').value  = d.phone  || '';
+    document.getElementById('c_date').value   = d.date   || '';
+    document.getElementById('c_amount').value = d.amount || '';
+    document.getElementById('c_desc').value   = d.desc   || '';
+    document.getElementById('c_notes').value  = d.notes  || '';
+  } else {
+    ['c_name','c_phone','c_desc','c_notes'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('c_amount').value = '';
+    document.getElementById('c_date').value = todayStr();
+  }
+  document.getElementById('custModal').classList.add('open');
+}
+function closeCustModal() { document.getElementById('custModal').classList.remove('open'); _editCustId = null; }
+
+function saveCustDebt() {
+  const name   = document.getElementById('c_name').value.trim();
+  const amount = parseFloat(document.getElementById('c_amount').value);
+  if (!name)          { showToast('הכנס שם לקוח', 'error'); return; }
+  if (!amount||amount<=0){ showToast('הכנס סכום חוב', 'error'); return; }
+
+  const db = getDB(DB_CDEBTS);
+  const rec = {
+    name, amount,
+    phone:  document.getElementById('c_phone').value.trim(),
+    date:   document.getElementById('c_date').value.trim() || todayStr(),
+    desc:   document.getElementById('c_desc').value.trim(),
+    notes:  document.getElementById('c_notes').value.trim()
+  };
+  if (_editCustId) {
+    const idx = db.findIndex(x => x.id === _editCustId);
+    if (idx !== -1) { rec.id = _editCustId; rec.payments = db[idx].payments||[]; db[idx] = rec; }
+  } else {
+    rec.id = nowId(); rec.payments = [];
+    db.unshift(rec);
+  }
+  setDB(DB_CDEBTS, db);
+  closeCustModal();
+  renderStats();
+  renderCustomers();
+  showToast(_editCustId ? 'חוב עודכן ✓' : 'חוב נוסף ✓', 'success');
+  autoSync();
+}
+
+function deleteCustDebt(id) {
+  const d = getDB(DB_CDEBTS).find(x => x.id === id);
+  showConfirm(`למחוק את החוב של ${d?d.name:'לקוח זה'}?`, () => {
+    setDB(DB_CDEBTS, getDB(DB_CDEBTS).filter(x => x.id !== id));
+    renderStats(); renderCustomers();
+    showToast('חוב נמחק ✓'); autoSync();
+  });
+}
+
+// ===== PAYMENT MODAL =====
+function openPayModal(debtId) {
+  _payTargetId = debtId;
+  const d = getDB(DB_CDEBTS).find(x => x.id === debtId);
+  if (!d) return;
+  const balance = _custBalance(d);
+  document.getElementById('payDebtSummary').innerHTML =
+    `👤 <strong>${d.name}</strong><br>יתרה לתשלום: <strong style="color:var(--danger)">₪${balance.toLocaleString('he-IL',{minimumFractionDigits:2})}</strong>`;
+  document.getElementById('p_amount').value = balance > 0 ? balance.toFixed(2) : '';
+  document.getElementById('p_date').value   = todayStr();
+  document.getElementById('p_notes').value  = '';
+  document.getElementById('payModal').classList.add('open');
+}
+function closePayModal() { document.getElementById('payModal').classList.remove('open'); _payTargetId = null; }
+
+function savePayment() {
+  const amount = parseFloat(document.getElementById('p_amount').value);
+  if (!amount || amount <= 0) { showToast('הכנס סכום תשלום', 'error'); return; }
+  const db  = getDB(DB_CDEBTS);
+  const idx = db.findIndex(x => x.id === _payTargetId);
+  if (idx === -1) return;
+  if (!db[idx].payments) db[idx].payments = [];
+  db[idx].payments.push({
+    id:     nowId(),
+    amount,
+    date:   document.getElementById('p_date').value.trim() || todayStr(),
+    notes:  document.getElementById('p_notes').value.trim()
+  });
+  setDB(DB_CDEBTS, db);
+  closePayModal();
+  renderStats();
+  renderCustomers();
+  showToast('תשלום נרשם ✓', 'success');
+  autoSync();
+}
+
+function deletePayment(debtId, payId) {
+  const db  = getDB(DB_CDEBTS);
+  const idx = db.findIndex(x => x.id === debtId);
+  if (idx === -1) return;
+  db[idx].payments = (db[idx].payments||[]).filter(p => p.id !== payId);
+  setDB(DB_CDEBTS, db);
+  renderStats(); renderCustomers();
+  showToast('תשלום נמחק ✓'); autoSync();
+}
+
+// ===== SUPPLIER DEBTS =====
+function renderSupplierDebts() {
+  const all   = getDB(DB_SDEBTS);
+  const q     = (document.getElementById('suppSearch').value||'').trim().toLowerCase();
+  const tbody = document.getElementById('suppTableBody');
+  const empty = document.getElementById('suppEmpty');
+  _fillSuppDatalist();
+
+  let debts = all;
+  if (q) debts = debts.filter(d =>
+    (d.supplierName||'').toLowerCase().includes(q) ||
+    (d.invoiceNum||'').toLowerCase().includes(q)
+  );
+
+  if (!debts.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  tbody.innerHTML = debts.map(d => {
+    const overdue = !d.paid && d.dueDate && _parseDDMMYYYY(d.dueDate) < today;
+    const rowStyle = overdue ? 'background:#fff5f5' : '';
+    const dueBadge = overdue
+      ? `<span style="color:var(--danger);font-weight:700;font-size:11px"> ⚠️ פג תוקף</span>`
+      : '';
+    return `<tr style="${rowStyle}">
+      <td>${d.date||'—'}</td>
+      <td style="font-weight:700">${d.supplierName||'—'}</td>
+      <td>${d.invoiceNum||'—'}</td>
+      <td style="font-weight:700;color:${d.paid?'var(--primary)':'var(--danger)'}">
+        ₪${(parseFloat(d.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2})}
+      </td>
+      <td>${d.dueDate||'—'}${dueBadge}</td>
+      <td>${d.paid
+        ? `<span style="background:#dcfce7;color:#166534;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700">✅ שולם ${d.paidDate?'('+d.paidDate+')':''}</span>`
+        : `<span style="background:#fee2e2;color:#dc2626;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700">ממתין</span>`
+      }</td>
+      <td style="white-space:nowrap">
+        ${!d.paid ? `<button class="btn btn-primary btn-sm" onclick="markSuppPaid(${d.id})">✅ שולם</button>` : ''}
+        <button class="btn btn-secondary btn-sm" onclick="openSuppModal(${d.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSuppDebt(${d.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function _parseDDMMYYYY(s) {
+  if (!s) return new Date(0);
+  const p = s.split('/');
+  return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date(0);
+}
+
+function _fillSuppDatalist() {
+  const suppliers = getDB('pnc_suppliers');
+  document.getElementById('suppNamesList').innerHTML =
+    suppliers.map(s => `<option value="${s.company||s.name||''}">`).join('');
+}
+
+function openSuppModal(id) {
+  _editSuppId = id || null;
+  document.getElementById('suppModalTitle').textContent = id ? 'עריכת חוב לספק' : 'חוב לספק חדש';
+  _fillSuppDatalist();
+  if (id) {
+    const d = getDB(DB_SDEBTS).find(x => x.id === id);
+    if (!d) return;
+    document.getElementById('s_name').value    = d.supplierName || '';
+    document.getElementById('s_invoice').value = d.invoiceNum   || '';
+    document.getElementById('s_date').value    = d.date         || '';
+    document.getElementById('s_due').value     = d.dueDate      || '';
+    document.getElementById('s_amount').value  = d.amount       || '';
+    document.getElementById('s_notes').value   = d.notes        || '';
+  } else {
+    ['s_name','s_invoice','s_due','s_notes'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('s_amount').value = '';
+    document.getElementById('s_date').value = todayStr();
+  }
+  document.getElementById('suppModal').classList.add('open');
+}
+function closeSuppModal() { document.getElementById('suppModal').classList.remove('open'); _editSuppId = null; }
+
+function saveSuppDebt() {
+  const name   = document.getElementById('s_name').value.trim();
+  const amount = parseFloat(document.getElementById('s_amount').value);
+  if (!name)             { showToast('הכנס שם ספק', 'error'); return; }
+  if (!amount||amount<=0){ showToast('הכנס סכום', 'error'); return; }
+
+  const db = getDB(DB_SDEBTS);
+  const rec = {
+    supplierName: name, amount,
+    invoiceNum: document.getElementById('s_invoice').value.trim(),
+    date:       document.getElementById('s_date').value.trim() || todayStr(),
+    dueDate:    document.getElementById('s_due').value.trim(),
+    notes:      document.getElementById('s_notes').value.trim(),
+    paid: false, paidDate: ''
+  };
+  if (_editSuppId) {
+    const idx = db.findIndex(x => x.id === _editSuppId);
+    if (idx !== -1) { rec.id = _editSuppId; rec.paid = db[idx].paid; rec.paidDate = db[idx].paidDate; db[idx] = rec; }
+  } else {
+    rec.id = nowId(); db.unshift(rec);
+  }
+  setDB(DB_SDEBTS, db);
+  closeSuppModal();
+  renderStats(); renderSupplierDebts();
+  showToast(_editSuppId ? 'חוב עודכן ✓' : 'חוב נוסף ✓', 'success');
+  autoSync();
+}
+
+function markSuppPaid(id) {
+  const db  = getDB(DB_SDEBTS);
+  const idx = db.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  db[idx].paid     = true;
+  db[idx].paidDate = todayStr();
+  setDB(DB_SDEBTS, db);
+  renderStats(); renderSupplierDebts();
+  showToast('סומן כשולם ✓', 'success');
+  autoSync();
+}
+
+function deleteSuppDebt(id) {
+  showConfirm('למחוק את החוב לספק?', () => {
+    setDB(DB_SDEBTS, getDB(DB_SDEBTS).filter(x => x.id !== id));
+    renderStats(); renderSupplierDebts();
+    showToast('חוב נמחק ✓'); autoSync();
+  });
+}
+
+// ===== INIT =====
+renderStats();
+renderCustomers();
+</script>
+</body>
+</html>

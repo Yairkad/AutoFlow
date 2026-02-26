@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – ראשי</title>
-  <link rel="stylesheet" href="style.css?v=1.6">
+  <link rel="stylesheet" href="style.css?v=1.7">
   <style>
     .welcome { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
     .modules-grid {
@@ -75,6 +75,8 @@
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
   <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+  <a href="עובדים.html"          class="nav-link">👷 <span class="label">עובדים</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
   <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
@@ -148,6 +150,18 @@
       <p>ניהול קנייה ומכירה של רכבים, מעקב רווחיות ותמונות</p>
       <div class="mod-stat" id="statCars">—</div>
     </a>
+    <a href="עובדים.html" class="module-card gray">
+      <div class="mod-icon">👷</div>
+      <h2>עובדים ומשכורות</h2>
+      <p>ניהול עובדים, תשלום שכר חודשי, בונוסים וניכויים</p>
+      <div class="mod-stat" id="statEmployees">—</div>
+    </a>
+    <a href="חובות.html" class="module-card red">
+      <div class="mod-icon">💳</div>
+      <h2>חובות</h2>
+      <p>מעקב חובות לקוחות וחשבוניות פתוחות לספקים</p>
+      <div class="mod-stat" id="statDebts">—</div>
+    </a>
   </div>
 
   <!-- Alerts -->
@@ -163,7 +177,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.6"></script>
+<script src="shared.js?v=1.7"></script>
 <script>
 document.getElementById('todayChip').textContent = todayStr();
 
@@ -211,6 +225,16 @@ function loadDashboard() {
   const carsInv  = getDB('pnc_cars_inventory');
   const availCars = carsInv.filter(c => c.status === 'available');
 
+  // Employees
+  const employees = getDB('pnc_employees');
+  const empSals   = getDB('pnc_salaries');
+  const activeEmps = employees.filter(e => e.active);
+  const empCurSals = empSals.filter(s => s.period === curPeriod);
+  const empUnpaid  = activeEmps.filter(e => {
+    const sal = empCurSals.find(s => s.employeeId === e.id);
+    return !sal || !sal.paid;
+  }).length;
+
   document.getElementById('statExpenses').textContent  = '₪' + totalExpMonth.toLocaleString('he-IL') + ' החודש';
   document.getElementById('statProducts').textContent  = products.length + ' פריטים';
   document.getElementById('statTires').textContent     = tires.length + ' סוגי צמיג';
@@ -220,6 +244,20 @@ function loadDashboard() {
   document.getElementById('statReminders').textContent = openRems.length + ' פתוחות' + (overdueRems.length > 0 ? ` · ${overdueRems.length} באיחור` : '');
   document.getElementById('statInvoices').textContent  = unpaidTenants.length > 0 ? unpaidTenants.length + ' ממתינים לתשלום' : '✓ הכל שולם';
   document.getElementById('statCars').textContent      = availCars.length + ' זמינים' + (carsInv.length > availCars.length ? ` / ${carsInv.length} סה״כ` : '');
+  document.getElementById('statEmployees').textContent = activeEmps.length + ' פעילים' + (empUnpaid > 0 ? ` · ${empUnpaid} ממתינים` : '');
+
+  // Debts
+  const custDebts  = getDB('pnc_customer_debts');
+  const suppDebts  = getDB('pnc_supplier_debts');
+  const openCust   = custDebts.filter(d => {
+    const paid = (d.payments||[]).reduce((s,p) => s+(parseFloat(p.amount)||0), 0);
+    return Math.max(0, (parseFloat(d.amount)||0) - paid) > 0;
+  });
+  const openSupp   = suppDebts.filter(d => !d.paid);
+  const debtParts  = [];
+  if (openCust.length)  debtParts.push(openCust.length + ' לקוחות');
+  if (openSupp.length)  debtParts.push(openSupp.length + ' ספקים');
+  document.getElementById('statDebts').textContent = debtParts.length ? debtParts.join(' · ') : '✓ אין חובות פתוחים';
 
   // Alerts
   const alerts = [];
@@ -232,6 +270,26 @@ function loadDashboard() {
   highRems.forEach(r => {
     alerts.push({ color: 'orange', text: `🔔 תזכורת דחופה: ${r.text}` });
   });
+  // Unpaid employee salaries
+  activeEmps.forEach(e => {
+    const sal = empCurSals.find(s => s.employeeId === e.id);
+    if (!sal || !sal.paid) {
+      const amount = sal ? sal.total : (e.payType === 'monthly' ? (parseFloat(e.baseSalary)||0) : 0);
+      if (amount > 0)
+        alerts.push({ color: 'orange', text: `👷 שכר לא שולם: ${e.name} – ₪${amount.toLocaleString('he-IL',{maximumFractionDigits:0})} (${curPeriod})` });
+    }
+  });
+
+  // Overdue supplier debts
+  openSupp.forEach(d => {
+    if (!d.dueDate) return;
+    const parts = d.dueDate.split('/');
+    const due = parts.length === 3 ? new Date(parts[2], parts[1]-1, parts[0]) : null;
+    if (due && due < today) {
+      alerts.push({ color: '', text: `🏭 חשבונית פגת תוקף: ${d.supplierName} – ₪${(parseFloat(d.amount)||0).toLocaleString('he-IL',{maximumFractionDigits:0})} (עד ${d.dueDate})` });
+    }
+  });
+
   // Unpaid invoices current month
   unpaidTenants.forEach(t => {
     const total = (t.items||[]).reduce((s,item)=>s+(parseFloat(item.amount)||0),0);

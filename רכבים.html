@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>אוטוליין – סוכנות רכב</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=1.6">
+  <link rel="stylesheet" href="style.css?v=1.7">
   <style>
     /* ===== TABS ===== */
     .tab-bar { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
@@ -156,6 +156,16 @@
     /* ===== SELL MODAL ===== */
     #sellModal .modal-box { max-width:500px; width:95%; }
 
+    /* ===== TEST/INSURANCE DATE CHIPS ===== */
+    .date-chip {
+      display:inline-flex; align-items:center; gap:4px;
+      font-size:11px; font-weight:600; padding:2px 8px;
+      border-radius:10px; margin-top:3px;
+    }
+    .date-chip.ok      { background:#dcfce7; color:#166534; }
+    .date-chip.soon    { background:#fef9c3; color:#92400e; }
+    .date-chip.expired { background:#fee2e2; color:#dc2626; }
+
     @media print {
       .app-header, .main-nav, .no-print, .tab-bar, .car-actions, .filter-chips,
       .form-card, #toast { display:none !important; }
@@ -178,6 +188,9 @@
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
   <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+  
+  <a href="עובדים.html" class="nav-link">👷 <span class="label">עובדים</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
   <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
@@ -220,7 +233,9 @@
           <button id="btnViewCards" class="active" onclick="setView('cards')" title="כרטיסים">⊞</button>
           <button id="btnViewTable" onclick="setView('table')" title="טבלה">☰</button>
         </div>
-        <button class="btn btn-outline" onclick="exportInventory()">📊 Excel</button>
+        <button class="btn btn-outline" onclick="exportInventory()">📊 ייצוא</button>
+        <button class="btn btn-outline" onclick="document.getElementById('xlsxImportInput').click()">📥 ייבוא Excel</button>
+        <input type="file" id="xlsxImportInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(this)">
         <button class="btn btn-primary" onclick="openInvForm()">+ הוסף רכב</button>
       </div>
     </div>
@@ -307,7 +322,7 @@
     </div>
     <div class="modal-body">
       <div class="form-section-title">פרטי הרכב</div>
-      <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
+      <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
         <div class="field"><label>יצרן *</label>
           <input type="text" id="i_make" list="makesList" oninput="markFilled(this)"></div>
         <div class="field"><label>דגם *</label>
@@ -340,11 +355,22 @@
           <input type="number" id="i_buyPrice" min="0" oninput="markFilled(this)"></div>
         <div class="field"><label>מחיר מבוקש (₪)</label>
           <input type="number" id="i_askPrice" min="0" oninput="markFilled(this)"></div>
-        <div class="field"><label>תאריך</label>
+        <div class="field"><label>תאריך הוספה</label>
           <input type="text" id="i_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
         <div class="field"><label>איש קשר / מוכר</label>
           <input type="text" id="i_contact" oninput="markFilled(this)"></div>
       </div>
+
+      <div class="form-section-title" style="margin-top:10px">טסט, ביטוח ובעלות (לרכב עסקי)</div>
+      <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
+        <div class="field"><label>תוקף טסט</label>
+          <input type="text" id="i_testDate" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
+        <div class="field"><label>תוקף ביטוח</label>
+          <input type="text" id="i_insurDate" placeholder="DD/MM/YYYY" oninput="markFilled(this)"></div>
+        <div class="field"><label>שם הבעלים (אם לא העסק)</label>
+          <input type="text" id="i_owner" placeholder="השאר ריק אם שייך לעסק" oninput="markFilled(this)"></div>
+      </div>
+
       <div class="field" style="margin-top:8px"><label>הערות</label>
         <textarea id="i_notes" rows="2" oninput="markFilled(this)"></textarea>
       </div>
@@ -558,7 +584,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.6"></script>
+<script src="shared.js?v=1.7"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 // ===== DB KEYS =====
@@ -591,6 +617,105 @@ function esc(s) {
 function kmFmt(km) {
   const n = parseInt(km);
   return (!n && n!==0) ? '—' : n.toLocaleString('he-IL') + ' ק"מ';
+}
+
+// Returns CSS class for test/insurance date chip based on days remaining
+function _dateChipClass(ddmmyyyy) {
+  if (!ddmmyyyy) return 'ok';
+  const parts = ddmmyyyy.split('/');
+  if (parts.length !== 3) return 'ok';
+  const d = new Date(parts[2], parts[1]-1, parts[0]);
+  const days = Math.floor((d - Date.now()) / 86400000);
+  if (days < 0)   return 'expired';
+  if (days <= 30) return 'soon';
+  return 'ok';
+}
+
+// ===== EXCEL IMPORT =====
+function importFromExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      if (!rows.length) { showToast('הקובץ ריק', 'error'); return; }
+
+      // Column name mapping (flexible – case insensitive, common variants)
+      const colMap = {
+        make:      ['יצרן','make','manufacturer','מותג'],
+        model:     ['דגם','model','דגם רכב'],
+        year:      ['שנה','year','שנת ייצור','שנת יצור'],
+        plate:     ['לוחית','לוחית רישוי','plate','license','מספר רכב'],
+        km:        ['קמ','ק"מ','km','kilometers','קילומטר','קילומטראז'],
+        color:     ['צבע','color','colour'],
+        condition: ['מצב','condition','מצב הרכב'],
+        status:    ['סטטוס','status','מצב מכירה'],
+        buyPrice:  ['מחיר קנייה','מחיר רכישה','buy price','קנייה'],
+        askPrice:  ['מחיר מבוקש','מחיר מכירה','ask price','מכירה','מחיר'],
+        notes:     ['הערות','notes','remarks'],
+        testDate:  ['טסט','תוקף טסט','test date'],
+        insurDate: ['ביטוח','תוקף ביטוח','insurance'],
+        contact:   ['איש קשר','מוכר','contact','seller'],
+        owner:     ['בעלים','owner']
+      };
+
+      function findCol(row, keys) {
+        const rowKeys = Object.keys(row).map(k => k.trim().toLowerCase());
+        for (const k of keys) {
+          const ki = k.toLowerCase();
+          const idx = rowKeys.findIndex(rk => rk.includes(ki) || ki.includes(rk));
+          if (idx !== -1) return Object.values(row)[idx];
+        }
+        return '';
+      }
+
+      const COND_MAP = { 'חדש':'new','כמו חדש':'like-new','טוב':'good','סביר':'fair','לשיפוץ':'poor' };
+      const STAT_MAP = { 'למכירה':'available','זמין':'available','שמור':'reserved','נמכר':'sold' };
+
+      const cars = getDB(DB_INV);
+      let added = 0;
+      rows.forEach(row => {
+        const make  = String(findCol(row, colMap.make)||'').trim();
+        const model = String(findCol(row, colMap.model)||'').trim();
+        if (!make && !model) return;
+        const condRaw = String(findCol(row, colMap.condition)||'').trim();
+        const statRaw = String(findCol(row, colMap.status)||'').trim();
+        const car = {
+          id:        nowId(),
+          date:      todayStr(),
+          make:      make || '—',
+          model:     model || '—',
+          year:      String(findCol(row, colMap.year)||'').trim(),
+          plate:     String(findCol(row, colMap.plate)||'').trim(),
+          km:        String(findCol(row, colMap.km)||'').trim(),
+          color:     String(findCol(row, colMap.color)||'').trim(),
+          condition: COND_MAP[condRaw] || 'good',
+          status:    STAT_MAP[statRaw] || 'available',
+          buyPrice:  String(findCol(row, colMap.buyPrice)||'').trim(),
+          askPrice:  String(findCol(row, colMap.askPrice)||'').trim(),
+          contact:   String(findCol(row, colMap.contact)||'').trim(),
+          notes:     String(findCol(row, colMap.notes)||'').trim(),
+          testDate:  String(findCol(row, colMap.testDate)||'').trim(),
+          insurDate: String(findCol(row, colMap.insurDate)||'').trim(),
+          owner:     String(findCol(row, colMap.owner)||'').trim(),
+          photos:    []
+        };
+        cars.push(car);
+        added++;
+      });
+      setDB(DB_INV, cars);
+      renderInventory();
+      showToast(`יובאו ${added} רכבים ✓`, 'success');
+      autoSync();
+    } catch(err) {
+      showToast('שגיאה בקריאת הקובץ: ' + err.message, 'error');
+    }
+    input.value = '';
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 // ===== STATS =====
@@ -693,6 +818,10 @@ function renderCards(cars) {
           ${car.buyPrice ? `<span class="car-chip" style="color:var(--text-muted)">קנייה: ${formatCurrency(car.buyPrice)}</span>` : ''}
         </div>
         ${car.notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">${esc(car.notes)}</div>` : ''}
+        ${(car.testDate||car.insurDate) ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
+          ${car.testDate ? `<span class="date-chip ${_dateChipClass(car.testDate)}">🔧 טסט: ${car.testDate}</span>` : ''}
+          ${car.insurDate ? `<span class="date-chip ${_dateChipClass(car.insurDate)}">🛡️ ביטוח: ${car.insurDate}</span>` : ''}
+        </div>` : ''}
         ${car.status==='reserved' && car.interestedBuyer && car.interestedBuyer.name ? `
           <div style="margin-top:8px;background:#fef9c3;border-radius:8px;padding:7px 10px;font-size:11px;line-height:1.6">
             <strong>🟡 מתעניין:</strong> ${esc(car.interestedBuyer.name)}
@@ -757,10 +886,13 @@ function openInvForm(id) {
     document.getElementById('i_date').value     = car.date||'';
     document.getElementById('i_contact').value  = car.contact||'';
     document.getElementById('i_notes').value    = car.notes||'';
+    document.getElementById('i_testDate').value = car.testDate||'';
+    document.getElementById('i_insurDate').value= car.insurDate||'';
+    document.getElementById('i_owner').value    = car.owner||'';
     formPhotos = car.photos ? [...car.photos] : [];
   } else {
     document.getElementById('invModalTitle').textContent = 'הוסף רכב למלאי';
-    ['i_make','i_model','i_year','i_plate','i_km','i_color','i_buyPrice','i_askPrice','i_contact','i_notes'].forEach(id => {
+    ['i_make','i_model','i_year','i_plate','i_km','i_color','i_buyPrice','i_askPrice','i_contact','i_notes','i_testDate','i_insurDate','i_owner'].forEach(id => {
       document.getElementById(id).value = '';
     });
     document.getElementById('i_condition').value = 'good';
@@ -877,6 +1009,9 @@ function saveInventoryCar() {
     askPrice:  document.getElementById('i_askPrice').value.trim(),
     contact:   document.getElementById('i_contact').value.trim(),
     notes:     document.getElementById('i_notes').value.trim(),
+    testDate:  document.getElementById('i_testDate').value.trim(),
+    insurDate: document.getElementById('i_insurDate').value.trim(),
+    owner:     document.getElementById('i_owner').value.trim(),
     photos:    [...formPhotos]
   };
 

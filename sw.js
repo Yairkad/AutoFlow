@@ -3,13 +3,13 @@
 //  Offline-first caching strategy
 // =============================================
 
-const CACHE = 'autoline-v7';
+const CACHE = 'autoline-v10';
 
 const SHELL = [
   './',
   './index.html',
-  './style.css?v=1.6',
-  './shared.js?v=1.6',
+  './style.css?v=1.7',
+  './shared.js?v=1.7',
   './manifest.json',
   './הוצאות.html',
   './מוצרים.html',
@@ -20,6 +20,8 @@ const SHELL = [
   './בדיקות-קניה.html',
   './חשבונות.html',
   './תזכורות.html',
+  './עובדים.html',
+  './חובות.html',
   './הגדרות.html',
   'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;900&display=swap',
   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'

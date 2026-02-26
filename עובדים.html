@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a9e5c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="אוטוליין">
+  <link rel="manifest" href="manifest.json">
+  <title>אוטוליין – עובדים ומשכורות</title>
+  <link rel="stylesheet" href="style.css?v=1.7">
+  <style>
+    .emp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .emp-card {
+      background: white; border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 20px;
+      border-right: 4px solid var(--primary);
+    }
+    .emp-card.inactive { border-right-color: var(--border-dark); opacity: 0.7; }
+    .emp-card-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; margin-bottom: 12px;
+    }
+    .emp-name { font-size: 16px; font-weight: 900; color: var(--text); }
+    .emp-role { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .emp-badge {
+      font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+    }
+    .emp-badge.active  { background: var(--primary-light); color: var(--primary-dark); }
+    .emp-badge.inactive{ background: #f1f5f9; color: var(--text-muted); }
+    .emp-detail {
+      font-size: 13px; color: var(--text-muted);
+      margin-bottom: 5px; display: flex; align-items: center; gap: 6px;
+    }
+    .emp-salary-info {
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 13px; font-weight: 700; color: var(--primary);
+    }
+    .emp-actions { display: flex; gap: 6px; margin-top: 12px; }
+
+    /* Salary tab */
+    .salary-period-bar {
+      display: flex; align-items: center; gap: 12px;
+      flex-wrap: wrap; margin-bottom: 16px; padding: 10px 0;
+    }
+    .salary-table-wrap {
+      background: white; border-radius: var(--radius);
+      box-shadow: var(--shadow); overflow-x: auto;
+    }
+    .salary-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .salary-table th {
+      background: #f8fafc; padding: 10px 14px;
+      text-align: right; font-weight: 700;
+      font-size: 12px; color: var(--text-muted);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .salary-table td {
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .salary-table tr:last-child td { border-bottom: none; }
+    .salary-table tr.paid-row { background: #f0fdf4; }
+    .paid-badge   { background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+    .unpaid-badge { background:#fff7ed; color:var(--warning); padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+    .salary-summary { display:flex; gap:20px; align-items:center; flex-wrap:wrap; font-size:13px; }
+    .salary-summary strong { font-weight:900; }
+
+    /* Pay type tabs */
+    .pay-type-tabs {
+      display:flex; gap:0; border:1.5px solid var(--border);
+      border-radius:8px; overflow:hidden; margin-bottom:14px;
+    }
+    .pay-type-tab {
+      flex:1; padding:8px; border:none; background:white; cursor:pointer;
+      font-size:13px; font-weight:600; font-family:'Heebo',sans-serif;
+      color:var(--text-muted); transition:all 0.15s;
+    }
+    .pay-type-tab.active { background:var(--primary); color:white; }
+
+    /* Adj rows */
+    .adj-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+    .adj-row input {
+      padding:7px 10px; border:1.5px solid var(--border); border-radius:8px;
+      font-family:'Heebo',sans-serif; font-size:13px;
+    }
+    .adj-label  { flex:1; }
+    .adj-amount { width:90px; }
+    .adj-section-title {
+      font-size:12px; font-weight:700; color:var(--text-muted);
+      text-transform:uppercase; letter-spacing:0.5px;
+      margin-bottom:8px; margin-top:14px;
+    }
+    .sm-total-bar {
+      border-top:1px solid var(--border); padding-top:14px; margin-top:10px;
+      display:flex; justify-content:space-between; align-items:center;
+      font-size:15px; font-weight:900;
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" id="headerLogo" src="" alt="לוגו" style="display:none">
+    <div class="header-title">
+      <h1 id="headerBizName">אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+  <a href="עובדים.html"         class="nav-link active">👷 <span class="label">עובדים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('employees',this)">👷 עובדים</button>
+    <button class="tab-btn"        onclick="switchTab('salaries',this)">💰 משכורות</button>
+  </div>
+
+  <!-- Tab: Employees -->
+  <div id="tab-employees" class="tab-content active">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <button class="btn btn-primary" onclick="openAddEmp()">+ הוסף עובד</button>
+    </div>
+    <div id="empGrid" class="emp-grid"></div>
+    <div id="empEmpty" class="empty-state" style="display:none">
+      <div style="font-size:40px;margin-bottom:12px">👷</div>
+      <p>לא הוגדרו עובדים עדיין</p>
+      <button class="btn btn-primary" onclick="openAddEmp()" style="margin-top:12px">הוסף עובד ראשון</button>
+    </div>
+  </div>
+
+  <!-- Tab: Salaries -->
+  <div id="tab-salaries" class="tab-content">
+    <div class="salary-period-bar">
+      <label style="font-weight:700;font-size:14px">תקופה:</label>
+      <select id="periodSel" class="filter-select" onchange="renderSalaries()"></select>
+      <div id="salarySummary" class="salary-summary"></div>
+    </div>
+    <div class="salary-table-wrap">
+      <table class="salary-table">
+        <thead>
+          <tr>
+            <th>עובד</th>
+            <th>שכר / תעריף</th>
+            <th>שעות</th>
+            <th>תוספות</th>
+            <th>ניכויים</th>
+            <th>סה״כ</th>
+            <th>סטטוס</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="salaryTbody"></tbody>
+      </table>
+    </div>
+    <div id="salaryEmpty" class="empty-state" style="display:none;padding:40px">
+      <p>לא הוגדרו עובדים פעילים</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal: Employee -->
+<div id="empModal" class="modal-overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3 id="empModalTitle">עובד חדש</h3>
+      <button class="modal-close" onclick="closeEmpModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="pay-type-tabs">
+        <button class="pay-type-tab active" id="ptMonthly" onclick="setPayType('monthly')">שכר חודשי קבוע</button>
+        <button class="pay-type-tab" id="ptHourly" onclick="setPayType('hourly')">שכר שעתי</button>
+      </div>
+      <div class="grid-inputs">
+        <div class="field">
+          <label>שם העובד *</label>
+          <input type="text" id="e_name" placeholder="שם מלא" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>תפקיד</label>
+          <input type="text" id="e_role" placeholder="מכונאי, מוכר..." oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>טלפון</label>
+          <input type="tel" id="e_phone" placeholder="050-0000000" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>תאריך תחילת עבודה</label>
+          <input type="date" id="e_startDate" oninput="markFilled(this)">
+        </div>
+        <div class="field" id="row-monthly">
+          <label>שכר בסיס (₪/חודש)</label>
+          <input type="number" id="e_baseSalary" placeholder="7000" min="0" step="1" oninput="markFilled(this)">
+        </div>
+        <div class="field" id="row-hourly" style="display:none">
+          <label>תעריף שעתי (₪/שעה)</label>
+          <input type="number" id="e_hourlyRate" placeholder="35" min="0" step="0.5" oninput="markFilled(this)">
+        </div>
+        <div class="field" style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:6px 0">
+          <input type="checkbox" id="e_active" checked style="width:16px;height:16px;cursor:pointer">
+          <label for="e_active" style="cursor:pointer;color:var(--text);font-weight:600">עובד פעיל</label>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>הערות</label>
+          <textarea id="e_notes" placeholder="פרטים נוספים..." rows="2" oninput="markFilled(this)"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEmpModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveEmp()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Salary -->
+<div id="salaryModal" class="modal-overlay">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h3 id="salaryModalTitle">עריכת משכורת</h3>
+      <button class="modal-close" onclick="closeSalaryModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-inputs narrow">
+        <div class="field">
+          <label id="sm_base_label">שכר בסיס (₪)</label>
+          <input type="number" id="sm_base" min="0" step="1" oninput="calcSalaryTotal()">
+        </div>
+        <div class="field" id="sm_hours_row" style="display:none">
+          <label>שעות עבודה</label>
+          <input type="number" id="sm_hours" min="0" step="0.5" placeholder="0" oninput="calcSalaryTotal()">
+        </div>
+      </div>
+
+      <div class="adj-section-title">➕ תוספות</div>
+      <div id="additionsArea"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addAdjRow('addition')" style="margin-bottom:12px">+ הוסף תוספת</button>
+
+      <div class="adj-section-title">➖ ניכויים</div>
+      <div id="deductionsArea"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addAdjRow('deduction')" style="margin-bottom:12px">+ הוסף ניכוי</button>
+
+      <div class="sm-total-bar">
+        <span>סה״כ לתשלום:</span>
+        <span id="sm_total_display" style="color:var(--primary)">₪0</span>
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <label>הערות</label>
+        <input type="text" id="sm_notes" placeholder="הערה..." oninput="markFilled(this)">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeSalaryModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveSalaryDetails()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div style="font-size:36px;margin-bottom:12px">⚠️</div>
+    <p id="confirmMsg" style="margin-bottom:20px;font-size:14px"></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger"    onclick="confirmYes()">מחק</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="shared.js?v=1.7"></script>
+<script>
+
+const DB_EMPLOYEES = 'pnc_employees';
+const DB_SALARIES  = 'pnc_salaries';
+
+let _editEmpId  = null;
+let _curPayType = 'monthly';
+let _sm_empId   = null;
+let _sm_period  = null;
+
+// ===== HELPERS =====
+
+function _monthsBack(n) {
+  const d = new Date();
+  d.setMonth(d.getMonth() - n);
+  return String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+}
+
+function _periodLabel(p) {
+  if (!p) return '';
+  const [mm, yyyy] = p.split('/');
+  const names = ['','ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  return (names[parseInt(mm)] || mm) + ' ' + yyyy;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s || '');
+  return d.innerHTML;
+}
+
+function _dateInputToDisplay(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function _displayToDateInput(disp) {
+  if (!disp) return '';
+  const p = disp.split('/');
+  if (p.length !== 3) return '';
+  return `${p[2]}-${p[1]}-${p[0]}`;
+}
+
+// ===== TABS =====
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'salaries') renderSalaries();
+}
+
+// ===== STATS =====
+
+function renderStats() {
+  const employees = getDB(DB_EMPLOYEES);
+  const salaries  = getDB(DB_SALARIES);
+  const active    = employees.filter(e => e.active);
+  const period    = _monthsBack(0);
+  const curSals   = salaries.filter(s => s.period === period);
+
+  // total expected payroll
+  const totalPay = active.reduce((sum, e) => {
+    const sal = curSals.find(s => s.employeeId === e.id);
+    if (sal) return sum + (sal.total || 0);
+    return sum + (e.payType === 'monthly' ? (parseFloat(e.baseSalary) || 0) : 0);
+  }, 0);
+
+  // unpaid = active employees with no paid salary record
+  const unpaid = active.filter(e => {
+    const sal = curSals.find(s => s.employeeId === e.id);
+    return !sal || !sal.paid;
+  }).length;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-value">${active.length}</div>
+      <div class="stat-label">עובדים פעילים</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-value">₪${totalPay.toLocaleString('he-IL',{maximumFractionDigits:0})}</div>
+      <div class="stat-label">שכר חודש נוכחי</div>
+    </div>
+    <div class="stat-card ${unpaid > 0 ? 'red' : ''}">
+      <div class="stat-value">${unpaid}</div>
+      <div class="stat-label">ממתינים לתשלום</div>
+    </div>
+  `;
+}
+
+// ===== EMPLOYEE TAB =====
+
+function renderEmployees() {
+  const employees = getDB(DB_EMPLOYEES);
+  const grid  = document.getElementById('empGrid');
+  const empty = document.getElementById('empEmpty');
+  renderStats();
+
+  if (!employees.length) {
+    grid.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const sorted = [...employees].sort((a,b) => (b.active?1:0) - (a.active?1:0));
+
+  grid.innerHTML = sorted.map(e => {
+    const salLine = e.payType === 'hourly'
+      ? `₪${(parseFloat(e.hourlyRate)||0).toLocaleString('he-IL')} לשעה`
+      : `₪${(parseFloat(e.baseSalary)||0).toLocaleString('he-IL',{maximumFractionDigits:0})} לחודש`;
+    return `
+    <div class="emp-card ${e.active?'':'inactive'}">
+      <div class="emp-card-header">
+        <div>
+          <div class="emp-name">👷 ${esc(e.name)}</div>
+          <div class="emp-role">${esc(e.role)}</div>
+        </div>
+        <span class="emp-badge ${e.active?'active':'inactive'}">${e.active?'פעיל':'לא פעיל'}</span>
+      </div>
+      ${e.phone     ? `<div class="emp-detail">📞 ${esc(e.phone)}</div>`                     : ''}
+      ${e.startDate ? `<div class="emp-detail">📅 מתאריך ${esc(e.startDate)}</div>`           : ''}
+      <div class="emp-salary-info">💵 ${salLine}</div>
+      ${e.notes     ? `<div class="emp-detail" style="margin-top:8px;font-style:italic">${esc(e.notes)}</div>` : ''}
+      <div class="emp-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openEditEmp(${e.id})" style="flex:1">✏️ עריכה</button>
+        <button class="btn btn-danger btn-sm"    onclick="deleteEmp(${e.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== EMPLOYEE MODAL =====
+
+function openAddEmp() {
+  _editEmpId = null;
+  document.getElementById('empModalTitle').textContent = 'עובד חדש';
+  ['e_name','e_role','e_phone','e_baseSalary','e_hourlyRate','e_notes'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+    el.classList.remove('filled');
+  });
+  document.getElementById('e_startDate').value = '';
+  document.getElementById('e_active').checked = true;
+  setPayType('monthly');
+  document.getElementById('empModal').classList.add('open');
+}
+
+function openEditEmp(id) {
+  const e = getDB(DB_EMPLOYEES).find(x => x.id === id);
+  if (!e) return;
+  _editEmpId = id;
+  document.getElementById('empModalTitle').textContent = 'עריכת עובד';
+  document.getElementById('e_name').value       = e.name       || '';
+  document.getElementById('e_role').value       = e.role       || '';
+  document.getElementById('e_phone').value      = e.phone      || '';
+  document.getElementById('e_baseSalary').value = e.baseSalary || '';
+  document.getElementById('e_hourlyRate').value = e.hourlyRate || '';
+  document.getElementById('e_notes').value      = e.notes      || '';
+  document.getElementById('e_active').checked   = !!e.active;
+  document.getElementById('e_startDate').value  = _displayToDateInput(e.startDate);
+  setPayType(e.payType || 'monthly');
+  document.getElementById('empModal').classList.add('open');
+}
+
+function closeEmpModal() {
+  document.getElementById('empModal').classList.remove('open');
+}
+
+function setPayType(type) {
+  _curPayType = type;
+  document.getElementById('ptMonthly').classList.toggle('active', type === 'monthly');
+  document.getElementById('ptHourly').classList.toggle('active',  type === 'hourly');
+  document.getElementById('row-monthly').style.display = type === 'monthly' ? '' : 'none';
+  document.getElementById('row-hourly').style.display  = type === 'hourly'  ? '' : 'none';
+}
+
+function saveEmp() {
+  const name = document.getElementById('e_name').value.trim();
+  if (!name) { showToast('נא להזין שם עובד', 'error'); return; }
+
+  const startIso = document.getElementById('e_startDate').value;
+  const rec = {
+    id:          _editEmpId || nowId(),
+    name,
+    role:        document.getElementById('e_role').value.trim(),
+    phone:       document.getElementById('e_phone').value.trim(),
+    startDate:   _dateInputToDisplay(startIso),
+    active:      document.getElementById('e_active').checked,
+    payType:     _curPayType,
+    baseSalary:  parseFloat(document.getElementById('e_baseSalary').value) || 0,
+    hourlyRate:  parseFloat(document.getElementById('e_hourlyRate').value) || 0,
+    notes:       document.getElementById('e_notes').value.trim(),
+  };
+
+  const db = getDB(DB_EMPLOYEES);
+  if (_editEmpId) {
+    const idx = db.findIndex(x => x.id === _editEmpId);
+    if (idx !== -1) db[idx] = rec;
+  } else {
+    db.push(rec);
+  }
+  setDB(DB_EMPLOYEES, db);
+  closeEmpModal();
+  renderEmployees();
+  showToast(_editEmpId ? 'עובד עודכן ✓' : 'עובד נוסף ✓', 'success');
+  autoSync();
+}
+
+function deleteEmp(id) {
+  const e = getDB(DB_EMPLOYEES).find(x => x.id === id);
+  showConfirm(`למחוק את ${e ? e.name : 'העובד'}?`, () => {
+    setDB(DB_EMPLOYEES, getDB(DB_EMPLOYEES).filter(x => x.id !== id));
+    renderEmployees();
+    showToast('עובד נמחק ✓');
+    autoSync();
+  });
+}
+
+// ===== SALARY TAB =====
+
+function buildPeriodList() {
+  const sel = document.getElementById('periodSel');
+  const cur = sel.value || _monthsBack(0);
+  const opts = Array.from({length: 13}, (_, i) => _monthsBack(i));
+  sel.innerHTML = opts.map(p =>
+    `<option value="${p}" ${p === cur ? 'selected' : ''}>${_periodLabel(p)}</option>`
+  ).join('');
+}
+
+function _calcTotal(sal) {
+  const base   = parseFloat(sal.baseSalary) || 0;
+  const hours  = parseFloat(sal.hours) || 0;
+  const amount = (sal._payType === 'hourly') ? base * hours : base;
+  const adds   = (sal.additions  || []).reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+  const deds   = (sal.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+  return Math.max(0, amount + adds - deds);
+}
+
+function _ensureSalaryRec(empId, period) {
+  const sals = getDB(DB_SALARIES);
+  let sal = sals.find(s => s.employeeId === empId && s.period === period);
+  if (!sal) {
+    const e = getDB(DB_EMPLOYEES).find(x => x.id === empId) || {};
+    sal = {
+      id:          nowId(),
+      employeeId:  empId,
+      period,
+      baseSalary:  e.payType === 'monthly' ? (e.baseSalary || 0) : (e.hourlyRate || 0),
+      hours:       0,
+      additions:   [],
+      deductions:  [],
+      paid:        false,
+      paidDate:    '',
+      notes:       '',
+      _payType:    e.payType   || 'monthly',
+      _hourlyRate: e.hourlyRate || 0,
+    };
+    sal.total = _calcTotal(sal);
+    sals.push(sal);
+    setDB(DB_SALARIES, sals);
+  }
+  return sal;
+}
+
+function renderSalaries() {
+  const period    = document.getElementById('periodSel').value || _monthsBack(0);
+  const employees = getDB(DB_EMPLOYEES).filter(e => e.active);
+  const sals      = getDB(DB_SALARIES);
+  const tbody     = document.getElementById('salaryTbody');
+  const empty     = document.getElementById('salaryEmpty');
+
+  if (!employees.length) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+    document.getElementById('salarySummary').innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  let totalAll = 0, totalPaidAmt = 0;
+
+  tbody.innerHTML = employees.map(e => {
+    const sal = sals.find(s => s.employeeId === e.id && s.period === period);
+    const baseSal = sal ? sal.baseSalary : (e.payType === 'monthly' ? (e.baseSalary||0) : (e.hourlyRate||0));
+    const hours   = sal ? (sal.hours || 0) : 0;
+    const payType = sal ? (sal._payType || e.payType || 'monthly') : (e.payType || 'monthly');
+    const adds    = sal ? (sal.additions ||[]).reduce((s,a)=>s+(parseFloat(a.amount)||0),0) : 0;
+    const deds    = sal ? (sal.deductions||[]).reduce((s,d)=>s+(parseFloat(d.amount)||0),0) : 0;
+    const baseAmt = payType === 'hourly' ? baseSal * hours : baseSal;
+    const total   = sal ? (sal.total || _calcTotal(sal)) : baseAmt;
+    const paid    = sal ? sal.paid : false;
+
+    const baseDisplay = payType === 'hourly'
+      ? `₪${baseSal.toLocaleString('he-IL')} × ${hours}שע׳`
+      : `₪${baseSal.toLocaleString('he-IL',{maximumFractionDigits:0})}`;
+
+    totalAll     += total;
+    if (paid) totalPaidAmt += total;
+
+    return `
+    <tr class="${paid?'paid-row':''}">
+      <td><strong>${esc(e.name)}</strong>${e.role?`<br><span style="font-size:11px;color:var(--text-muted)">${esc(e.role)}</span>`:''}</td>
+      <td>${baseDisplay}</td>
+      <td>${payType==='hourly'?hours+' שע׳':'—'}</td>
+      <td style="color:var(--primary)">${adds>0?'+₪'+adds.toLocaleString('he-IL'):'—'}</td>
+      <td style="color:var(--danger)">${deds>0?'−₪'+deds.toLocaleString('he-IL'):'—'}</td>
+      <td><strong>₪${total.toLocaleString('he-IL',{maximumFractionDigits:0})}</strong></td>
+      <td>${paid?`<span class="paid-badge">✅ שולם</span>`:`<span class="unpaid-badge">⏳ ממתין</span>`}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          ${paid
+            ? `<button class="btn btn-secondary btn-sm" onclick="togglePaid(${e.id},'${period}',false)">↩️</button>`
+            : `<button class="btn btn-primary btn-sm"   onclick="togglePaid(${e.id},'${period}',true)">✅ שלם</button>`}
+          <button class="btn btn-secondary btn-sm" onclick="openSalaryModal(${e.id},'${period}')">✏️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const totalUnpaid = totalAll - totalPaidAmt;
+  document.getElementById('salarySummary').innerHTML = `
+    <span>סה״כ: <strong>₪${totalAll.toLocaleString('he-IL',{maximumFractionDigits:0})}</strong></span>
+    <span style="color:var(--primary)">שולם: <strong>₪${totalPaidAmt.toLocaleString('he-IL',{maximumFractionDigits:0})}</strong></span>
+    <span style="color:var(--warning)">ממתין: <strong>₪${totalUnpaid.toLocaleString('he-IL',{maximumFractionDigits:0})}</strong></span>
+  `;
+}
+
+function togglePaid(empId, period, paid) {
+  const sal = _ensureSalaryRec(empId, period);
+  const sals = getDB(DB_SALARIES);
+  const idx  = sals.findIndex(s => s.employeeId === empId && s.period === period);
+  if (idx !== -1) {
+    sals[idx].paid     = paid;
+    sals[idx].paidDate = paid ? todayStr() : '';
+    setDB(DB_SALARIES, sals);
+  }
+  renderSalaries();
+  renderStats();
+  showToast(paid ? 'סומן כשולם ✓' : 'תשלום בוטל', paid ? 'success' : '');
+  autoSync();
+}
+
+// ===== SALARY MODAL =====
+
+function openSalaryModal(empId, period) {
+  _sm_empId  = empId;
+  _sm_period = period;
+
+  const sal = _ensureSalaryRec(empId, period);
+  const e   = getDB(DB_EMPLOYEES).find(x => x.id === empId) || {};
+
+  document.getElementById('salaryModalTitle').textContent =
+    `משכורת: ${e.name || ''} – ${_periodLabel(period)}`;
+
+  const isHourly = sal._payType === 'hourly';
+  document.getElementById('sm_base_label').textContent = isHourly ? 'תעריף שעתי (₪/שעה)' : 'שכר בסיס (₪)';
+  document.getElementById('sm_base').value  = sal.baseSalary || '';
+  document.getElementById('sm_hours_row').style.display = isHourly ? '' : 'none';
+  document.getElementById('sm_hours').value = sal.hours || '';
+  document.getElementById('sm_notes').value = sal.notes || '';
+
+  // Additions
+  const addArea = document.getElementById('additionsArea');
+  addArea.innerHTML = '';
+  (sal.additions || []).forEach(a => _addAdjRowWithData('addition', a.label, a.amount));
+
+  // Deductions
+  const dedArea = document.getElementById('deductionsArea');
+  dedArea.innerHTML = '';
+  (sal.deductions || []).forEach(d => _addAdjRowWithData('deduction', d.label, d.amount));
+
+  calcSalaryTotal();
+  document.getElementById('salaryModal').classList.add('open');
+}
+
+function closeSalaryModal() {
+  document.getElementById('salaryModal').classList.remove('open');
+}
+
+function addAdjRow(type) {
+  _addAdjRowWithData(type, '', '');
+}
+
+function _addAdjRowWithData(type, label, amount) {
+  const areaId = type === 'addition' ? 'additionsArea' : 'deductionsArea';
+  const area = document.getElementById(areaId);
+  const row  = document.createElement('div');
+  row.className = 'adj-row';
+  row.innerHTML = `
+    <input type="text"   class="adj-label"  placeholder="${type==='addition'?'בונוס, תוספת...':'ניכוי, מחלה...'}" value="${esc(label||'')}" oninput="calcSalaryTotal()">
+    <input type="number" class="adj-amount" placeholder="₪" value="${amount||''}" min="0" step="1" oninput="calcSalaryTotal()">
+    <button onclick="this.parentElement.remove();calcSalaryTotal()"
+      style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:20px;line-height:1;padding:0 4px"
+      title="הסר">×</button>
+  `;
+  area.appendChild(row);
+}
+
+function calcSalaryTotal() {
+  const base   = parseFloat(document.getElementById('sm_base').value)  || 0;
+  const hours  = parseFloat(document.getElementById('sm_hours').value) || 0;
+  const isHourly = document.getElementById('sm_hours_row').style.display !== 'none';
+  const baseAmt  = isHourly ? base * hours : base;
+
+  const adds = Array.from(document.querySelectorAll('#additionsArea .adj-amount'))
+    .reduce((s,el) => s + (parseFloat(el.value)||0), 0);
+  const deds = Array.from(document.querySelectorAll('#deductionsArea .adj-amount'))
+    .reduce((s,el) => s + (parseFloat(el.value)||0), 0);
+
+  const total = Math.max(0, baseAmt + adds - deds);
+  document.getElementById('sm_total_display').textContent =
+    '₪' + total.toLocaleString('he-IL', {minimumFractionDigits:0});
+  return total;
+}
+
+function saveSalaryDetails() {
+  const additions = Array.from(document.querySelectorAll('#additionsArea .adj-row')).map(row => ({
+    label:  row.querySelector('.adj-label').value.trim(),
+    amount: parseFloat(row.querySelector('.adj-amount').value) || 0,
+  })).filter(a => a.label || a.amount > 0);
+
+  const deductions = Array.from(document.querySelectorAll('#deductionsArea .adj-row')).map(row => ({
+    label:  row.querySelector('.adj-label').value.trim(),
+    amount: parseFloat(row.querySelector('.adj-amount').value) || 0,
+  })).filter(d => d.label || d.amount > 0);
+
+  const base  = parseFloat(document.getElementById('sm_base').value)  || 0;
+  const hours = parseFloat(document.getElementById('sm_hours').value) || 0;
+  const notes = document.getElementById('sm_notes').value.trim();
+  const total = calcSalaryTotal();
+
+  const sals = getDB(DB_SALARIES);
+  const idx  = sals.findIndex(s => s.employeeId === _sm_empId && s.period === _sm_period);
+  if (idx !== -1) {
+    sals[idx].baseSalary = base;
+    sals[idx].hours      = hours;
+    sals[idx].additions  = additions;
+    sals[idx].deductions = deductions;
+    sals[idx].notes      = notes;
+    sals[idx].total      = total;
+    setDB(DB_SALARIES, sals);
+  }
+  closeSalaryModal();
+  renderSalaries();
+  renderStats();
+  showToast('משכורת עודכנה ✓', 'success');
+  autoSync();
+}
+
+// ===== INIT =====
+
+buildPeriodList();
+renderEmployees();
+highlightNav();
+loadHeaderBranding();
+
+</script>
+</body>
+</html>

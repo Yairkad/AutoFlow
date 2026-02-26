@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – חשבונות</title>
-  <link rel="stylesheet" href="style.css?v=1.6">
+  <link rel="stylesheet" href="style.css?v=1.7">
   <style>
     @media print {
       .app-header, .main-nav, .action-area, #toast, .btn, button, .no-print,
@@ -38,7 +38,7 @@
 
     .items-table { width:100%; border-collapse:collapse; margin-bottom:10px; }
     .items-table th { font-size:12px; color:var(--text-muted); font-weight:600; padding:4px 8px; border-bottom:1px solid var(--border); text-align:right; }
-    .items-table td { padding:7px 8px; font-size:13px; border-bottom:1px solid var(--border); }
+    .items-table td { padding:7px 8px; font-size:13px; border-bottom:1px solid var(--border); vertical-align:middle; }
     .items-table tr:last-child td { border-bottom:none; }
     .items-table .amount-cell { font-weight:700; color:var(--primary); }
 
@@ -48,11 +48,53 @@
       display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap;
     }
 
-    .payment-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-radius:8px; margin-top:8px; }
+    .payment-row {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:8px 12px; border-radius:8px; margin-top:8px; flex-wrap:wrap; gap:8px;
+    }
     .payment-row.paid   { background:#dcfce7; }
     .payment-row.unpaid { background:#fff7ed; }
     .paid-badge   { background:#16a34a; color:white; padding:2px 10px; border-radius:10px; font-size:11px; font-weight:700; }
     .unpaid-badge { background:#d97706; color:white; padding:2px 10px; border-radius:10px; font-size:11px; font-weight:700; }
+
+    .paid-date-input {
+      border:none; background:rgba(0,0,0,.06); border-radius:6px;
+      padding:3px 8px; font-family:inherit; font-size:12px; color:var(--text);
+      width:110px; text-align:center;
+    }
+    .paid-date-input:focus { outline:2px solid #16a34a; }
+
+    /* Variable item input inside table */
+    .var-amount-input {
+      width:100px; padding:4px 8px; border:1.5px solid var(--border);
+      border-radius:6px; font-family:inherit; font-size:13px; font-weight:700;
+      color:var(--primary); background:#fffbf0;
+    }
+    .var-amount-input:focus { outline:none; border-color:var(--warning); }
+    .badge-variable {
+      display:inline-block; font-size:10px; background:#fef9c3;
+      color:#92400e; padding:1px 6px; border-radius:6px; font-weight:700;
+      margin-right:5px; vertical-align:middle;
+    }
+
+    /* Item row in modal */
+    .item-row { background:#f8fafc; border-radius:10px; padding:10px; margin-bottom:8px; }
+    .item-row-top { display:grid; grid-template-columns:2fr 1fr 1fr 32px; gap:6px; align-items:end; }
+    .item-row-bottom { display:flex; align-items:center; gap:8px; margin-top:6px; }
+    .item-row label { font-size:11px; color:var(--text-muted); display:block; margin-bottom:2px; }
+    .item-row input {
+      padding:7px 8px; border:1px solid var(--border); border-radius:8px;
+      font-family:inherit; font-size:13px; width:100%; box-sizing:border-box;
+    }
+    .item-row input:focus { outline:none; border-color:var(--primary); }
+    .type-toggle {
+      padding:4px 10px; border-radius:16px; border:1.5px solid;
+      cursor:pointer; font-family:inherit; font-size:11px; font-weight:700;
+      white-space:nowrap; transition:all .15s;
+    }
+    .type-toggle.fixed    { background:#e0f2fe; color:#0369a1; border-color:#bae6fd; }
+    .type-toggle.variable { background:#fef9c3; color:#92400e; border-color:#fde68a; }
+    .vat-hint { font-size:11px; color:var(--text-muted); }
   </style>
 </head>
 <body>
@@ -70,7 +112,9 @@
 <nav class="main-nav">
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
-  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חשבונות.html"        class="nav-link active">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+  <a href="עובדים.html"         class="nav-link">👷 <span class="label">עובדים</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
   <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
@@ -95,8 +139,7 @@
   <!-- Period selector -->
   <div class="bill-period-bar no-print">
     <label style="font-weight:700;font-size:14px">תקופה:</label>
-    <select id="periodSel" class="filter-select" onchange="renderBills()">
-    </select>
+    <select id="periodSel" class="filter-select" onchange="renderBills()"></select>
     <button class="btn btn-warning btn-sm" onclick="printBills()">🖨️ הדפס חשבוניות</button>
   </div>
 
@@ -112,7 +155,7 @@
 
 <!-- Add/Edit Tenant Modal -->
 <div id="editModal" class="modal-overlay">
-  <div class="modal" style="max-width:620px">
+  <div class="modal" style="max-width:640px">
     <div class="modal-header">
       <h3 id="modalTitle">שוכר חדש</h3>
       <button class="modal-close" onclick="closeModal()">✕</button>
@@ -134,10 +177,11 @@
       </div>
 
       <div style="margin-top:18px">
-        <div style="font-weight:700;font-size:14px;margin-bottom:10px;border-bottom:2px solid var(--border);padding-bottom:6px">
-          פריטי חיוב חודשיים
+        <div style="font-weight:700;font-size:14px;margin-bottom:6px;border-bottom:2px solid var(--border);padding-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <span>פריטי חיוב חודשיים</span>
+          <span style="font-size:11px;color:var(--text-muted);font-weight:400">📌 קבוע = סכום זהה כל חודש · 📊 משתנה = מזינים ידנית כל חודש</span>
         </div>
-        <div id="itemsWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+        <div id="itemsWrap" style="margin-bottom:12px"></div>
         <button class="btn btn-secondary btn-sm" onclick="addItemRow()">+ הוסף פריט</button>
       </div>
     </div>
@@ -162,10 +206,11 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.6"></script>
+<script src="shared.js?v=1.7"></script>
 <script>
 const DB_TENANTS  = 'pnc_tenants';
 const DB_PAYMENTS = 'pnc_payments';
+const VAT_RATE = 1.17;
 
 let _editTenantId = null;
 let _itemSeq = 0;
@@ -176,18 +221,28 @@ function _monthsBack(n) {
   d.setMonth(d.getMonth() - n);
   return String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
 }
-
 function _periodLabel(p) {
   const [mm,yy] = p.split('/');
   const names = ['','ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   return (names[parseInt(mm)]||mm) + ' ' + yy;
 }
-
 function buildPeriodList() {
   const sel = document.getElementById('periodSel');
   const cur = sel.value || _monthsBack(0);
   const opts = Array.from({length:13},(_,i)=>_monthsBack(i));
   sel.innerHTML = opts.map(p=>`<option value="${p}" ${p===cur?'selected':''}>${_periodLabel(p)}</option>`).join('');
+}
+
+// ===== TOTAL CALCULATION =====
+// Handles fixed items (always same amount) and variable items (amount from payment record)
+function totalForTenant(t, pmt) {
+  return (t.items||[]).reduce((s, item) => {
+    if (item.type === 'variable') {
+      const varAmounts = pmt && pmt.varAmounts ? pmt.varAmounts : {};
+      return s + (parseFloat(varAmounts[item.id]) || 0);
+    }
+    return s + (parseFloat(item.amount) || 0);
+  }, 0);
 }
 
 // ===== STATS =====
@@ -196,8 +251,11 @@ function renderStats() {
   const payments = getDB(DB_PAYMENTS);
   const period   = document.getElementById('periodSel').value || _monthsBack(0);
   const periodPmts = payments.filter(p => p.period === period);
-  const totalOwed = tenants.reduce((s,t) => s + totalForTenant(t), 0);
-  const totalPaid = periodPmts.reduce((s,p) => s + (p.paid ? p.amount : 0), 0);
+  const totalOwed = tenants.reduce((s,t) => {
+    const pmt = periodPmts.find(p => p.tenantId === t.id);
+    return s + totalForTenant(t, pmt);
+  }, 0);
+  const totalPaid = periodPmts.reduce((s,p) => s + (p.paid ? (parseFloat(p.amount)||0) : 0), 0);
   const unpaidCount = tenants.filter(t => {
     const pmt = periodPmts.find(p => p.tenantId === t.id);
     return !pmt || !pmt.paid;
@@ -206,13 +264,9 @@ function renderStats() {
   document.getElementById('statsRow').innerHTML = `
     <div class="stat-card"><div class="stat-value">${tenants.length}</div><div class="stat-label">שוכרים</div></div>
     <div class="stat-card blue"><div class="stat-value">₪${totalOwed.toLocaleString('he-IL',{maximumFractionDigits:0})}</div><div class="stat-label">סה"כ לגבייה</div></div>
-    <div class="stat-card"><div class="stat-value">₪${totalPaid.toLocaleString('he-IL',{maximumFractionDigits:0})}</div><div class="stat-label">שולם החודש</div></div>
-    <div class="stat-card ${unpaidCount>0?'danger':''}"><div class="stat-value">${unpaidCount}</div><div class="stat-label">ממתינים לתשלום</div></div>
+    <div class="stat-card"><div class="stat-value">₪${totalPaid.toLocaleString('he-IL',{maximumFractionDigits:0})}</div><div class="stat-label">שולם</div></div>
+    <div class="stat-card ${unpaidCount>0?'danger':''}"><div class="stat-value">${unpaidCount}</div><div class="stat-label">ממתינים</div></div>
   `;
-}
-
-function totalForTenant(t) {
-  return (t.items||[]).reduce((s,item)=>s+(parseFloat(item.amount)||0),0);
 }
 
 // ===== RENDER BILLS =====
@@ -229,19 +283,42 @@ function renderBills() {
   empty.style.display = 'none';
 
   area.innerHTML = tenants.map(t => {
-    const total = totalForTenant(t);
-    const pmt   = payments.find(p => p.tenantId === t.id && p.period === period);
-    const paid  = pmt && pmt.paid;
-    const items = (t.items||[]);
+    const pmt  = payments.find(p => p.tenantId === t.id && p.period === period);
+    const paid = pmt && pmt.paid;
+    const varAmounts = pmt && pmt.varAmounts ? pmt.varAmounts : {};
+    const total = totalForTenant(t, pmt);
+    const items = t.items || [];
 
-    const itemRows = items.map(item=>`
-      <tr>
-        <td>${item.label||'—'}</td>
-        <td class="amount-cell">₪${(parseFloat(item.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
-        <td style="color:var(--text-muted);font-size:12px">${item.notes||''}</td>
-      </tr>`).join('');
+    const itemRows = items.map(item => {
+      if (item.type === 'variable') {
+        const va = parseFloat(varAmounts[item.id]) || 0;
+        const bv = va > 0 ? (va / VAT_RATE).toFixed(2) : '';
+        return `
+          <tr>
+            <td><span class="badge-variable">משתנה</span>${item.label||'—'}</td>
+            <td class="amount-cell">
+              <input class="var-amount-input no-print" type="number" value="${va||''}" placeholder="₪"
+                onchange="saveVarAmt(${t.id},'${period}',${item.id},this.value)"
+                oninput="updateTotalDisplay(this,'${t.id}')">
+              <span class="print-only">${va?'₪'+va.toLocaleString('he-IL',{minimumFractionDigits:2}):''}</span>
+            </td>
+            <td style="font-size:11px;color:var(--text-muted)">${bv?'לפני מע"מ: ₪'+bv:item.notes||''}</td>
+          </tr>`;
+      } else {
+        const bv = item.beforeVat ? parseFloat(item.beforeVat).toLocaleString('he-IL',{minimumFractionDigits:2}) : '';
+        return `
+          <tr>
+            <td>${item.label||'—'}</td>
+            <td class="amount-cell">₪${(parseFloat(item.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+            <td style="font-size:11px;color:var(--text-muted)">${bv?'לפני מע"מ: ₪'+bv:item.notes||''}</td>
+          </tr>`;
+      }
+    }).join('');
 
-    return `<div class="tenant-card">
+    const paidDateVal = pmt && pmt.paidDate ? pmt.paidDate : '';
+    const payNotesVal = pmt && pmt.payNotes ? pmt.payNotes : '';
+
+    return `<div class="tenant-card" id="tc_${t.id}">
       <div class="tenant-header">
         <div>
           <div class="tenant-name">${t.name}</div>
@@ -262,16 +339,25 @@ function renderBills() {
       </div>
 
       <table class="items-table">
-        <thead><tr><th>פריט</th><th>סכום</th><th>הערה</th></tr></thead>
+        <thead><tr><th>פריט</th><th>סכום</th><th>לפני מע"מ / הערה</th></tr></thead>
         <tbody>${itemRows}</tbody>
-        <tfoot><tr><td colspan="3"><div class="tenant-total">סה"כ לתשלום: ₪${total.toLocaleString('he-IL',{minimumFractionDigits:2})}</div></td></tr></tfoot>
+        <tfoot><tr><td colspan="3">
+          <div class="tenant-total" id="total_${t.id}">סה"כ לתשלום: ₪${total.toLocaleString('he-IL',{minimumFractionDigits:2})}</div>
+        </td></tr></tfoot>
       </table>
 
       <div class="payment-row ${paid?'paid':'unpaid'}">
-        <div>
-          <span class="${paid?'paid-badge':'unpaid-badge'}">${paid?'✅ שולם':'⏳ ממתין לתשלום'}</span>
-          ${pmt&&pmt.paidDate?`<span style="font-size:12px;color:var(--text-muted);margin-right:8px">בתאריך ${pmt.paidDate}</span>`:''}
-          ${pmt&&pmt.payNotes?`<span style="font-size:12px;color:var(--text-muted)"> | ${pmt.payNotes}</span>`:''}
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="${paid?'paid-badge':'unpaid-badge'}">${paid?'✅ שולם':'⏳ ממתין'}</span>
+          ${paid?`
+            <span style="font-size:12px;color:var(--text-muted)">תאריך:</span>
+            <input class="paid-date-input no-print" type="text" value="${paidDateVal}"
+              placeholder="DD/MM/YYYY"
+              onchange="updatePaidDate(${t.id},'${period}',this.value)"
+              title="תאריך קבלת התשלום">
+            <span class="print-only" style="font-size:12px;color:var(--text-muted)">${paidDateVal}</span>
+          `:`<span style="font-size:12px;color:var(--text-muted)">${_periodLabel(period)}</span>`}
+          ${payNotesVal?`<span style="font-size:12px;color:var(--text-muted)"> | ${payNotesVal}</span>`:''}
         </div>
         <div class="no-print">
           ${paid
@@ -284,15 +370,67 @@ function renderBills() {
   }).join('');
 }
 
-// ===== PAYMENT =====
-function markPayment(tenantId, period, paid) {
+// ===== UPDATE TOTAL DISPLAY (for variable inputs without saving) =====
+function updateTotalDisplay(input, tenantId) {
+  const t = getDB(DB_TENANTS).find(x => x.id == tenantId);
+  if (!t) return;
+  const pmt = getDB(DB_PAYMENTS).find(p => p.tenantId == tenantId && p.period === (document.getElementById('periodSel').value || _monthsBack(0)));
+  // Build virtual varAmounts from current inputs
+  const varInputs = input.closest('.tenant-card').querySelectorAll('.var-amount-input');
+  const varAmounts = pmt && pmt.varAmounts ? {...pmt.varAmounts} : {};
+  varInputs.forEach(inp => {
+    const onchangeAttr = inp.getAttribute('onchange') || '';
+    const match = onchangeAttr.match(/saveVarAmt\([\d]+,'[^']+',(\d+)/);
+    if (match) varAmounts[parseInt(match[1])] = parseFloat(inp.value) || 0;
+  });
+  const virtualPmt = { ...(pmt||{}), varAmounts };
+  const total = totalForTenant(t, virtualPmt);
+  const el = document.getElementById('total_' + tenantId);
+  if (el) el.textContent = 'סה"כ לתשלום: ₪' + total.toLocaleString('he-IL',{minimumFractionDigits:2});
+}
+
+// ===== SAVE VARIABLE AMOUNT =====
+function saveVarAmt(tenantId, period, itemId, value) {
+  const db = getDB(DB_PAYMENTS);
+  let idx = db.findIndex(p => p.tenantId === tenantId && p.period === period);
+  if (idx === -1) {
+    db.push({ tenantId, period, paid: false, amount: 0, paidDate: '', payNotes: '', varAmounts: {} });
+    idx = db.length - 1;
+  }
+  if (!db[idx].varAmounts) db[idx].varAmounts = {};
+  db[idx].varAmounts[itemId] = parseFloat(value) || 0;
+  const tenant = getDB(DB_TENANTS).find(t => t.id === tenantId);
+  db[idx].amount = tenant ? totalForTenant(tenant, db[idx]) : 0;
+  setDB(DB_PAYMENTS, db);
+  renderStats();
+  autoSync();
+}
+
+// ===== UPDATE PAID DATE =====
+function updatePaidDate(tenantId, period, date) {
   const db  = getDB(DB_PAYMENTS);
   const idx = db.findIndex(p => p.tenantId === tenantId && p.period === period);
+  if (idx !== -1) {
+    db[idx].paidDate = date;
+    setDB(DB_PAYMENTS, db);
+    autoSync();
+  }
+}
+
+// ===== PAYMENT =====
+function markPayment(tenantId, period, paid) {
+  const db     = getDB(DB_PAYMENTS);
+  let   idx    = db.findIndex(p => p.tenantId === tenantId && p.period === period);
   const tenant = getDB(DB_TENANTS).find(t => t.id === tenantId);
-  const amount = tenant ? totalForTenant(tenant) : 0;
-  const entry  = { tenantId, period, paid, amount, paidDate: paid ? todayStr() : '', payNotes: '' };
-  if (idx !== -1) db[idx] = entry;
-  else db.push(entry);
+  const existing = idx !== -1 ? db[idx] : {};
+  const amount = tenant ? totalForTenant(tenant, existing) : 0;
+  const entry  = {
+    ...existing,
+    tenantId, period, paid, amount,
+    paidDate:  paid ? (existing.paidDate || todayStr()) : '',
+    payNotes:  existing.payNotes || ''
+  };
+  if (idx !== -1) db[idx] = entry; else db.push(entry);
   setDB(DB_PAYMENTS, db);
   renderBills();
   showToast(paid ? 'סומן כשולם ✓' : 'תשלום בוטל', paid ? 'success' : '');
@@ -329,33 +467,116 @@ function closeModal() {
   document.getElementById('editModal').classList.remove('open');
 }
 
+// ===== ADD ITEM ROW =====
 function addItemRow(item) {
-  const seq = ++_itemSeq;
-  const wrap = document.getElementById('itemsWrap');
-  const div = document.createElement('div');
+  const seq   = ++_itemSeq;
+  const wrap  = document.getElementById('itemsWrap');
+  const div   = document.createElement('div');
+  const type  = item && item.type === 'variable' ? 'variable' : 'fixed';
+  const label = item ? (item.label||'') : '';
+  const amt   = item ? (item.amount||'') : '';
+  const bv    = item ? (item.beforeVat||'') : '';
+  const notes = item ? (item.notes||'') : '';
+
   div.id = 'item_' + seq;
-  div.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1.5fr 36px;gap:6px;align-items:center';
+  div.className = 'item-row';
   div.innerHTML = `
-    <input type="text"   placeholder="שם הפריט (לדוגמה: שכירות, חשמל)" value="${item&&item.label?item.label:''}" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px">
-    <input type="number" placeholder="₪ סכום" value="${item&&item.amount?item.amount:''}" min="0" step="0.01" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px">
-    <input type="text"   placeholder="הערה (אופציונלי)" value="${item&&item.notes?item.notes:''}" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px">
-    <button onclick="document.getElementById('item_${seq}').remove()" style="width:32px;height:32px;border:none;background:var(--danger-light);color:var(--danger);border-radius:8px;cursor:pointer;font-size:16px">✕</button>
+    <div class="item-row-top">
+      <div>
+        <label>שם הפריט</label>
+        <input type="text" id="il_${seq}" value="${label}" placeholder="לדוגמה: שכירות, חשמל, מים">
+      </div>
+      <div>
+        <label>₪ כולל מע"מ</label>
+        <input type="number" id="ia_${seq}" value="${amt}" placeholder="0.00" min="0" step="0.01"
+          oninput="syncVat(${seq},'after')">
+      </div>
+      <div>
+        <label>₪ לפני מע"מ</label>
+        <input type="number" id="ib_${seq}" value="${bv}" placeholder="0.00" min="0" step="0.01"
+          oninput="syncVat(${seq},'before')">
+      </div>
+      <button onclick="document.getElementById('item_${seq}').remove()"
+        style="width:32px;height:32px;border:none;background:var(--danger-light);color:var(--danger);border-radius:8px;cursor:pointer;font-size:16px;align-self:end;margin-bottom:0">✕</button>
+    </div>
+    <div class="item-row-bottom">
+      <button id="ityp_${seq}" class="type-toggle ${type}" onclick="toggleItemType(${seq})"
+        data-type="${type}" title="לחץ להחלפת סוג">${type==='fixed'?'📌 קבוע':'📊 משתנה'}</button>
+      <span class="vat-hint" id="ivh_${seq}">${bv?`לפני מע"מ: ₪${bv}`:'מלא כולל מע"מ ← יחושב לפני אוטומטית'}</span>
+      <input type="text" id="in_${seq}" value="${notes}" placeholder="הערה (אופציונלי)"
+        style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12px">
+    </div>
   `;
   wrap.appendChild(div);
 }
 
+// ===== VAT SYNC =====
+function syncVat(seq, changed) {
+  const afterEl  = document.getElementById('ia_' + seq);
+  const beforeEl = document.getElementById('ib_' + seq);
+  const hintEl   = document.getElementById('ivh_' + seq);
+  if (changed === 'after') {
+    const v = parseFloat(afterEl.value);
+    if (!isNaN(v) && v > 0) {
+      const bv = (v / VAT_RATE).toFixed(2);
+      beforeEl.value = bv;
+      hintEl.textContent = `לפני מע"מ: ₪${bv}`;
+    } else {
+      beforeEl.value = '';
+      hintEl.textContent = 'מלא כולל מע"מ ← יחושב לפני אוטומטית';
+    }
+  } else {
+    const v = parseFloat(beforeEl.value);
+    if (!isNaN(v) && v > 0) {
+      const av = (v * VAT_RATE).toFixed(2);
+      afterEl.value = av;
+      hintEl.textContent = `כולל מע"מ: ₪${av}`;
+    } else {
+      afterEl.value = '';
+      hintEl.textContent = 'מלא כולל מע"מ ← יחושב לפני אוטומטית';
+    }
+  }
+}
+
+// ===== TOGGLE ITEM TYPE =====
+function toggleItemType(seq) {
+  const btn = document.getElementById('ityp_' + seq);
+  const cur = btn.dataset.type;
+  const next = cur === 'fixed' ? 'variable' : 'fixed';
+  btn.dataset.type = next;
+  btn.textContent  = next === 'fixed' ? '📌 קבוע' : '📊 משתנה';
+  btn.className    = 'type-toggle ' + next;
+  if (next === 'variable') {
+    document.getElementById('ivh_' + seq).textContent = '⚠️ הסכום יוזן ידנית בכל חודש';
+  }
+}
+
+// ===== SAVE TENANT =====
 function saveTenant() {
   const name = document.getElementById('t_name').value.trim();
   if (!name) { showToast('הכנס שם שוכר', 'error'); return; }
+
   const items = [];
-  document.getElementById('itemsWrap').querySelectorAll('div[id^="item_"]').forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    const label  = inputs[0].value.trim();
-    const amount = parseFloat(inputs[1].value) || 0;
-    const notes  = inputs[2].value.trim();
-    if (label && amount > 0) items.push({ id: nowId(), label, amount, notes });
+  document.getElementById('itemsWrap').querySelectorAll('.item-row').forEach(row => {
+    const seq    = row.id.replace('item_','');
+    const label  = document.getElementById('il_' + seq).value.trim();
+    const amount = parseFloat(document.getElementById('ia_' + seq).value) || 0;
+    const bv     = parseFloat(document.getElementById('ib_' + seq).value) || 0;
+    const notes  = document.getElementById('in_' + seq).value.trim();
+    const typeBtn= document.getElementById('ityp_' + seq);
+    const type   = typeBtn ? typeBtn.dataset.type : 'fixed';
+
+    if (!label) return;
+    // Variable items don't need an amount (it's entered per period)
+    if (type === 'fixed' && amount <= 0) { return; }
+    items.push({ id: nowId(), label, amount, beforeVat: bv, type, notes });
   });
-  if (!items.length) { showToast('הוסף לפחות פריט חיוב אחד', 'error'); return; }
+
+  if (!items.length) {
+    showToast('הוסף לפחות פריט חיוב אחד', 'error');
+    return;
+  }
+
   const db = getDB(DB_TENANTS);
   const tenant = {
     name, items,
@@ -389,7 +610,6 @@ function deleteTenant(id) {
 
 // ===== PRINT =====
 function printBills() {
-  const s = getSettings();
   document.querySelectorAll('.print-doc-header').forEach(el => el.style.display = 'flex');
   window.print();
   document.querySelectorAll('.print-doc-header').forEach(el => el.style.display = 'none');

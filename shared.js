@@ -135,6 +135,10 @@ function backupAll() {
     carsInv:      getDB('pnc_cars_inventory'),
     carsBuys:     getDB('pnc_cars_buys'),
     carsSells:    getDB('pnc_cars_sells'),
+    employees:    getDB('pnc_employees'),
+    salaries:     getDB('pnc_salaries'),
+    customerDebts: getDB('pnc_customer_debts'),
+    supplierDebts: getDB('pnc_supplier_debts'),
     suppliers:    getDB('pnc_suppliers'),
     checks:       getDB('mualem_db_v3') || JSON.parse(localStorage.getItem('mualem_db_v3') || '[]'),
     settings:     getSettings()
@@ -162,7 +166,11 @@ function restoreAll(file) {
       if (data.carsInv)     setDB('pnc_cars_inventory',  data.carsInv);
       if (data.carsBuys)    setDB('pnc_cars_buys',       data.carsBuys);
       if (data.carsSells)   setDB('pnc_cars_sells',      data.carsSells);
-      if (data.suppliers)   setDB('pnc_suppliers',       data.suppliers);
+      if (data.employees)     setDB('pnc_employees',        data.employees);
+      if (data.salaries)      setDB('pnc_salaries',         data.salaries);
+      if (data.customerDebts) setDB('pnc_customer_debts',  data.customerDebts);
+      if (data.supplierDebts) setDB('pnc_supplier_debts',   data.supplierDebts);
+      if (data.suppliers)     setDB('pnc_suppliers',        data.suppliers);
       if (data.checks)      setDB('mualem_db_v3',        data.checks);
       if (data.settings)    saveSettings(data.settings);
       showToast('הנתונים שוחזרו בהצלחה ✓', 'success');
@@ -204,7 +212,11 @@ async function syncPushAll() {
       carsInv:     getDB('pnc_cars_inventory'),
       carsBuys:    getDB('pnc_cars_buys'),
       carsSells:   getDB('pnc_cars_sells'),
-      suppliers:   getDB('pnc_suppliers'),
+      employees:    getDB('pnc_employees'),
+      salaries:     getDB('pnc_salaries'),
+      customerDebts: getDB('pnc_customer_debts'),
+      supplierDebts: getDB('pnc_supplier_debts'),
+      suppliers:    getDB('pnc_suppliers'),
       checks:      (() => { try { return JSON.parse(localStorage.getItem('mualem_db_v3')) || []; } catch { return []; } })()
     }
   };
@@ -240,7 +252,11 @@ async function syncPullAll() {
     if (remote.carsInv)     setDB('pnc_cars_inventory',  remote.carsInv);
     if (remote.carsBuys)    setDB('pnc_cars_buys',       remote.carsBuys);
     if (remote.carsSells)   setDB('pnc_cars_sells',      remote.carsSells);
-    if (remote.suppliers)   setDB('pnc_suppliers',       remote.suppliers);
+    if (remote.employees)     setDB('pnc_employees',        remote.employees);
+    if (remote.salaries)      setDB('pnc_salaries',         remote.salaries);
+    if (remote.customerDebts) setDB('pnc_customer_debts',  remote.customerDebts);
+    if (remote.supplierDebts) setDB('pnc_supplier_debts',   remote.supplierDebts);
+    if (remote.suppliers)     setDB('pnc_suppliers',        remote.suppliers);
     if (remote.checks)      setDB('mualem_db_v3',     remote.checks);
     showToast('נתונים עודכנו מהענן ✓', 'success');
     return true;
@@ -258,7 +274,26 @@ function autoSync() {
 // ===== SERVICE WORKER (PWA) =====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version ready – show update bar
+            const bar = document.createElement('div');
+            bar.innerHTML = `<span>🔄 גרסה חדשה זמינה</span><button onclick="location.reload()" style="margin-right:12px;padding:5px 14px;background:white;color:#1a9e5c;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-family:inherit">רענן עכשיו</button>`;
+            Object.assign(bar.style, {
+              position:'fixed', top:'0', left:'0', right:'0', zIndex:'9999',
+              background:'#1a9e5c', color:'white', padding:'10px 20px',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              gap:'12px', fontSize:'14px', fontWeight:'600', fontFamily:'Heebo,sans-serif'
+            });
+            document.body.prepend(bar);
+          }
+        });
+      });
+    }).catch(() => {});
   });
 }
 

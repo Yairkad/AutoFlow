@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – הוצאות</title>
-  <link rel="stylesheet" href="style.css?v=1.6">
+  <link rel="stylesheet" href="style.css?v=1.7">
   <style>
     @media print {
       .app-header, .main-nav, .search-wrap,
@@ -67,6 +67,9 @@
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
   <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+  
+  <a href="עובדים.html" class="nav-link">👷 <span class="label">עובדים</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
   <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
@@ -130,8 +133,14 @@
           <input type="text" id="f_desc" placeholder="תיאור ההוצאה" oninput="markFilled(this)">
         </div>
         <div class="field">
-          <label>סכום (₪) <span class="required-star">*</span></label>
-          <input type="number" id="f_amount" placeholder="0.00" min="0" step="0.01" oninput="markFilled(this)">
+          <label>לפני מע"מ (₪)</label>
+          <input type="number" id="f_beforeVat" placeholder="0.00" min="0" step="0.01"
+            oninput="markFilled(this); vatSync('before')">
+        </div>
+        <div class="field">
+          <label>סה"כ כולל מע"מ (₪) <span class="required-star">*</span></label>
+          <input type="number" id="f_amount" placeholder="0.00" min="0" step="0.01"
+            oninput="markFilled(this); vatSync('after')">
         </div>
         <div class="field">
           <label>מסמך (שם קובץ)</label>
@@ -488,7 +497,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.6"></script>
+<script src="shared.js?v=1.7"></script>
 <script>
 const DB_KEY = 'pnc_expenses';
 
@@ -544,6 +553,22 @@ function printExpenses() {
   window.print();
 }
 
+// ===== VAT SYNC =====
+const VAT_RATE = 1.17;
+function vatSync(changed) {
+  const before = document.getElementById('f_beforeVat');
+  const after  = document.getElementById('f_amount');
+  if (changed === 'before') {
+    const v = parseFloat(before.value);
+    if (!isNaN(v) && v > 0) { after.value = (v * VAT_RATE).toFixed(2); after.classList.add('filled'); }
+    else after.value = '';
+  } else {
+    const v = parseFloat(after.value);
+    if (!isNaN(v) && v > 0) { before.value = (v / VAT_RATE).toFixed(2); before.classList.add('filled'); }
+    else before.value = '';
+  }
+}
+
 // ===== SAVE =====
 function saveExpense() {
   const date   = document.getElementById('f_date').value.trim();
@@ -560,7 +585,8 @@ function saveExpense() {
     source,
     category: document.getElementById('f_category').value,
     desc:     document.getElementById('f_desc').value.trim(),
-    supplier: document.getElementById('f_supplier').value.trim(),
+    supplier:  document.getElementById('f_supplier').value.trim(),
+    beforeVat: parseFloat(document.getElementById('f_beforeVat').value) || 0,
     amount,
     doc:      document.getElementById('f_doc').value.trim(),
     notes:    document.getElementById('f_notes').value.trim()
@@ -578,7 +604,7 @@ function saveExpense() {
 }
 
 function clearForm() {
-  ['f_date','f_source','f_category','f_desc','f_supplier','f_amount','f_doc','f_notes']
+  ['f_date','f_source','f_category','f_desc','f_supplier','f_beforeVat','f_amount','f_doc','f_notes']
     .forEach(id => { const el = document.getElementById(id); el.value = ''; el.classList.remove('filled'); });
   document.getElementById('f_date').value = todayStr();
   markFilled(document.getElementById('f_date'));
@@ -743,7 +769,7 @@ function exportExpenses() {
 // ===== SUPPLIER LIST =====
 function buildSupplierList() {
   const suppliers = getDB('pnc_suppliers');
-  const html = suppliers.map(s => `<option value="${s.name}">`).join('');
+  const html = suppliers.map(s => `<option value="${s.company || s.name || ''}">`).join('');
   document.getElementById('supplierList').innerHTML = html;
 }
 

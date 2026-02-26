@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – מלאי צמיגים</title>
-  <link rel="stylesheet" href="style.css?v=1.6">
+  <link rel="stylesheet" href="style.css?v=1.7">
   <style>
     .tire-size { font-weight:900; font-size:15px; color:var(--accent); letter-spacing:0.5px; }
     .tire-brand { font-weight:700; }
@@ -54,6 +54,9 @@
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
   <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+  
+  <a href="עובדים.html" class="nav-link">👷 <span class="label">עובדים</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
   <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
@@ -84,7 +87,7 @@
         <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">מידות הצמיג</div>
         <div class="grid-inputs narrow">
           <div class="field">
-            <label>מותג <span class="required-star">*</span></label>
+            <label>מותג</label>
             <input type="text" id="f_brand" list="brandList" placeholder="Michelin, Bridgestone..." oninput="markFilled(this)">
             <datalist id="brandList"></datalist>
           </div>
@@ -131,7 +134,7 @@
       <!-- Pricing & stock -->
       <div class="grid-inputs">
         <div class="field">
-          <label>מחיר קנייה (₪) <span class="required-star">*</span> <small style="font-weight:400;color:var(--text-muted)">לפני מע"מ</small></label>
+          <label>מחיר קנייה (₪) <small style="font-weight:400;color:var(--text-muted)">לפני מע"מ</small></label>
           <input type="number" id="f_costPrice" placeholder="0.00" min="0" step="0.01" oninput="calcTireSell(); updateVat('f_costPrice','f_costVat'); markFilled(this)">
           <small id="f_costVat" style="color:var(--text-muted);font-size:11px;margin-top:2px;display:block"></small>
         </div>
@@ -324,7 +327,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.6"></script>
+<script src="shared.js?v=1.7"></script>
 <script>
 const DB_KEY = 'pnc_tires';
 let editId = null;
@@ -375,9 +378,7 @@ function saveTire() {
   const cost    = parseFloat(document.getElementById('f_costPrice').value);
   const qty     = document.getElementById('f_quantity').value;
 
-  if (!brand)         return showToast('יש להזין מותג', 'error');
   if (!width||!profile||!rim) return showToast('יש להזין מידה מלאה (רוחב/פרופיל/קוטר)', 'error');
-  if (!cost||cost<=0) return showToast('יש להזין מחיר קנייה', 'error');
   if (qty==='')       return showToast('יש להזין כמות', 'error');
 
   const margin    = parseFloat(document.getElementById('f_margin').value)||0;
