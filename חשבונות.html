@@ -1,0 +1,403 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a9e5c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="אוטוליין">
+  <link rel="manifest" href="manifest.json">
+  <title>אוטוליין – חשבונות</title>
+  <link rel="stylesheet" href="style.css?v=1.6">
+  <style>
+    @media print {
+      .app-header, .main-nav, .action-area, #toast, .btn, button, .no-print,
+      #editModal, #confirmOverlay { display:none !important; }
+      body { background:white !important; }
+      .card { box-shadow:none !important; }
+      .print-doc-header { display:flex !important; }
+    }
+    @media screen { .print-doc-header { display:none; } }
+    .print-doc-header {
+      justify-content:space-between; align-items:center;
+      padding:10px 0 12px; margin-bottom:14px; border-bottom:3px solid #000;
+    }
+    .pdh-info h2 { font-size:20px; font-weight:900; margin:0 0 3px; }
+    .pdh-info p  { font-size:12px; color:#555; margin:0; }
+    .pdh-logo img { height:55px; object-fit:contain; }
+
+    .tenant-card {
+      border:2px solid var(--border); border-radius:var(--radius);
+      padding:16px; margin-bottom:14px; background:white;
+    }
+    .tenant-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
+    .tenant-name { font-size:16px; font-weight:900; }
+    .tenant-phone { font-size:13px; color:var(--text-muted); }
+
+    .items-table { width:100%; border-collapse:collapse; margin-bottom:10px; }
+    .items-table th { font-size:12px; color:var(--text-muted); font-weight:600; padding:4px 8px; border-bottom:1px solid var(--border); text-align:right; }
+    .items-table td { padding:7px 8px; font-size:13px; border-bottom:1px solid var(--border); }
+    .items-table tr:last-child td { border-bottom:none; }
+    .items-table .amount-cell { font-weight:700; color:var(--primary); }
+
+    .tenant-total { text-align:left; font-size:15px; font-weight:900; padding:6px 8px; border-top:2px solid var(--border); }
+
+    .bill-period-bar {
+      display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap;
+    }
+
+    .payment-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-radius:8px; margin-top:8px; }
+    .payment-row.paid   { background:#dcfce7; }
+    .payment-row.unpaid { background:#fff7ed; }
+    .paid-badge   { background:#16a34a; color:white; padding:2px 10px; border-radius:10px; font-size:11px; font-weight:700; }
+    .unpaid-badge { background:#d97706; color:white; padding:2px 10px; border-radius:10px; font-size:11px; font-weight:700; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" src="" alt="לוגו">
+    <div class="header-title">
+      <h1>אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+  <div class="page-title">
+    <h2>🧾 חשבונות שוכרים</h2>
+    <div class="action-area">
+      <button class="btn btn-primary" onclick="openAddTenant()">+ הוסף שוכר</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Period selector -->
+  <div class="bill-period-bar no-print">
+    <label style="font-weight:700;font-size:14px">תקופה:</label>
+    <select id="periodSel" class="filter-select" onchange="renderBills()">
+    </select>
+    <button class="btn btn-warning btn-sm" onclick="printBills()">🖨️ הדפס חשבוניות</button>
+  </div>
+
+  <!-- Bills area -->
+  <div id="billsArea"></div>
+
+  <div id="emptyState" class="empty-state" style="display:none">
+    <div class="emoji">🧾</div>
+    <p>לא הוגדרו שוכרים עדיין</p>
+    <button class="btn btn-primary" onclick="openAddTenant()">הוסף שוכר ראשון</button>
+  </div>
+</div>
+
+<!-- Add/Edit Tenant Modal -->
+<div id="editModal" class="modal-overlay">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <h3 id="modalTitle">שוכר חדש</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-inputs">
+        <div class="field">
+          <label>שם השוכר *</label>
+          <input type="text" id="t_name" placeholder="שם מלא" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>טלפון</label>
+          <input type="text" id="t_phone" placeholder="050-0000000" oninput="markFilled(this)">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>הערות</label>
+          <input type="text" id="t_notes" placeholder="פרטים נוספים..." oninput="markFilled(this)">
+        </div>
+      </div>
+
+      <div style="margin-top:18px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;border-bottom:2px solid var(--border);padding-bottom:6px">
+          פריטי חיוב חודשיים
+        </div>
+        <div id="itemsWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+        <button class="btn btn-secondary btn-sm" onclick="addItemRow()">+ הוסף פריט</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveTenant()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <p id="confirmMsg"></p>
+    <div class="confirm-btns">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmYes()">מחק</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="shared.js?v=1.6"></script>
+<script>
+const DB_TENANTS  = 'pnc_tenants';
+const DB_PAYMENTS = 'pnc_payments';
+
+let _editTenantId = null;
+let _itemSeq = 0;
+
+// ===== PERIOD HELPERS =====
+function _monthsBack(n) {
+  const d = new Date();
+  d.setMonth(d.getMonth() - n);
+  return String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+}
+
+function _periodLabel(p) {
+  const [mm,yy] = p.split('/');
+  const names = ['','ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  return (names[parseInt(mm)]||mm) + ' ' + yy;
+}
+
+function buildPeriodList() {
+  const sel = document.getElementById('periodSel');
+  const cur = sel.value || _monthsBack(0);
+  const opts = Array.from({length:13},(_,i)=>_monthsBack(i));
+  sel.innerHTML = opts.map(p=>`<option value="${p}" ${p===cur?'selected':''}>${_periodLabel(p)}</option>`).join('');
+}
+
+// ===== STATS =====
+function renderStats() {
+  const tenants  = getDB(DB_TENANTS);
+  const payments = getDB(DB_PAYMENTS);
+  const period   = document.getElementById('periodSel').value || _monthsBack(0);
+  const periodPmts = payments.filter(p => p.period === period);
+  const totalOwed = tenants.reduce((s,t) => s + totalForTenant(t), 0);
+  const totalPaid = periodPmts.reduce((s,p) => s + (p.paid ? p.amount : 0), 0);
+  const unpaidCount = tenants.filter(t => {
+    const pmt = periodPmts.find(p => p.tenantId === t.id);
+    return !pmt || !pmt.paid;
+  }).length;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${tenants.length}</div><div class="stat-label">שוכרים</div></div>
+    <div class="stat-card blue"><div class="stat-value">₪${totalOwed.toLocaleString('he-IL',{maximumFractionDigits:0})}</div><div class="stat-label">סה"כ לגבייה</div></div>
+    <div class="stat-card"><div class="stat-value">₪${totalPaid.toLocaleString('he-IL',{maximumFractionDigits:0})}</div><div class="stat-label">שולם החודש</div></div>
+    <div class="stat-card ${unpaidCount>0?'danger':''}"><div class="stat-value">${unpaidCount}</div><div class="stat-label">ממתינים לתשלום</div></div>
+  `;
+}
+
+function totalForTenant(t) {
+  return (t.items||[]).reduce((s,item)=>s+(parseFloat(item.amount)||0),0);
+}
+
+// ===== RENDER BILLS =====
+function renderBills() {
+  const tenants  = getDB(DB_TENANTS);
+  const payments = getDB(DB_PAYMENTS);
+  const period   = document.getElementById('periodSel').value || _monthsBack(0);
+  const area     = document.getElementById('billsArea');
+  const empty    = document.getElementById('emptyState');
+
+  renderStats();
+
+  if (!tenants.length) { area.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+
+  area.innerHTML = tenants.map(t => {
+    const total = totalForTenant(t);
+    const pmt   = payments.find(p => p.tenantId === t.id && p.period === period);
+    const paid  = pmt && pmt.paid;
+    const items = (t.items||[]);
+
+    const itemRows = items.map(item=>`
+      <tr>
+        <td>${item.label||'—'}</td>
+        <td class="amount-cell">₪${(parseFloat(item.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+        <td style="color:var(--text-muted);font-size:12px">${item.notes||''}</td>
+      </tr>`).join('');
+
+    return `<div class="tenant-card">
+      <div class="tenant-header">
+        <div>
+          <div class="tenant-name">${t.name}</div>
+          ${t.phone?`<div class="tenant-phone">📞 ${t.phone}</div>`:''}
+          ${t.notes?`<div class="tenant-phone">${t.notes}</div>`:''}
+        </div>
+        <div style="display:flex;gap:8px" class="no-print">
+          <button class="btn btn-secondary btn-sm" onclick="openEditTenant(${t.id})">✏️ ערוך</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTenant(${t.id})">🗑️ מחק</button>
+        </div>
+      </div>
+
+      <div class="print-doc-header" style="display:none;margin-bottom:10px">
+        <div class="pdh-info">
+          <h2>${t.name}</h2>
+          <p>חשבון לתקופה: ${_periodLabel(period)} | ${todayStr()}</p>
+        </div>
+      </div>
+
+      <table class="items-table">
+        <thead><tr><th>פריט</th><th>סכום</th><th>הערה</th></tr></thead>
+        <tbody>${itemRows}</tbody>
+        <tfoot><tr><td colspan="3"><div class="tenant-total">סה"כ לתשלום: ₪${total.toLocaleString('he-IL',{minimumFractionDigits:2})}</div></td></tr></tfoot>
+      </table>
+
+      <div class="payment-row ${paid?'paid':'unpaid'}">
+        <div>
+          <span class="${paid?'paid-badge':'unpaid-badge'}">${paid?'✅ שולם':'⏳ ממתין לתשלום'}</span>
+          ${pmt&&pmt.paidDate?`<span style="font-size:12px;color:var(--text-muted);margin-right:8px">בתאריך ${pmt.paidDate}</span>`:''}
+          ${pmt&&pmt.payNotes?`<span style="font-size:12px;color:var(--text-muted)"> | ${pmt.payNotes}</span>`:''}
+        </div>
+        <div class="no-print">
+          ${paid
+            ? `<button class="btn btn-secondary btn-sm" onclick="markPayment(${t.id},'${period}',false)">↩️ בטל תשלום</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="markPayment(${t.id},'${period}',true)">✅ סמן כשולם</button>`
+          }
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== PAYMENT =====
+function markPayment(tenantId, period, paid) {
+  const db  = getDB(DB_PAYMENTS);
+  const idx = db.findIndex(p => p.tenantId === tenantId && p.period === period);
+  const tenant = getDB(DB_TENANTS).find(t => t.id === tenantId);
+  const amount = tenant ? totalForTenant(tenant) : 0;
+  const entry  = { tenantId, period, paid, amount, paidDate: paid ? todayStr() : '', payNotes: '' };
+  if (idx !== -1) db[idx] = entry;
+  else db.push(entry);
+  setDB(DB_PAYMENTS, db);
+  renderBills();
+  showToast(paid ? 'סומן כשולם ✓' : 'תשלום בוטל', paid ? 'success' : '');
+  autoSync();
+}
+
+// ===== TENANT MODAL =====
+function openAddTenant() {
+  _editTenantId = null;
+  document.getElementById('modalTitle').textContent = 'שוכר חדש';
+  ['t_name','t_phone','t_notes'].forEach(id => { document.getElementById(id).value=''; });
+  document.getElementById('itemsWrap').innerHTML = '';
+  _itemSeq = 0;
+  addItemRow();
+  document.getElementById('editModal').classList.add('open');
+}
+
+function openEditTenant(id) {
+  const t = getDB(DB_TENANTS).find(x => x.id === id);
+  if (!t) return;
+  _editTenantId = id;
+  document.getElementById('modalTitle').textContent = 'עריכת שוכר';
+  document.getElementById('t_name').value  = t.name  || '';
+  document.getElementById('t_phone').value = t.phone || '';
+  document.getElementById('t_notes').value = t.notes || '';
+  const wrap = document.getElementById('itemsWrap');
+  wrap.innerHTML = '';
+  _itemSeq = 0;
+  (t.items||[]).forEach(item => addItemRow(item));
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+}
+
+function addItemRow(item) {
+  const seq = ++_itemSeq;
+  const wrap = document.getElementById('itemsWrap');
+  const div = document.createElement('div');
+  div.id = 'item_' + seq;
+  div.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1.5fr 36px;gap:6px;align-items:center';
+  div.innerHTML = `
+    <input type="text"   placeholder="שם הפריט (לדוגמה: שכירות, חשמל)" value="${item&&item.label?item.label:''}" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px">
+    <input type="number" placeholder="₪ סכום" value="${item&&item.amount?item.amount:''}" min="0" step="0.01" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px">
+    <input type="text"   placeholder="הערה (אופציונלי)" value="${item&&item.notes?item.notes:''}" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px">
+    <button onclick="document.getElementById('item_${seq}').remove()" style="width:32px;height:32px;border:none;background:var(--danger-light);color:var(--danger);border-radius:8px;cursor:pointer;font-size:16px">✕</button>
+  `;
+  wrap.appendChild(div);
+}
+
+function saveTenant() {
+  const name = document.getElementById('t_name').value.trim();
+  if (!name) { showToast('הכנס שם שוכר', 'error'); return; }
+  const items = [];
+  document.getElementById('itemsWrap').querySelectorAll('div[id^="item_"]').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const label  = inputs[0].value.trim();
+    const amount = parseFloat(inputs[1].value) || 0;
+    const notes  = inputs[2].value.trim();
+    if (label && amount > 0) items.push({ id: nowId(), label, amount, notes });
+  });
+  if (!items.length) { showToast('הוסף לפחות פריט חיוב אחד', 'error'); return; }
+  const db = getDB(DB_TENANTS);
+  const tenant = {
+    name, items,
+    phone: document.getElementById('t_phone').value.trim(),
+    notes: document.getElementById('t_notes').value.trim()
+  };
+  if (_editTenantId) {
+    const idx = db.findIndex(x => x.id === _editTenantId);
+    if (idx !== -1) { tenant.id = _editTenantId; db[idx] = tenant; }
+  } else {
+    tenant.id = nowId();
+    db.push(tenant);
+  }
+  setDB(DB_TENANTS, db);
+  closeModal();
+  renderBills();
+  showToast(_editTenantId ? 'שוכר עודכן ✓' : 'שוכר נוסף ✓', 'success');
+  autoSync();
+}
+
+function deleteTenant(id) {
+  const t = getDB(DB_TENANTS).find(x => x.id === id);
+  showConfirm(`למחוק את ${t?t.name:'שוכר זה'}? כל היסטוריית התשלומים תימחק!`, () => {
+    setDB(DB_TENANTS, getDB(DB_TENANTS).filter(x => x.id !== id));
+    setDB(DB_PAYMENTS, getDB(DB_PAYMENTS).filter(p => p.tenantId !== id));
+    renderBills();
+    showToast('שוכר נמחק ✓');
+    autoSync();
+  });
+}
+
+// ===== PRINT =====
+function printBills() {
+  const s = getSettings();
+  document.querySelectorAll('.print-doc-header').forEach(el => el.style.display = 'flex');
+  window.print();
+  document.querySelectorAll('.print-doc-header').forEach(el => el.style.display = 'none');
+}
+
+// ===== INIT =====
+buildPeriodList();
+renderBills();
+</script>
+</body>
+</html>

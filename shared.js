@@ -125,6 +125,16 @@ function backupAll() {
     tires:        getDB('pnc_tires'),
     quotesTires:  getDB('pnc_quotes_tires'),
     quotesParts:  getDB('pnc_quotes_parts'),
+    quotesCars:   getDB('pnc_quotes_cars'),
+    reminders:    getDB('pnc_reminders'),
+    income:       getDB('pnc_income'),
+    recurringInc: getDB('pnc_recurring_income'),
+    recurring:    getDB('pnc_recurring'),
+    tenants:      getDB('pnc_tenants'),
+    payments:     getDB('pnc_payments'),
+    carsInv:      getDB('pnc_cars_inventory'),
+    carsBuys:     getDB('pnc_cars_buys'),
+    carsSells:    getDB('pnc_cars_sells'),
     suppliers:    getDB('pnc_suppliers'),
     checks:       getDB('mualem_db_v3') || JSON.parse(localStorage.getItem('mualem_db_v3') || '[]'),
     settings:     getSettings()
@@ -147,6 +157,11 @@ function restoreAll(file) {
       if (data.tires)       setDB('pnc_tires',           data.tires);
       if (data.quotesTires) setDB('pnc_quotes_tires',   data.quotesTires);
       if (data.quotesParts) setDB('pnc_quotes_parts',   data.quotesParts);
+      if (data.quotesCars)  setDB('pnc_quotes_cars',    data.quotesCars);
+      if (data.reminders)   setDB('pnc_reminders',      data.reminders);
+      if (data.carsInv)     setDB('pnc_cars_inventory',  data.carsInv);
+      if (data.carsBuys)    setDB('pnc_cars_buys',       data.carsBuys);
+      if (data.carsSells)   setDB('pnc_cars_sells',      data.carsSells);
       if (data.suppliers)   setDB('pnc_suppliers',       data.suppliers);
       if (data.checks)      setDB('mualem_db_v3',        data.checks);
       if (data.settings)    saveSettings(data.settings);
@@ -184,6 +199,11 @@ async function syncPushAll() {
       tires:       getDB('pnc_tires'),
       quotesTires: getDB('pnc_quotes_tires'),
       quotesParts: getDB('pnc_quotes_parts'),
+      quotesCars:  getDB('pnc_quotes_cars'),
+      reminders:   getDB('pnc_reminders'),
+      carsInv:     getDB('pnc_cars_inventory'),
+      carsBuys:    getDB('pnc_cars_buys'),
+      carsSells:   getDB('pnc_cars_sells'),
       suppliers:   getDB('pnc_suppliers'),
       checks:      (() => { try { return JSON.parse(localStorage.getItem('mualem_db_v3')) || []; } catch { return []; } })()
     }
@@ -215,7 +235,12 @@ async function syncPullAll() {
     if (remote.tires)       setDB('pnc_tires',        remote.tires);
     if (remote.quotesTires) setDB('pnc_quotes_tires', remote.quotesTires);
     if (remote.quotesParts) setDB('pnc_quotes_parts', remote.quotesParts);
-    if (remote.suppliers)   setDB('pnc_suppliers',    remote.suppliers);
+    if (remote.quotesCars)  setDB('pnc_quotes_cars',  remote.quotesCars);
+    if (remote.reminders)   setDB('pnc_reminders',       remote.reminders);
+    if (remote.carsInv)     setDB('pnc_cars_inventory',  remote.carsInv);
+    if (remote.carsBuys)    setDB('pnc_cars_buys',       remote.carsBuys);
+    if (remote.carsSells)   setDB('pnc_cars_sells',      remote.carsSells);
+    if (remote.suppliers)   setDB('pnc_suppliers',       remote.suppliers);
     if (remote.checks)      setDB('mualem_db_v3',     remote.checks);
     showToast('נתונים עודכנו מהענן ✓', 'success');
     return true;
@@ -278,8 +303,9 @@ if ('serviceWorker' in navigator) {
     function tryConfirm() {
       const s = getSettings();
       if (input.value === String(s.adminPin || '')) {
+        const cb = window._pinCb;
         closePin();
-        if (window._pinCb) window._pinCb();
+        if (cb) cb();
       } else {
         errorEl.textContent = 'קוד שגוי – נסה שוב';
         input.style.borderColor = '#dc2626';

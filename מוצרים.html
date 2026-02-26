@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – מלאי מוצרים</title>
-  <link rel="stylesheet" href="style.css?v=1.2">
+  <link rel="stylesheet" href="style.css?v=1.6">
   <style>
     @media print {
       .app-header, .main-nav, .search-wrap,
@@ -20,6 +20,7 @@
       .card { box-shadow: none !important; margin: 0 !important; }
       .print-doc-header { display: flex !important; }
       td:last-child, th:last-child { display: none; }
+      body.print-customer .internal-col { display: none !important; }
     }
     @media screen { .print-doc-header { display: none; } }
     .print-doc-header {
@@ -47,11 +48,14 @@
 <nav class="main-nav">
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
   <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
 </nav>
 
@@ -147,7 +151,8 @@
         <h3>רשימת מוצרים</h3>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-warning btn-sm" onclick="printProducts()">🖨️ הדפס</button>
+        <button class="btn btn-warning btn-sm" onclick="printProducts()">🖨️ הדפס פנימי</button>
+        <button class="btn btn-warning btn-sm" onclick="printCustomerPriceList()">🖨️ מחירון ללקוח</button>
         <button class="btn btn-secondary btn-sm" onclick="exportProducts()">📊 ייצא Excel</button>
         <label class="btn btn-secondary btn-sm" style="cursor:pointer">
           📥 ייבא Excel <input type="file" accept=".xlsx,.xls" style="display:none" onchange="importProducts(this)">
@@ -172,13 +177,13 @@
             <th>שם מוצר</th>
             <th>קטגוריה</th>
             <th>יחידה</th>
-            <th>מחיר קנייה</th>
+            <th class="internal-col">מחיר קנייה</th>
             <th>מחיר מכירה</th>
-            <th>% רווח</th>
-            <th>כמות</th>
+            <th class="internal-col">% רווח</th>
+            <th class="internal-col">כמות</th>
             <th class="no-print">מכר החודש</th>
-            <th>מינימום</th>
-            <th>ספק</th>
+            <th class="internal-col">מינימום</th>
+            <th class="internal-col">ספק</th>
             <th>הערות</th>
             <th></th>
           </tr>
@@ -291,7 +296,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.2"></script>
+<script src="shared.js?v=1.6"></script>
 <script>
 const DB_KEY = 'pnc_products';
 let editId = null;
@@ -450,13 +455,13 @@ function renderTable() {
       <td style="font-weight:700">${p.name}</td>
       <td>${p.category||'—'}</td>
       <td>${p.unit||'יח׳'}</td>
-      <td>${p.costPrice?`₪${p.costPrice.toLocaleString('he-IL',{minimumFractionDigits:2})}<br><small style="color:var(--text-muted)">${(p.costPrice*1.18).toLocaleString('he-IL',{minimumFractionDigits:2})} עם מע"מ</small>`:'—'}</td>
+      <td class="internal-col">${p.costPrice?`₪${p.costPrice.toLocaleString('he-IL',{minimumFractionDigits:2})}<br><small style="color:var(--text-muted)">${(p.costPrice*1.18).toLocaleString('he-IL',{minimumFractionDigits:2})} עם מע"מ</small>`:'—'}</td>
       <td style="font-weight:700;color:var(--primary)">${p.sellPrice?'₪'+p.sellPrice.toLocaleString('he-IL',{minimumFractionDigits:2}):'—'}</td>
-      <td>${marginPct}</td>
-      <td>${qtyBadge}</td>
+      <td class="internal-col">${marginPct}</td>
+      <td class="internal-col">${qtyBadge}</td>
       <td class="no-print">${soldBadge}</td>
-      <td>${minQty||'—'}</td>
-      <td>${p.supplier||'—'}</td>
+      <td class="internal-col">${minQty||'—'}</td>
+      <td class="internal-col">${p.supplier||'—'}</td>
       <td style="color:var(--text-muted)">${p.notes||'—'}</td>
       <td style="white-space:nowrap">
         <button class="btn-icon" title="עדכן כמות" onclick="openStockUpdate(${p.id})">🔢</button>
@@ -600,6 +605,18 @@ function deleteProduct(id) {
 }
 
 // ===== PRINT =====
+function printCustomerPriceList() {
+  const s = getSettings();
+  document.getElementById('pdh_title').textContent = 'מחירון מוצרים – ' + (s.businessName || 'אוטוליין');
+  document.getElementById('pdh_sub').textContent   = todayStr() + ' | המחירים כוללים מע"מ ועשויים להשתנות';
+  const logo = document.getElementById('pdh_logo');
+  if (s.logoBase64) { logo.src = s.logoBase64; logo.style.display = ''; }
+  else { logo.style.display = 'none'; }
+  document.body.classList.add('print-customer');
+  window.print();
+  document.body.classList.remove('print-customer');
+}
+
 function printProducts() {
   const s = getSettings();
   const cat = document.getElementById('filterCat').value;

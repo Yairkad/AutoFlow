@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – ספקים</title>
-  <link rel="stylesheet" href="style.css?v=1.2">
+  <link rel="stylesheet" href="style.css?v=1.6">
   <style>
     .debt-positive { color:var(--danger); font-weight:700; }
     .debt-negative { color:var(--primary); font-weight:700; }
@@ -51,11 +51,14 @@
 <nav class="main-nav">
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
   <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
 </nav>
 
@@ -213,7 +216,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.2"></script>
+<script src="shared.js?v=1.6"></script>
 <script>
 const DB_KEY = 'pnc_suppliers';
 let editId = null;

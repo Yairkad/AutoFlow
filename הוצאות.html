@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – הוצאות</title>
-  <link rel="stylesheet" href="style.css?v=1.2">
+  <link rel="stylesheet" href="style.css?v=1.6">
   <style>
     @media print {
       .app-header, .main-nav, .search-wrap,
@@ -33,6 +33,22 @@
     .pdh-info h2 { font-size: 20px; font-weight: 900; margin: 0 0 3px; }
     .pdh-info p  { font-size: 12px; color: #555; margin: 0; }
     .pdh-logo img { height: 55px; object-fit: contain; }
+
+    .tab-bar { display:flex; gap:0; margin-bottom:20px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); background:white; }
+    .tab-btn { flex:1; padding:12px 10px; border:none; background:transparent; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s,color .15s; color:var(--text-muted); font-family:inherit; }
+    .tab-btn.active { background:var(--primary); color:white; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    .pl-table { width:100%; border-collapse:collapse; }
+    .pl-table th { background:var(--bg); font-size:12px; color:var(--text-muted); padding:8px 12px; border-bottom:2px solid var(--border); text-align:right; }
+    .pl-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid var(--border); }
+    .pl-table tr:last-child td { border-bottom:none; }
+    .pl-table .income-col  { color:var(--primary); font-weight:700; }
+    .pl-table .expense-col { color:var(--danger);  font-weight:700; }
+    .pl-table .profit-pos  { color:var(--primary); font-weight:900; }
+    .pl-table .profit-neg  { color:var(--danger);  font-weight:900; }
+    .pl-table .total-row td { background:var(--bg); font-weight:900; font-size:14px; border-top:2px solid var(--border); }
   </style>
 </head>
 <body>
@@ -50,19 +66,32 @@
 <nav class="main-nav">
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
   <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
 </nav>
 
 <div class="container">
-  <div class="page-title"><span class="icon">💰</span> הוצאות</div>
+  <div class="page-title"><span class="icon">💰</span> הוצאות והכנסות</div>
 
   <!-- Stats -->
   <div class="stats-row" id="statsRow"></div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('expenses')">💸 הוצאות</button>
+    <button class="tab-btn"        onclick="switchTab('income')">📈 הכנסות</button>
+    <button class="tab-btn"        onclick="switchTab('summary')">📊 סיכום חודשי</button>
+  </div>
+
+  <!-- ===== TAB: EXPENSES ===== -->
+  <div id="tab-expenses" class="tab-content active">
 
   <!-- Form -->
   <div class="card no-print">
@@ -93,7 +122,8 @@
         </div>
         <div class="field">
           <label>ספק / חנות</label>
-          <input type="text" id="f_supplier" placeholder="שם הספק" oninput="markFilled(this)">
+          <input type="text" id="f_supplier" list="supplierList" placeholder="הקלד או בחר ספק..." oninput="markFilled(this)">
+          <datalist id="supplierList"></datalist>
         </div>
         <div class="field">
           <label>תיאור</label>
@@ -116,6 +146,67 @@
     <div class="action-area">
       <button class="btn btn-primary" onclick="saveExpense()">💾 שמור הוצאה</button>
       <button class="btn btn-secondary" onclick="clearForm()">🗑 נקה</button>
+    </div>
+  </div>
+
+  <!-- Recurring Expenses -->
+  <div class="card no-print">
+    <div class="card-header" onclick="toggleRecurringPanel()" style="cursor:pointer;user-select:none">
+      <div class="card-header-left">
+        <div class="icon orange">🔄</div>
+        <h3>הוצאות קבועות</h3>
+      </div>
+      <span id="recurringToggleIcon" style="font-size:18px;color:var(--text-muted)">▼</span>
+    </div>
+    <div id="recurringPanel" style="display:none">
+      <div class="card-body" style="padding-bottom:6px">
+        <div class="grid-inputs" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+          <div class="field">
+            <label>שם</label>
+            <input type="text" id="rc_name" placeholder="לדוגמה: שכירות" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>קטגוריה</label>
+            <input type="text" id="rc_cat" list="catList" placeholder="קטגוריה" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>מקור</label>
+            <select id="rc_source" oninput="markFilled(this)">
+              <option value="office">משרד</option>
+              <option value="garage">פנצריה</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>ספק</label>
+            <input type="text" id="rc_supplier" list="supplierList" placeholder="ספק" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>סכום (₪)</label>
+            <input type="number" id="rc_amount" placeholder="0.00" min="0" step="0.01" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>תדירות</label>
+            <select id="rc_freq" oninput="markFilled(this)">
+              <option value="monthly">חודשי</option>
+              <option value="bimonthly">דו-חודשי</option>
+              <option value="quarterly">רבעוני</option>
+              <option value="yearly">שנתי</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addRecurring()">+ הוסף הוצאה קבועה</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="data-table" id="recurringTable">
+          <thead><tr>
+            <th>שם</th><th>קטגוריה</th><th>מקור</th><th>ספק</th><th>סכום</th><th>תדירות</th><th>עדכון אחרון</th><th></th>
+          </tr></thead>
+          <tbody id="recurringBody"></tbody>
+        </table>
+      </div>
+      <div id="recurringEmpty" class="empty-state" style="display:none;padding:20px">
+        <p>לא הוגדרו הוצאות קבועות</p>
+      </div>
     </div>
   </div>
 
@@ -177,6 +268,173 @@
       <p>אין הוצאות רשומות עדיין</p>
     </div>
   </div>
+
+  </div><!-- end tab-expenses -->
+
+  <!-- ===== TAB: INCOME ===== -->
+  <div id="tab-income" class="tab-content">
+
+  <!-- Income Form -->
+  <div class="card no-print">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="icon green">➕</div>
+        <h3>הוספת הכנסה</h3>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="grid-inputs">
+        <div class="field">
+          <label>תאריך <span class="required-star">*</span></label>
+          <input type="text" id="inc_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>קטגוריה</label>
+          <input type="text" id="inc_cat" list="incCatList" placeholder="סליקה, שכירות, מכירות..." oninput="markFilled(this)">
+          <datalist id="incCatList">
+            <option value="סליקה כרטיסי אשראי">
+            <option value="שכירות שהתקבלה">
+            <option value="מכירות מזומן">
+            <option value="חשבון בנק">
+            <option value="אחר">
+          </datalist>
+        </div>
+        <div class="field">
+          <label>תיאור</label>
+          <input type="text" id="inc_desc" placeholder="תיאור ההכנסה" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>סכום (₪) <span class="required-star">*</span></label>
+          <input type="number" id="inc_amount" placeholder="0.00" min="0" step="0.01" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>מסמך</label>
+          <input type="text" id="inc_doc" placeholder="שם קובץ..." oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>הערות</label>
+          <input type="text" id="inc_notes" placeholder="הערה חופשית" oninput="markFilled(this)">
+        </div>
+      </div>
+    </div>
+    <div class="action-area">
+      <button class="btn btn-primary" onclick="saveIncome()">💾 שמור הכנסה</button>
+      <button class="btn btn-secondary" onclick="clearIncomeForm()">🗑 נקה</button>
+    </div>
+  </div>
+
+  <!-- Recurring Income -->
+  <div class="card no-print">
+    <div class="card-header" onclick="toggleIncRecurringPanel()" style="cursor:pointer;user-select:none">
+      <div class="card-header-left">
+        <div class="icon green">🔄</div>
+        <h3>הכנסות קבועות</h3>
+      </div>
+      <span id="incRecurringToggleIcon" style="font-size:18px;color:var(--text-muted)">▼</span>
+    </div>
+    <div id="incRecurringPanel" style="display:none">
+      <div class="card-body" style="padding-bottom:6px">
+        <div class="grid-inputs" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+          <div class="field">
+            <label>שם</label>
+            <input type="text" id="irc_name" placeholder="לדוגמה: סליקה" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>קטגוריה</label>
+            <input type="text" id="irc_cat" list="incCatList" placeholder="קטגוריה" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>סכום (₪)</label>
+            <input type="number" id="irc_amount" placeholder="0.00" min="0" step="0.01" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>תדירות</label>
+            <select id="irc_freq" oninput="markFilled(this)">
+              <option value="monthly">חודשי</option>
+              <option value="bimonthly">דו-חודשי</option>
+              <option value="quarterly">רבעוני</option>
+              <option value="yearly">שנתי</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>תיאור</label>
+            <input type="text" id="irc_desc" placeholder="פירוט נוסף..." oninput="markFilled(this)">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addIncRecurring()">+ הוסף הכנסה קבועה</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead><tr><th>שם</th><th>קטגוריה</th><th>סכום</th><th>תדירות</th><th>עדכון אחרון</th><th></th></tr></thead>
+          <tbody id="incRecurringBody"></tbody>
+        </table>
+      </div>
+      <div id="incRecurringEmpty" class="empty-state" style="display:none;padding:20px">
+        <p>לא הוגדרו הכנסות קבועות</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Income History -->
+  <div class="card">
+    <div class="card-header no-print">
+      <div class="card-header-left">
+        <div class="icon green">📋</div>
+        <h3>היסטוריית הכנסות</h3>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="exportIncome()">📊 ייצא Excel</button>
+      </div>
+    </div>
+    <div class="search-wrap no-print">
+      <input type="text" class="search-input" id="incSearchInput" placeholder="🔍 חיפוש..." oninput="renderIncomeTable()">
+      <select class="filter-select" id="incFilterMonth" onchange="renderIncomeTable()">
+        <option value="">כל החודשים</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>תאריך</th><th>קטגוריה</th><th>תיאור</th><th>סכום</th><th>מסמך</th><th>הערות</th><th></th>
+        </tr></thead>
+        <tbody id="incTableBody"></tbody>
+      </table>
+    </div>
+    <div id="incEmptyState" class="empty-state" style="display:none">
+      <div class="emoji">📈</div>
+      <p>אין הכנסות רשומות עדיין</p>
+    </div>
+  </div>
+
+  </div><!-- end tab-income -->
+
+  <!-- ===== TAB: SUMMARY ===== -->
+  <div id="tab-summary" class="tab-content">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="icon blue">📊</div>
+        <h3>סיכום חודשי – רווח/הפסד</h3>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="pl-table" id="plTable">
+        <thead><tr>
+          <th>חודש</th>
+          <th>הכנסות</th>
+          <th>הוצאות</th>
+          <th>רווח / הפסד</th>
+        </tr></thead>
+        <tbody id="plBody"></tbody>
+      </table>
+    </div>
+    <div id="plEmpty" class="empty-state" style="display:none">
+      <div class="emoji">📊</div>
+      <p>אין נתונים לסיכום עדיין</p>
+    </div>
+  </div>
+  </div><!-- end tab-summary -->
+
 </div>
 
 <!-- Edit Modal -->
@@ -201,7 +459,7 @@
           <input type="text" id="e_category" list="editCatList" oninput="markFilled(this)">
           <datalist id="editCatList"></datalist>
         </div>
-        <div class="field"><label>ספק</label><input type="text" id="e_supplier" oninput="markFilled(this)"></div>
+        <div class="field"><label>ספק</label><input type="text" id="e_supplier" list="supplierList" oninput="markFilled(this)"></div>
         <div class="field"><label>תיאור</label><input type="text" id="e_desc" oninput="markFilled(this)"></div>
         <div class="field"><label>סכום (₪)</label><input type="number" id="e_amount" oninput="markFilled(this)"></div>
         <div class="field"><label>מסמך</label><input type="text" id="e_doc" oninput="markFilled(this)"></div>
@@ -230,7 +488,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.2"></script>
+<script src="shared.js?v=1.6"></script>
 <script>
 const DB_KEY = 'pnc_expenses';
 
@@ -241,9 +499,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('f_date').value = todayStr();
   markFilled(document.getElementById('f_date'));
   buildCatList();
+  buildSupplierList();
   buildMonthFilter();
   renderStats();
   renderTable();
+  renderRecurring();
+  applyRecurring();
+  document.getElementById('inc_date').value = todayStr();
+  markFilled(document.getElementById('inc_date'));
+  buildIncMonthFilter();
+  renderIncomeTable();
+  renderIncRecurring();
+  applyIncRecurring();
 });
 
 function buildCatList() {
@@ -473,6 +740,120 @@ function exportExpenses() {
   exportToExcel([headers, ...rows], 'הוצאות-אוטוליין', 'הוצאות');
 }
 
+// ===== SUPPLIER LIST =====
+function buildSupplierList() {
+  const suppliers = getDB('pnc_suppliers');
+  const html = suppliers.map(s => `<option value="${s.name}">`).join('');
+  document.getElementById('supplierList').innerHTML = html;
+}
+
+// ===== RECURRING EXPENSES =====
+const RC_KEY = 'pnc_recurring';
+const FREQ_LABEL = { monthly:'חודשי', bimonthly:'דו-חודשי', quarterly:'רבעוני', yearly:'שנתי' };
+const SOURCE_LBL  = { office:'משרד', garage:'פנצריה' };
+
+function toggleRecurringPanel() {
+  const panel = document.getElementById('recurringPanel');
+  const icon  = document.getElementById('recurringToggleIcon');
+  const open  = panel.style.display === '';
+  panel.style.display = open ? 'none' : '';
+  icon.textContent = open ? '▼' : '▲';
+}
+
+function addRecurring() {
+  const name = document.getElementById('rc_name').value.trim();
+  const amount = parseFloat(document.getElementById('rc_amount').value);
+  if (!name)        return showToast('הכנס שם להוצאה', 'error');
+  if (!amount || amount <= 0) return showToast('הכנס סכום תקין', 'error');
+  const db = getDB(RC_KEY);
+  db.push({
+    id:       nowId(),
+    name,
+    category: document.getElementById('rc_cat').value.trim(),
+    source:   document.getElementById('rc_source').value,
+    supplier: document.getElementById('rc_supplier').value.trim(),
+    amount,
+    freq:     document.getElementById('rc_freq').value,
+    lastApplied: ''
+  });
+  setDB(RC_KEY, db);
+  ['rc_name','rc_cat','rc_supplier','rc_amount'].forEach(id => {
+    const el = document.getElementById(id); el.value = ''; el.classList.remove('filled');
+  });
+  renderRecurring();
+  showToast('הוצאה קבועה נוספה ✓', 'success');
+}
+
+function deleteRecurring(id) {
+  showConfirm('למחוק הוצאה קבועה זו?', () => {
+    setDB(RC_KEY, getDB(RC_KEY).filter(r => r.id !== id));
+    renderRecurring();
+    showToast('נמחק ✓');
+  });
+}
+
+function renderRecurring() {
+  const db    = getDB(RC_KEY);
+  const tbody = document.getElementById('recurringBody');
+  const empty = document.getElementById('recurringEmpty');
+  if (!db.length) { tbody.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = db.map(r => `<tr>
+    <td style="font-weight:700">${r.name}</td>
+    <td>${r.category||'—'}</td>
+    <td><span class="badge ${r.source==='office'?'badge-blue':'badge-orange'}">${SOURCE_LBL[r.source]||r.source}</span></td>
+    <td>${r.supplier||'—'}</td>
+    <td style="font-weight:700;color:var(--danger)">₪${(r.amount||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+    <td>${FREQ_LABEL[r.freq]||r.freq}</td>
+    <td style="color:var(--text-muted)">${r.lastApplied||'טרם הופעל'}</td>
+    <td><button class="btn-icon" onclick="deleteRecurring(${r.id})">🗑️</button></td>
+  </tr>`).join('');
+}
+
+function _currentPeriod(freq) {
+  const d = new Date();
+  const m = d.getMonth() + 1;
+  const y = d.getFullYear();
+  if (freq === 'monthly')   return String(m).padStart(2,'0') + '/' + y;
+  if (freq === 'bimonthly') { const p = Math.ceil(m / 2); const m1=(p*2-1),m2=p*2; return String(m1).padStart(2,'0')+'-'+String(m2).padStart(2,'0')+'/'+y; }
+  if (freq === 'quarterly') { const q = Math.ceil(m / 3); const m1=(q*3-2),m3=q*3; return String(m1).padStart(2,'0')+'-'+String(m3).padStart(2,'0')+'/'+y; }
+  if (freq === 'yearly')    return '01-12/' + y;
+  return '';
+}
+
+function applyRecurring() {
+  const rcDb = getDB(RC_KEY);
+  if (!rcDb.length) return;
+  const expenses = getDB(DB_KEY);
+  let added = 0;
+  const today = todayStr();
+  rcDb.forEach(r => {
+    const period = _currentPeriod(r.freq);
+    if (r.lastApplied === period) return;  // already applied this period
+    expenses.unshift({
+      id:       nowId() + added,
+      date:     today,
+      source:   r.source,
+      category: r.category,
+      desc:     r.name + ' (אוטומטי)',
+      supplier: r.supplier,
+      amount:   r.amount,
+      doc:      '',
+      notes:    'הוצאה קבועה – ' + FREQ_LABEL[r.freq]
+    });
+    r.lastApplied = period;
+    added++;
+  });
+  if (added > 0) {
+    setDB(DB_KEY, expenses);
+    setDB(RC_KEY, rcDb);
+    renderStats();
+    renderTable();
+    buildMonthFilter();
+    showToast(`${added} הוצאות קבועות נוספו אוטומטית ✓`, 'success');
+  }
+}
+
 // ===== IMPORT =====
 function importExpenses(input) {
   const file = input.files[0];
@@ -505,6 +886,244 @@ function importExpenses(input) {
   });
   input.value = '';
 }
+
+// ===== TABS =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', ['expenses','income','summary'][i] === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'summary') renderPL();
+}
+
+// ===== INCOME DB =====
+const INC_KEY     = 'pnc_income';
+const IRC_KEY     = 'pnc_recurring_income';
+
+// ===== INCOME FORM =====
+function clearIncomeForm() {
+  ['inc_date','inc_cat','inc_desc','inc_amount','inc_doc','inc_notes'].forEach(id => {
+    const el = document.getElementById(id); el.value = ''; el.classList.remove('filled');
+  });
+  document.getElementById('inc_date').value = todayStr();
+  markFilled(document.getElementById('inc_date'));
+}
+
+function saveIncome() {
+  const date   = document.getElementById('inc_date').value.trim();
+  const amount = parseFloat(document.getElementById('inc_amount').value);
+  if (!date)            return showToast('יש להזין תאריך', 'error');
+  if (!amount || amount <= 0) return showToast('יש להזין סכום תקין', 'error');
+  const db = getDB(INC_KEY);
+  db.unshift({
+    id:     nowId(),
+    date,
+    cat:    document.getElementById('inc_cat').value.trim(),
+    desc:   document.getElementById('inc_desc').value.trim(),
+    amount,
+    doc:    document.getElementById('inc_doc').value.trim(),
+    notes:  document.getElementById('inc_notes').value.trim()
+  });
+  setDB(INC_KEY, db);
+  clearIncomeForm();
+  buildIncMonthFilter();
+  renderIncomeTable();
+  renderStats();
+  showToast('ההכנסה נשמרה ✓', 'success');
+  autoSync();
+}
+
+function deleteIncome(id) {
+  showConfirm('למחוק הכנסה זו?', () => {
+    setDB(INC_KEY, getDB(INC_KEY).filter(x => x.id !== id));
+    renderIncomeTable();
+    renderStats();
+    showToast('נמחק ✓');
+    autoSync();
+  });
+}
+
+// ===== INCOME TABLE =====
+function buildIncMonthFilter() {
+  const db = getDB(INC_KEY);
+  const months = [...new Set(db.map(e => {
+    const p=(e.date||'').split('/'); return p.length===3 ? p[1]+'/'+p[2] : '';
+  }).filter(Boolean))].sort().reverse();
+  const sel = document.getElementById('incFilterMonth');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">כל החודשים</option>' + months.map(m => {
+    const [mm,yyyy]=m.split('/');
+    const names=['','ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+    return `<option value="${m}" ${cur===m?'selected':''}>${names[parseInt(mm)]} ${yyyy}</option>`;
+  }).join('');
+}
+
+function renderIncomeTable() {
+  const db     = getDB(INC_KEY);
+  const search = document.getElementById('incSearchInput').value.toLowerCase();
+  const monthF = document.getElementById('incFilterMonth').value;
+  const filtered = db.filter(e => {
+    if (monthF) { const p=(e.date||'').split('/'); if(p.length!==3||p[1]+'/'+p[2]!==monthF) return false; }
+    if (search) { const hay=[e.cat||'',e.desc||'',e.notes||''].join(' ').toLowerCase(); if(!hay.includes(search)) return false; }
+    return true;
+  });
+  const body  = document.getElementById('incTableBody');
+  const empty = document.getElementById('incEmptyState');
+  if (!filtered.length) { body.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display='none';
+  body.innerHTML = filtered.map(e => `<tr>
+    <td>${e.date||'—'}</td>
+    <td>${e.cat||'—'}</td>
+    <td>${e.desc||'—'}</td>
+    <td style="font-weight:700;color:var(--primary)">₪${(parseFloat(e.amount)||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+    <td>${e.doc?`<span class="badge badge-gray" title="${e.doc}">📎 ${e.doc.length>18?e.doc.slice(0,16)+'…':e.doc}</span>`:'—'}</td>
+    <td style="color:var(--text-muted)">${e.notes||'—'}</td>
+    <td><button class="btn-icon" title="מחק" onclick="deleteIncome(${e.id})">🗑️</button></td>
+  </tr>`).join('');
+}
+
+function exportIncome() {
+  const db = getDB(INC_KEY);
+  if (!db.length) return showToast('אין נתונים לייצוא', 'error');
+  exportToExcel([['תאריך','קטגוריה','תיאור','סכום','מסמך','הערות'],...db.map(e=>[e.date,e.cat,e.desc,e.amount,e.doc,e.notes])],'הכנסות-אוטוליין','הכנסות');
+}
+
+// ===== RECURRING INCOME =====
+function toggleIncRecurringPanel() {
+  const panel = document.getElementById('incRecurringPanel');
+  const icon  = document.getElementById('incRecurringToggleIcon');
+  const open  = panel.style.display === '';
+  panel.style.display = open ? 'none' : '';
+  icon.textContent = open ? '▼' : '▲';
+}
+
+function addIncRecurring() {
+  const name   = document.getElementById('irc_name').value.trim();
+  const amount = parseFloat(document.getElementById('irc_amount').value);
+  if (!name)   return showToast('הכנס שם להכנסה', 'error');
+  if (!amount || amount <= 0) return showToast('הכנס סכום תקין', 'error');
+  const db = getDB(IRC_KEY);
+  db.push({ id:nowId(), name, cat:document.getElementById('irc_cat').value.trim(), desc:document.getElementById('irc_desc').value.trim(), amount, freq:document.getElementById('irc_freq').value, lastApplied:'' });
+  setDB(IRC_KEY, db);
+  ['irc_name','irc_cat','irc_amount','irc_desc'].forEach(id => { const el=document.getElementById(id); el.value=''; el.classList.remove('filled'); });
+  renderIncRecurring();
+  showToast('הכנסה קבועה נוספה ✓', 'success');
+}
+
+function deleteIncRecurring(id) {
+  showConfirm('למחוק הכנסה קבועה זו?', () => {
+    setDB(IRC_KEY, getDB(IRC_KEY).filter(r => r.id !== id));
+    renderIncRecurring();
+    showToast('נמחק ✓');
+  });
+}
+
+function renderIncRecurring() {
+  const db    = getDB(IRC_KEY);
+  const tbody = document.getElementById('incRecurringBody');
+  const empty = document.getElementById('incRecurringEmpty');
+  if (!db.length) { tbody.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display='none';
+  tbody.innerHTML = db.map(r=>`<tr>
+    <td style="font-weight:700">${r.name}</td>
+    <td>${r.cat||'—'}</td>
+    <td style="font-weight:700;color:var(--primary)">₪${(r.amount||0).toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+    <td>${FREQ_LABEL[r.freq]||r.freq}</td>
+    <td style="color:var(--text-muted)">${r.lastApplied||'טרם הופעל'}</td>
+    <td><button class="btn-icon" onclick="deleteIncRecurring(${r.id})">🗑️</button></td>
+  </tr>`).join('');
+}
+
+function applyIncRecurring() {
+  const rcDb = getDB(IRC_KEY);
+  if (!rcDb.length) return;
+  const incDb = getDB(INC_KEY);
+  let added = 0;
+  const today = todayStr();
+  rcDb.forEach(r => {
+    const period = _currentPeriod(r.freq);
+    if (r.lastApplied === period) return;
+    incDb.unshift({ id:nowId()+added, date:today, cat:r.cat, desc:r.name+' (אוטומטי)', amount:r.amount, doc:'', notes:'הכנסה קבועה – '+FREQ_LABEL[r.freq] });
+    r.lastApplied = period;
+    added++;
+  });
+  if (added > 0) {
+    setDB(INC_KEY, incDb);
+    setDB(IRC_KEY, rcDb);
+    renderIncomeTable();
+    buildIncMonthFilter();
+    renderStats();
+    showToast(`${added} הכנסות קבועות נוספו אוטומטית ✓`, 'success');
+  }
+}
+
+// ===== P&L SUMMARY =====
+function renderPL() {
+  const expenses = getDB(DB_KEY);
+  const income   = getDB(INC_KEY);
+  const names    = ['','ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+  // Collect all periods
+  const periods = new Set();
+  [...expenses,...income].forEach(e => {
+    const p=(e.date||'').split('/');
+    if(p.length===3) periods.add(p[1]+'/'+p[2]);
+  });
+  const sorted = [...periods].sort().reverse();
+
+  const body  = document.getElementById('plBody');
+  const empty = document.getElementById('plEmpty');
+  if (!sorted.length) { body.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display='none';
+
+  let totalInc=0, totalExp=0;
+  const rows = sorted.map(period => {
+    const [mm,yy] = period.split('/');
+    const label   = (names[parseInt(mm)]||mm) + ' ' + yy;
+    const inc = income.filter(e=>{const p=(e.date||'').split('/');return p.length===3&&p[1]+'/'+p[2]===period;}).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+    const exp = expenses.filter(e=>{const p=(e.date||'').split('/');return p.length===3&&p[1]+'/'+p[2]===period;}).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+    const profit = inc - exp;
+    totalInc+=inc; totalExp+=exp;
+    return `<tr>
+      <td style="font-weight:700">${label}</td>
+      <td class="income-col">₪${inc.toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+      <td class="expense-col">₪${exp.toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+      <td class="${profit>=0?'profit-pos':'profit-neg'}">${profit>=0?'+':''}₪${profit.toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+    </tr>`;
+  });
+
+  const totalProfit = totalInc - totalExp;
+  rows.push(`<tr class="total-row">
+    <td>סה"כ</td>
+    <td class="income-col">₪${totalInc.toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+    <td class="expense-col">₪${totalExp.toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+    <td class="${totalProfit>=0?'profit-pos':'profit-neg'}">${totalProfit>=0?'+':''}₪${totalProfit.toLocaleString('he-IL',{minimumFractionDigits:2})}</td>
+  </tr>`);
+
+  body.innerHTML = rows.join('');
+}
+
+// ===== UPDATE STATS TO INCLUDE INCOME =====
+const _origRenderStats = renderStats;
+renderStats = function() {
+  const db    = getDB(DB_KEY);
+  const incDb = getDB(INC_KEY);
+  const now   = new Date();
+  const mm    = String(now.getMonth()+1).padStart(2,'0');
+  const yyyy  = String(now.getFullYear());
+
+  const expThisMonth = db.filter(e=>{const p=(e.date||'').split('/');return p.length===3&&p[1]===mm&&p[2]===yyyy;});
+  const incThisMonth = incDb.filter(e=>{const p=(e.date||'').split('/');return p.length===3&&p[1]===mm&&p[2]===yyyy;});
+  const totalExp = expThisMonth.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const totalInc = incThisMonth.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const profit   = totalInc - totalExp;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card danger"><span class="num">₪${totalExp.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">הוצאות החודש</div></div>
+    <div class="stat-card blue"><span class="num">₪${totalInc.toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">הכנסות החודש</div></div>
+    <div class="stat-card ${profit>=0?'':'danger'}"><span class="num">${profit>=0?'+':''}₪${Math.abs(profit).toLocaleString('he-IL',{maximumFractionDigits:0})}</span><div class="lbl">רווח/הפסד</div></div>
+    <div class="stat-card"><span class="num">${db.length}</span><div class="lbl">רשומות הוצאות</div></div>
+  `;
+};
 </script>
 
 <!-- SheetJS -->

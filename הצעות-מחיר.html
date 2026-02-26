@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="אוטוליין">
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – הצעות מחיר</title>
-  <link rel="stylesheet" href="style.css?v=1.2">
+  <link rel="stylesheet" href="style.css?v=1.6">
   <style>
     .tab-bar { display:flex; gap:0; margin-bottom:20px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); background:white; }
     .tab-btn { flex:1; padding:12px 10px; border:none; background:transparent; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s,color .15s; color:var(--text-muted); }
@@ -87,11 +87,14 @@
 <nav class="main-nav">
   <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
   <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
   <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מלאי מוצרים</span></a>
   <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">מלאי צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">מלאי רכבים</span></a>
   <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
   <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
 </nav>
 
@@ -284,7 +287,8 @@
       <div id="partEmptyState" class="empty-state" style="display:none"><div class="emoji">🔧</div><p>אין בקשות חלקים עדיין</p></div>
     </div>
   </div>
-</div>
+
+  </div>
 
 <!-- Edit Modal -->
 <div id="editModal" class="modal-overlay">
@@ -316,7 +320,7 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="shared.js?v=1.2"></script>
+<script src="shared.js?v=1.6"></script>
 <script>
 const DB_TIRES = 'pnc_quotes_tires';
 const DB_PARTS = 'pnc_quotes_parts';
@@ -343,7 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function switchTab(tab) {
   currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='tires')||(i===1&&tab==='parts')));
+  const tabs = ['tires','parts'];
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', tabs[i] === tab));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
 }
@@ -578,7 +583,7 @@ function renderStats() {
     <div class="stat-card blue"><span class="num">${tOpen}</span><div class="lbl">צמיגים בטיפול</div></div>
     <div class="stat-card"><span class="num">${pOpen}</span><div class="lbl">חלקים בטיפול</div></div>
     <div class="stat-card"><span class="num">${tClosed+pClosed}</span><div class="lbl">עסקאות שנסגרו</div></div>
-    <div class="stat-card blue"><span class="num">₪${Math.round(totalRev).toLocaleString('he-IL')}</span><div class="lbl">הכנסות (עסקאות סגורות)</div></div>
+    <div class="stat-card"><span class="num">${formatCurrency(totalRev)}</span><div class="lbl">הכנסות שנסגרו</div></div>
   `;
 }
 
@@ -851,6 +856,7 @@ function exportQuotes(type) {
     exportToExcel([hdrs,...rows],'הצעות-חלקים-אוטוליין','חלקים');
   }
 }
+
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </body>
