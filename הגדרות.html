@@ -255,64 +255,95 @@
 
 const GAS_CODE = `// ====== Google Apps Script – אוטוליין ======
 // פרוס כ-Web App: הרץ בשם Me, גישה ל-Anyone
+//
+// גיליונות עריכה (✏️ ניתן לערוך → יחזור לאפליקציה):
+//   הוצאות | מוצרים | צמיגים | ספקים
+//
+// גיליונות תצוגה בלבד (שינוי כאן לא ייקרא):
+//   הצעות-צמיגים | הצעות-חלקים
+//
+// גיליון _autoline_data – אל תגע בו, הוא מאחסן נתונים מורכבים
 
-function doGet(e) {
-  var action = (e.parameter || {}).action || '';
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName('_autoline_data') || ss.insertSheet('_autoline_data');
-  var headers = ContentService.createTextOutput;
+// קיצורים
+var EDITABLE = {
+  expenses:   'הוצאות',
+  products:   'מוצרים',
+  tires:      'צמיגים',
+  suppliers:  'ספקים'
+};
+var DISPLAY_ONLY = {
+  quotesTires: 'הצעות-צמיגים',
+  quotesParts: 'הצעות-חלקים'
+};
 
-  // Return all data
+// המרת גיליון → מערך אובייקטים
+function sheetToObjects(sheet) {
   var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return [];
+  var headers = data[0];
+  return data.slice(1).filter(function(row) {
+    return row.some(function(c) { return c !== '' && c !== null; });
+  }).map(function(row) {
+    var obj = {};
+    headers.forEach(function(h, i) { if (h !== '') obj[String(h)] = row[i]; });
+    return obj;
+  });
+}
+
+// GET – משיכת נתונים לאפליקציה
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var result = {};
-  for (var i = 0; i < data.length; i++) {
-    try { result[data[i][0]] = JSON.parse(data[i][1]); } catch(ex) {}
+
+  // קרא גיליונות עריכה (מקור האמת)
+  for (var key in EDITABLE) {
+    var s = ss.getSheetByName(EDITABLE[key]);
+    result[key] = s ? sheetToObjects(s) : [];
   }
+
+  // קרא נתונים מורכבים מ-_autoline_data (JSON blob)
+  var blobSheet = ss.getSheetByName('_autoline_data');
+  if (blobSheet) {
+    var rows = blobSheet.getDataRange().getValues();
+    for (var i = 0; i < rows.length; i++) {
+      var k = rows[i][0];
+      if (!EDITABLE[k]) { // אל תדרוס גיליונות עריכה
+        try { result[k] = JSON.parse(rows[i][1]); } catch(ex) {}
+      }
+    }
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// POST – שליחת נתונים מהאפליקציה
 function doPost(e) {
   var payload = JSON.parse(e.postData.contents);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName('_autoline_data') || ss.insertSheet('_autoline_data');
-
   var dataMap = payload.type === '__all__' ? payload.data : {};
   if (payload.type !== '__all__') dataMap[payload.type] = payload.data;
 
-  // Read existing rows
+  // שמור JSON blob ב-_autoline_data (גיבוי לכל הנתונים)
+  var blobSheet = ss.getSheetByName('_autoline_data') || ss.insertSheet('_autoline_data');
   var existing = {};
-  var rows = sheet.getDataRange().getValues();
-  for (var i = 0; i < rows.length; i++) {
-    existing[rows[i][0]] = i + 1; // 1-indexed row number
-  }
-
+  var blobRows = blobSheet.getDataRange().getValues();
+  for (var i = 0; i < blobRows.length; i++) existing[blobRows[i][0]] = i + 1;
   for (var key in dataMap) {
     var val = JSON.stringify(dataMap[key]);
-    if (existing[key]) {
-      sheet.getRange(existing[key], 2).setValue(val);
-    } else {
-      sheet.appendRow([key, val]);
-      existing[key] = sheet.getLastRow();
-    }
+    if (existing[key]) { blobSheet.getRange(existing[key], 2).setValue(val); }
+    else { blobSheet.appendRow([key, val]); existing[key] = blobSheet.getLastRow(); }
   }
 
-  // Update human-readable sheet
-  updateReadableSheets(ss, dataMap);
+  // עדכן גיליונות קריאים (עריכה + תצוגה)
+  var allSheets = {};
+  for (var k in EDITABLE) allSheets[k] = EDITABLE[k];
+  for (var k in DISPLAY_ONLY) allSheets[k] = DISPLAY_ONLY[k];
 
-  return ContentService.createTextOutput('ok');
-}
-
-function updateReadableSheets(ss, dataMap) {
-  var sheetNames = {
-    expenses: 'הוצאות', products: 'מוצרים', tires: 'צמיגים',
-    suppliers: 'ספקים', quotesTires: 'הצעות-צמיגים', quotesParts: 'הצעות-חלקים'
-  };
-  for (var key in sheetNames) {
+  for (var key in allSheets) {
     if (!dataMap[key] || !dataMap[key].length) continue;
-    var sheetName = sheetNames[key];
-    var s = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+    var s = ss.getSheetByName(allSheets[key]) || ss.insertSheet(allSheets[key]);
     s.clearContents();
     var headers = Object.keys(dataMap[key][0]);
     var values = [headers].concat(dataMap[key].map(function(row) {
@@ -320,6 +351,8 @@ function updateReadableSheets(ss, dataMap) {
     }));
     s.getRange(1, 1, values.length, headers.length).setValues(values);
   }
+
+  return ContentService.createTextOutput('ok');
 }`;
 
 document.addEventListener('DOMContentLoaded', () => {
