@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a9e5c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="אוטוליין">
+  <link rel="icon" href="icon-512.png" type="image/png">
+  <link rel="manifest" href="manifest.json">
+  <title>אוטוליין – מסמכים</title>
+  <link rel="stylesheet" href="style.css?v=1.7">
+  <style>
+    /* ── Cards grid ─────────────────────────────── */
+    .forms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .form-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border-right: 5px solid var(--accent);
+      padding: 18px 20px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .form-card-title {
+      font-size: 16px; font-weight: 800;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-card-meta { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+    .form-card-cols { font-size: 13px; color: var(--text); }
+    .form-card-actions {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;
+    }
+    .copies-wrap {
+      display: flex; align-items: center; gap: 6px; flex: 1;
+    }
+    .copies-wrap label { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+    .copies-input {
+      width: 52px; padding: 6px 8px; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 14px; text-align: center;
+    }
+
+    /* ── Column rows in modal ───────────────────── */
+    .col-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0; border-bottom: 1px solid var(--border);
+    }
+    .col-row:last-child { border-bottom: none; }
+    .col-name-input {
+      flex: 1; padding: 7px 10px; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 14px;
+    }
+    .width-btns { display: flex; gap: 4px; }
+    .width-btn {
+      padding: 5px 9px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--bg); font-size: 12px; cursor: pointer; transition: all .15s;
+      color: var(--text-muted);
+    }
+    .width-btn.active {
+      background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700;
+    }
+    .remove-col-btn {
+      background: none; border: none; color: var(--danger); cursor: pointer;
+      font-size: 18px; line-height: 1; padding: 2px 4px; border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .remove-col-btn:hover { background: #fee2e2; }
+    #colsList { display: flex; flex-direction: column; gap: 2px; }
+    .add-col-btn {
+      margin-top: 10px; padding: 8px; border: 2px dashed var(--border);
+      border-radius: 8px; background: none; width: 100%; cursor: pointer;
+      font-size: 13px; color: var(--text-muted); transition: all .15s;
+    }
+    .add-col-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Form meta fields ───────────────────────── */
+    .meta-row {
+      display: flex; gap: 10px; align-items: center;
+    }
+    .check-row {
+      display: flex; gap: 20px; flex-wrap: wrap;
+    }
+    .check-row label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img class="header-logo" src="" alt="לוגו">
+    <div class="header-title">
+      <h1>אוטוליין</h1>
+      <p>מערכת עזר לניהול</p>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+  <a href="עובדים.html"          class="nav-link">👷 <span class="label">עובדים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
+  <a href="מסמכים.html"         class="nav-link">📄 <span class="label">מסמכים</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
+
+<div class="container">
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="openForm()">➕ תבנית חדשה</button>
+  </div>
+
+  <!-- Cards -->
+  <div class="forms-grid" id="formsGrid"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     formModal – יצירה / עריכה
+══════════════════════════════════════════════ -->
+<div id="formModal" class="modal-overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3 id="formModalTitle">תבנית חדשה</h3>
+      <button class="modal-close" onclick="closeForm()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- שם + אייקון -->
+      <div class="meta-row" style="margin-bottom:16px">
+        <div class="field" style="width:68px;flex-shrink:0">
+          <label>אייקון</label>
+          <input type="text" id="f_icon" maxlength="4" style="text-align:center;font-size:22px;padding:6px 4px" value="📋">
+        </div>
+        <div class="field" style="flex:1">
+          <label>שם התבנית</label>
+          <input type="text" id="f_name" placeholder="למשל: הזמנת צמיגים" oninput="markFilled(this)">
+        </div>
+      </div>
+
+      <!-- עמודות -->
+      <div style="margin-bottom:6px">
+        <label style="font-size:13px;font-weight:700;color:var(--text-muted)">עמודות הטבלה</label>
+        <small style="color:var(--text-muted);font-size:11px;margin-right:8px">רוחב: צרה=מס'/כמות · בינונית=ברירת מחדל · רחבה=שם/הערות</small>
+      </div>
+      <div id="colsList"></div>
+      <button class="add-col-btn" onclick="addColumn()">➕ הוסף עמודה</button>
+
+      <hr style="margin:18px 0;border-color:var(--border)">
+
+      <!-- כותרת ותחתית -->
+      <div class="grid-inputs" style="margin-bottom:14px">
+        <div class="field">
+          <label>שורת כותרת נוספת <small style="color:var(--text-muted)">(רשות)</small></label>
+          <input type="text" id="f_headerExtra" placeholder='למשל: מס׳ הזמנה: _______ '>
+        </div>
+        <div class="field">
+          <label>שורת תחתית <small style="color:var(--text-muted)">(רשות)</small></label>
+          <input type="text" id="f_footerText" placeholder='למשל: חתימה: _______'>
+        </div>
+      </div>
+
+      <!-- checkboxes -->
+      <div class="check-row">
+        <label><input type="checkbox" id="f_showBiz" checked> הצג שם עסק בכותרת</label>
+        <label><input type="checkbox" id="f_showDate" checked> הצג תאריך בכותרת</label>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeForm()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveForm()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="big-icon" id="confirmIcon">🗑️</div>
+    <p id="confirmMsg"></p>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger"    onclick="confirmYes()" id="confirmYesBtn">מחק</button>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js?v=1.7"></script>
+<script>
+const DB_FORMS = 'pnc_forms';
+let _editId = null;
+
+/* ── helpers ─────────────────────────────── */
+function widthLabel(w) {
+  return w === 'narrow' ? 'צרה' : w === 'wide' ? 'רחבה' : 'בינונית';
+}
+
+/* ── render ──────────────────────────────── */
+function render() {
+  const forms = getDB(DB_FORMS);
+
+  // stats
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-val">${forms.length}</div>
+      <div class="stat-label">תבניות שמורות</div>
+    </div>`;
+
+  const grid = document.getElementById('formsGrid');
+  if (!forms.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <p>אין תבניות עדיין</p>
+      <button class="btn btn-primary" onclick="openForm()">➕ צור תבנית ראשונה</button>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = forms.map(f => {
+    const colNames = f.columns.map(c => c.label).join(' · ');
+    return `<div class="form-card">
+      <div class="form-card-title">${f.icon || '📋'} ${f.name}</div>
+      <div class="form-card-cols">${colNames}</div>
+      <div class="form-card-meta">
+        ${f.columns.length} עמודות
+        ${f.showBusinessName ? ' · שם עסק' : ''}
+        ${f.showDate ? ' · תאריך' : ''}
+        ${f.headerExtra ? ' · ' + f.headerExtra : ''}
+      </div>
+      <div class="form-card-actions">
+        <div class="copies-wrap">
+          <label>עותקים:</label>
+          <input type="number" class="copies-input" id="copies_${f.id}" value="1" min="1" max="20">
+        </div>
+        <button class="btn btn-primary" style="padding:8px 14px" onclick="printForm(${f.id})">🖨️ הדפס</button>
+        <button class="btn btn-secondary" style="padding:8px 10px" onclick="openForm(${f.id})">✏️</button>
+        <button class="btn btn-danger"    style="padding:8px 10px" onclick="deleteForm(${f.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── open / close formModal ──────────────── */
+function openForm(id) {
+  _editId = id || null;
+  const f = id ? getDB(DB_FORMS).find(x => x.id === id) : null;
+
+  document.getElementById('formModalTitle').textContent = f ? 'עריכת תבנית' : 'תבנית חדשה';
+  document.getElementById('f_icon').value        = f ? (f.icon || '📋') : '📋';
+  document.getElementById('f_name').value        = f ? f.name : '';
+  document.getElementById('f_headerExtra').value = f ? (f.headerExtra || '') : '';
+  document.getElementById('f_footerText').value  = f ? (f.footerText  || '') : '';
+  document.getElementById('f_showBiz').checked   = f ? !!f.showBusinessName : true;
+  document.getElementById('f_showDate').checked  = f ? !!f.showDate : true;
+
+  // build column rows
+  const cols = f ? f.columns : [
+    { label: '', width: 'medium' }
+  ];
+  renderColsList(cols);
+
+  document.getElementById('formModal').classList.add('open');
+  setTimeout(() => document.getElementById('f_name').focus(), 80);
+}
+
+function closeForm() {
+  document.getElementById('formModal').classList.remove('open');
+}
+
+/* ── column list UI ─────────────────────── */
+function renderColsList(cols) {
+  const list = document.getElementById('colsList');
+  list.innerHTML = cols.map((c, i) => colRowHTML(c, i)).join('');
+}
+
+function colRowHTML(col, idx) {
+  const widths = ['narrow', 'medium', 'wide'];
+  const btns = widths.map(w =>
+    `<button type="button" class="width-btn${col.width === w ? ' active' : ''}" onclick="setWidth(this,'${w}')">${widthLabel(w)}</button>`
+  ).join('');
+  return `<div class="col-row">
+    <input type="text" class="col-name-input" placeholder="שם עמודה" value="${col.label || ''}" oninput="markFilled(this)">
+    <div class="width-btns">${btns}</div>
+    <button type="button" class="remove-col-btn" onclick="removeColumn(this)" title="הסר עמודה">✕</button>
+  </div>`;
+}
+
+function addColumn() {
+  const list = document.getElementById('colsList');
+  const div  = document.createElement('div');
+  div.innerHTML = colRowHTML({ label: '', width: 'medium' }, 0);
+  list.appendChild(div.firstElementChild);
+  list.lastElementChild.querySelector('.col-name-input').focus();
+}
+
+function removeColumn(btn) {
+  const rows = document.querySelectorAll('#colsList .col-row');
+  if (rows.length <= 1) { showToast('חובה לפחות עמודה אחת', 'error'); return; }
+  btn.closest('.col-row').remove();
+}
+
+function setWidth(btn, width) {
+  btn.closest('.width-btns').querySelectorAll('.width-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ── read columns from DOM ───────────────── */
+function readColumns() {
+  return Array.from(document.querySelectorAll('#colsList .col-row')).map(row => ({
+    label: row.querySelector('.col-name-input').value.trim(),
+    width: (row.querySelector('.width-btn.active') || {}).textContent === 'צרה' ? 'narrow'
+         : (row.querySelector('.width-btn.active') || {}).textContent === 'רחבה' ? 'wide'
+         : 'medium'
+  }));
+}
+
+// re-read width from active button data attribute
+function readColumnsFixed() {
+  return Array.from(document.querySelectorAll('#colsList .col-row')).map(row => {
+    const activeBtn = row.querySelector('.width-btn.active');
+    let width = 'medium';
+    if (activeBtn) {
+      const txt = activeBtn.textContent.trim();
+      if (txt === 'צרה')  width = 'narrow';
+      if (txt === 'רחבה') width = 'wide';
+    }
+    return {
+      label: row.querySelector('.col-name-input').value.trim(),
+      width
+    };
+  });
+}
+
+/* ── save form ───────────────────────────── */
+function saveForm() {
+  const name = document.getElementById('f_name').value.trim();
+  if (!name) { showToast('הכנס שם לתבנית', 'error'); document.getElementById('f_name').focus(); return; }
+  const columns = readColumnsFixed().filter(c => c.label);
+  if (!columns.length) { showToast('הוסף לפחות עמודה אחת', 'error'); return; }
+
+  const rec = {
+    id:              _editId || nowId(),
+    name,
+    icon:            document.getElementById('f_icon').value.trim() || '📋',
+    columns,
+    showBusinessName: document.getElementById('f_showBiz').checked,
+    showDate:         document.getElementById('f_showDate').checked,
+    headerExtra:     document.getElementById('f_headerExtra').value.trim(),
+    footerText:      document.getElementById('f_footerText').value.trim()
+  };
+
+  const db  = getDB(DB_FORMS);
+  const idx = db.findIndex(x => x.id === rec.id);
+  if (idx >= 0) db[idx] = rec; else db.push(rec);
+  setDB(DB_FORMS, db);
+
+  closeForm();
+  render();
+  showToast(_editId ? 'תבנית עודכנה' : 'תבנית נשמרה', 'success');
+  autoSync();
+}
+
+/* ── delete ──────────────────────────────── */
+function deleteForm(id) {
+  const f = getDB(DB_FORMS).find(x => x.id === id);
+  showConfirm(`למחוק את התבנית "${f.name}"?`, () => {
+    setDB(DB_FORMS, getDB(DB_FORMS).filter(x => x.id !== id));
+    render();
+    showToast('תבנית נמחקה');
+    autoSync();
+  });
+}
+
+/* ── print ───────────────────────────────── */
+function printForm(id) {
+  const f       = getDB(DB_FORMS).find(x => x.id === id);
+  if (!f) return;
+  const copies  = Math.max(1, parseInt(document.getElementById('copies_' + id)?.value) || 1);
+  const settings = getSettings();
+  const today   = todayStr();
+
+  // column widths – proportional weights so they always sum to 100%
+  const WEIGHT = { narrow: 1, medium: 2, wide: 3 };
+  const totalW = f.columns.reduce((s, c) => s + (WEIGHT[c.width] || 2), 0);
+  const colWidths = f.columns.map(c => ((WEIGHT[c.width] || 2) / totalW * 100).toFixed(2) + '%');
+
+  // font size: shrink slightly with many columns for legibility
+  const n = f.columns.length;
+  const thFontPt  = n <= 4 ? 11 : n <= 7 ? 10 : 9;
+  const tdFontPt  = thFontPt;
+
+  // row height & count: always fill A4 body
+  // A4 body = 267mm; header ~22mm, thead row ~9mm, footer ~8mm => ~228mm for tbody
+  // more cols → slightly taller rows for writing comfort (min 7mm, max 10mm)
+  const rowHmm = n <= 3 ? 10 : n <= 6 ? 8.5 : 7;
+  const ROWS   = Math.floor(228 / rowHmm);
+
+  // build header line
+  const headerParts = [];
+  if (f.showBusinessName && settings.businessName) headerParts.push(settings.businessName);
+  if (f.showDate)         headerParts.push('תאריך: ' + today);
+  if (f.headerExtra)      headerParts.push(f.headerExtra);
+
+  const pageHTML = `
+    <div class="print-page">
+      <div class="doc-header">
+        <div class="doc-title">${f.icon || '📋'} ${f.name}</div>
+        ${headerParts.length ? `<div class="doc-meta">${headerParts.join('  ·  ')}</div>` : ''}
+      </div>
+      <table>
+        <colgroup>${colWidths.map(w => `<col style="width:${w}">`).join('')}</colgroup>
+        <thead>
+          <tr>${f.columns.map(c => `<th>${c.label}</th>`).join('')}</tr>
+        </thead>
+        <tbody>
+          ${Array(ROWS).fill(`<tr>${f.columns.map(() => '<td></td>').join('')}</tr>`).join('\n')}
+        </tbody>
+      </table>
+      ${f.footerText ? `<div class="doc-footer">${f.footerText}</div>` : ''}
+    </div>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @page { size: A4 portrait; margin: 15mm; }
+    body { font-family: Arial, 'Heebo', sans-serif; direction: rtl; background: #fff; }
+
+    .print-page {
+      width: 100%;
+      height: calc(297mm - 30mm);
+      display: flex;
+      flex-direction: column;
+      page-break-after: always;
+    }
+    .print-page:last-child { page-break-after: avoid; }
+
+    .doc-header { margin-bottom: 8mm; flex-shrink: 0; }
+    .doc-title  { font-size: 16pt; font-weight: bold; margin-bottom: 3mm; }
+    .doc-meta   { font-size: 10pt; color: #555; }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      table-layout: fixed;
+      flex: 1;
+    }
+    thead th {
+      background: #e8e8e8; font-weight: bold; font-size: ${thFontPt}pt;
+      padding: 3mm 2mm; border: 1px solid #333; text-align: center;
+    }
+    tbody td {
+      border: 1px solid #aaa; padding: 1mm 2mm;
+      vertical-align: top; font-size: ${tdFontPt}pt;
+    }
+    tbody tr { height: ${rowHmm}mm; }
+
+    .doc-footer {
+      margin-top: 6mm; font-size: 10pt; color: #444;
+      border-top: 1px solid #ccc; padding-top: 3mm;
+      flex-shrink: 0;
+    }
+
+    @media screen {
+      body { background: #f0f0f0; padding: 20px; }
+      .print-page { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2); margin-bottom: 20px; padding: 15mm; }
+    }
+  </style>
+</head>
+<body>
+  ${Array(copies).fill(pageHTML).join('\n')}
+  <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank');
+  if (!w) { showToast('אפשר חלונות קופצים בדפדפן', 'error'); return; }
+  w.document.write(html);
+  w.document.close();
+}
+
+/* ── init ────────────────────────────────── */
+render();
+</script>
+</body>
+</html>

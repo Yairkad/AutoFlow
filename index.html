@@ -85,6 +85,7 @@
   <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
   <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
   <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
+  <a href="מסמכים.html"         class="nav-link">📄 <span class="label">מסמכים</span></a>
   <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
 </nav>
 
@@ -162,6 +163,12 @@
       <h2>חובות</h2>
       <p>מעקב חובות לקוחות וחשבוניות פתוחות לספקים</p>
       <div class="mod-stat" id="statDebts">—</div>
+    </a>
+    <a href="מסמכים.html" class="module-card blue">
+      <div class="mod-icon">📄</div>
+      <h2>מסמכים</h2>
+      <p>תבניות טפסים וטבלאות להדפסה — הזמנות, השאלות ועוד</p>
+      <div class="mod-stat" id="statForms">—</div>
     </a>
   </div>
 
@@ -259,6 +266,10 @@ function loadDashboard() {
   if (openCust.length)  debtParts.push(openCust.length + ' לקוחות');
   if (openSupp.length)  debtParts.push(openSupp.length + ' ספקים');
   document.getElementById('statDebts').textContent = debtParts.length ? debtParts.join(' · ') : '✓ אין חובות פתוחים';
+
+  // Forms
+  const forms = getDB('pnc_forms');
+  document.getElementById('statForms').textContent = forms.length + ' תבניות';
 
   // Alerts
   const alerts = [];
