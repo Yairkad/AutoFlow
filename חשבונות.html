@@ -96,6 +96,31 @@
     .type-toggle.fixed    { background:#e0f2fe; color:#0369a1; border-color:#bae6fd; }
     .type-toggle.variable { background:#fef9c3; color:#92400e; border-color:#fde68a; }
     .vat-hint { font-size:11px; color:var(--text-muted); }
+
+    /* Electricity type */
+    .type-toggle.electricity { background:#fef3c7; color:#92400e; border-color:#fde68a; }
+    .badge-electricity {
+      display:inline-block; font-size:10px; background:#fef3c7;
+      color:#92400e; padding:1px 6px; border-radius:6px; font-weight:700;
+      margin-left:4px; vertical-align:middle;
+    }
+    .elec-meter-row {
+      display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:4px;
+    }
+    .elec-input {
+      width:90px; padding:4px 8px; border:1.5px solid var(--border);
+      border-radius:6px; font-family:inherit; font-size:13px;
+      color:var(--text); background:#fffbf0;
+    }
+    .elec-input:focus { outline:none; border-color:#f59e0b; }
+    .elec-badge {
+      background:#fef3c7; color:#92400e; padding:3px 10px;
+      border-radius:8px; font-size:12px; font-weight:700; white-space:nowrap;
+    }
+    .elec-amount-badge {
+      background:#dcfce7; color:#166534; padding:3px 12px;
+      border-radius:8px; font-size:13px; font-weight:900; white-space:nowrap;
+    }
   </style>
 </head>
 <body>
@@ -239,7 +264,7 @@ function buildPeriodList() {
 // Handles fixed items (always same amount) and variable items (amount from payment record)
 function totalForTenant(t, pmt) {
   return (t.items||[]).reduce((s, item) => {
-    if (item.type === 'variable') {
+    if (item.type === 'variable' || item.type === 'electricity') {
       const varAmounts = pmt && pmt.varAmounts ? pmt.varAmounts : {};
       return s + (parseFloat(varAmounts[item.id]) || 0);
     }
@@ -291,8 +316,60 @@ function renderBills() {
     const total = totalForTenant(t, pmt);
     const items = t.items || [];
 
+    const elecReadings = pmt && pmt.elecReadings ? pmt.elecReadings : {};
+
     const itemRows = items.map(item => {
-      if (item.type === 'variable') {
+      if (item.type === 'electricity') {
+        const er     = elecReadings[item.id] || {};
+        const prev   = er.prev != null ? er.prev : '';
+        const curr   = er.curr != null ? er.curr : '';
+        const kwh    = er.kwh  || 0;
+        // Monthly price: use saved value for this period, fall back to tenant default
+        const pkwh   = er.pkwh != null ? er.pkwh : (item.pricePerKwh || 0);
+        const amt    = Math.round(kwh * pkwh * 100) / 100;
+        return `
+          <tr>
+            <td>
+              <span class="badge-electricity">⚡</span>${item.label||'חשמל'}
+            </td>
+            <td colspan="2">
+              <div class="elec-meter-row no-print">
+                <div style="display:flex;flex-direction:column;align-items:center">
+                  <small style="color:var(--text-muted);font-size:10px;margin-bottom:2px">₪ לקוטש</small>
+                  <input class="elec-input" type="number" value="${pkwh||''}" placeholder="0.000"
+                    id="epkwh_${t.id}_${item.id}" style="width:75px;border-color:#a78bfa;background:#f5f3ff"
+                    oninput="calcElecFromKwh(${t.id},'${period}',${item.id})">
+                </div>
+                <span style="font-size:14px;color:var(--text-muted)">×</span>
+                <div style="display:flex;flex-direction:column;align-items:center">
+                  <small style="color:var(--text-muted);font-size:10px;margin-bottom:2px">מונה קודם</small>
+                  <input class="elec-input" type="number" value="${prev}" placeholder="0"
+                    id="eprev_${t.id}_${item.id}"
+                    oninput="calcElecFromMeter(${t.id},'${period}',${item.id})">
+                </div>
+                <span style="font-size:18px;color:var(--text-muted)">→</span>
+                <div style="display:flex;flex-direction:column;align-items:center">
+                  <small style="color:var(--text-muted);font-size:10px;margin-bottom:2px">מונה נוכחי</small>
+                  <input class="elec-input" type="number" value="${curr}" placeholder="0"
+                    id="ecurr_${t.id}_${item.id}"
+                    oninput="calcElecFromMeter(${t.id},'${period}',${item.id})">
+                </div>
+                <span id="ekwh_${t.id}_${item.id}" class="elec-badge">${kwh > 0 ? kwh + ' קוטש' : '— קוטש'}</span>
+                <span id="eamt_${t.id}_${item.id}" class="elec-amount-badge">${amt > 0 ? '₪' + amt.toFixed(2) : '—'}</span>
+              </div>
+              <div style="margin-top:5px;display:flex;align-items:center;gap:6px" class="no-print">
+                <small style="color:var(--text-muted)">או הזן כמות ישירות:</small>
+                <input class="elec-input" type="number" value="${kwh||''}" placeholder="קוטש"
+                  id="ekwh_inp_${t.id}_${item.id}" style="width:80px"
+                  oninput="calcElecFromKwh(${t.id},'${period}',${item.id})">
+                <small style="color:var(--text-muted)">קוטש</small>
+              </div>
+              <div class="print-only" style="font-size:13px;font-weight:700">
+                ${kwh > 0 ? kwh + ' קוטש × ₪' + pkwh + ' = ₪' + amt.toFixed(2) : '—'}
+              </div>
+            </td>
+          </tr>`;
+      } else if (item.type === 'variable') {
         const va = parseFloat(varAmounts[item.id]) || 0;
         const bv = va > 0 ? (va / VAT_RATE).toFixed(2) : '';
         return `
@@ -392,6 +469,68 @@ function updateTotalDisplay(input, tenantId) {
   if (el) el.textContent = 'סה"כ לתשלום: ₪' + total.toLocaleString('he-IL',{minimumFractionDigits:2});
 }
 
+// ===== ELECTRICITY CALCULATIONS =====
+function _getElecInputs(tId, itemId) {
+  const prevEl  = document.getElementById('eprev_'    + tId + '_' + itemId);
+  const currEl  = document.getElementById('ecurr_'    + tId + '_' + itemId);
+  const pkwhEl  = document.getElementById('epkwh_'    + tId + '_' + itemId);
+  const kwhInp  = document.getElementById('ekwh_inp_' + tId + '_' + itemId);
+  return {
+    prev:  parseFloat(prevEl  ? prevEl.value  : 0) || 0,
+    curr:  parseFloat(currEl  ? currEl.value  : 0) || 0,
+    pkwh:  parseFloat(pkwhEl  ? pkwhEl.value  : 0) || 0,
+    kwhInp
+  };
+}
+
+function calcElecFromMeter(tId, period, itemId) {
+  const { prev, curr, pkwh, kwhInp } = _getElecInputs(tId, itemId);
+  const kwh = curr > prev ? Math.round((curr - prev) * 1000) / 1000 : 0;
+  const amt = Math.round(kwh * pkwh * 100) / 100;
+  _updateElecDisplay(tId, itemId, kwh, amt);
+  if (kwhInp) kwhInp.value = kwh > 0 ? kwh : '';
+  _saveElecData(tId, period, itemId, prev, curr, kwh, amt, pkwh);
+}
+
+function calcElecFromKwh(tId, period, itemId) {
+  const { prev, curr, pkwh, kwhInp } = _getElecInputs(tId, itemId);
+  const kwh = parseFloat(kwhInp ? kwhInp.value : 0) || 0;
+  const amt = Math.round(kwh * pkwh * 100) / 100;
+  _updateElecDisplay(tId, itemId, kwh, amt);
+  _saveElecData(tId, period, itemId, prev, curr, kwh, amt, pkwh);
+}
+
+function _updateElecDisplay(tId, itemId, kwh, amt) {
+  const kwhEl = document.getElementById('ekwh_' + tId + '_' + itemId);
+  const amtEl = document.getElementById('eamt_' + tId + '_' + itemId);
+  if (kwhEl) kwhEl.textContent = kwh > 0 ? kwh + ' קוטש' : '— קוטש';
+  if (amtEl) amtEl.textContent = amt > 0 ? '₪' + amt.toFixed(2) : '—';
+}
+
+function _saveElecData(tId, period, itemId, prev, curr, kwh, amount, pkwh) {
+  const db  = getDB(DB_PAYMENTS);
+  let   idx = db.findIndex(p => p.tenantId === tId && p.period === period);
+  if (idx === -1) {
+    db.push({ tenantId: tId, period, paid: false, amount: 0, paidDate: '', payNotes: '', varAmounts: {}, elecReadings: {} });
+    idx = db.length - 1;
+  }
+  if (!db[idx].varAmounts)   db[idx].varAmounts   = {};
+  if (!db[idx].elecReadings) db[idx].elecReadings = {};
+  db[idx].varAmounts[itemId]   = amount;
+  db[idx].elecReadings[itemId] = { prev, curr, kwh, pkwh };
+  const tenant = getDB(DB_TENANTS).find(t => t.id === tId);
+  if (tenant) db[idx].amount = totalForTenant(tenant, db[idx]);
+  setDB(DB_PAYMENTS, db);
+  // Update total display
+  const totalEl = document.getElementById('total_' + tId);
+  if (totalEl && tenant) {
+    const total = totalForTenant(tenant, db[idx]);
+    totalEl.textContent = 'סה"כ לתשלום: ₪' + total.toLocaleString('he-IL', { minimumFractionDigits: 2 });
+  }
+  renderStats();
+  autoSync();
+}
+
 // ===== SAVE VARIABLE AMOUNT =====
 function saveVarAmt(tenantId, period, itemId, value) {
   const db = getDB(DB_PAYMENTS);
@@ -475,11 +614,17 @@ function addItemRow(item) {
   const seq   = ++_itemSeq;
   const wrap  = document.getElementById('itemsWrap');
   const div   = document.createElement('div');
-  const type  = item && item.type === 'variable' ? 'variable' : 'fixed';
+  const type  = item ? (item.type || 'fixed') : 'fixed';
   const label = item ? (item.label||'') : '';
   const amt   = item ? (item.amount||'') : '';
   const bv    = item ? (item.beforeVat||'') : '';
   const notes = item ? (item.notes||'') : '';
+  const pkwh  = item ? (item.pricePerKwh||'') : '';
+  const isElec = type === 'electricity';
+  const typeLabels = { fixed:'📌 קבוע', variable:'📊 משתנה', electricity:'⚡ חשמל' };
+  const hintText = isElec
+    ? '⚡ הסכום יחושב לפי קריאת מונה בכל חודש'
+    : (bv ? `לפני מע"מ: ₪${bv}` : 'מלא כולל מע"מ ← יחושב לפני אוטומטית');
 
   div.id = 'item_' + seq;
   div.className = 'item-row';
@@ -489,23 +634,27 @@ function addItemRow(item) {
         <label>שם הפריט</label>
         <input type="text" id="il_${seq}" value="${label}" placeholder="לדוגמה: שכירות, חשמל, מים">
       </div>
-      <div>
+      <div id="amtWrap_${seq}" ${isElec ? 'style="display:none"' : ''}>
         <label>₪ כולל מע"מ</label>
         <input type="number" id="ia_${seq}" value="${amt}" placeholder="0.00" min="0" step="0.01"
           oninput="syncVat(${seq},'after')">
       </div>
-      <div>
+      <div id="bvWrap_${seq}" ${isElec ? 'style="display:none"' : ''}>
         <label>₪ לפני מע"מ</label>
         <input type="number" id="ib_${seq}" value="${bv}" placeholder="0.00" min="0" step="0.01"
           oninput="syncVat(${seq},'before')">
+      </div>
+      <div id="elecWrap_${seq}" ${!isElec ? 'style="display:none"' : 'style="grid-column:2/span 2"'}>
+        <label>₪ מחיר לקוטש (ברירת מחדל)</label>
+        <input type="number" id="ikwh_${seq}" value="${pkwh}" placeholder="0.000" min="0" step="0.001">
       </div>
       <button onclick="document.getElementById('item_${seq}').remove()"
         style="width:32px;height:32px;border:none;background:var(--danger-light);color:var(--danger);border-radius:8px;cursor:pointer;font-size:16px;align-self:end;margin-bottom:0">✕</button>
     </div>
     <div class="item-row-bottom">
       <button id="ityp_${seq}" class="type-toggle ${type}" onclick="toggleItemType(${seq})"
-        data-type="${type}" title="לחץ להחלפת סוג">${type==='fixed'?'📌 קבוע':'📊 משתנה'}</button>
-      <span class="vat-hint" id="ivh_${seq}">${bv?`לפני מע"מ: ₪${bv}`:'מלא כולל מע"מ ← יחושב לפני אוטומטית'}</span>
+        data-type="${type}" title="לחץ להחלפת סוג">${typeLabels[type]}</button>
+      <span class="vat-hint" id="ivh_${seq}">${hintText}</span>
       <input type="text" id="in_${seq}" value="${notes}" placeholder="הערה (אופציונלי)"
         style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12px">
     </div>
@@ -545,12 +694,37 @@ function syncVat(seq, changed) {
 function toggleItemType(seq) {
   const btn = document.getElementById('ityp_' + seq);
   const cur = btn.dataset.type;
-  const next = cur === 'fixed' ? 'variable' : 'fixed';
+  const order = ['fixed', 'variable', 'electricity'];
+  const next  = order[(order.indexOf(cur) + 1) % order.length];
   btn.dataset.type = next;
-  btn.textContent  = next === 'fixed' ? '📌 קבוע' : '📊 משתנה';
-  btn.className    = 'type-toggle ' + next;
-  if (next === 'variable') {
-    document.getElementById('ivh_' + seq).textContent = '⚠️ הסכום יוזן ידנית בכל חודש';
+  const labels = { fixed:'📌 קבוע', variable:'📊 משתנה', electricity:'⚡ חשמל' };
+  btn.textContent = labels[next];
+  btn.className   = 'type-toggle ' + next;
+
+  const amtWrap  = document.getElementById('amtWrap_'  + seq);
+  const bvWrap   = document.getElementById('bvWrap_'   + seq);
+  const elecWrap = document.getElementById('elecWrap_' + seq);
+  const hintEl   = document.getElementById('ivh_'      + seq);
+  const labelEl  = document.getElementById('il_'       + seq);
+
+  if (next === 'electricity') {
+    amtWrap.style.display       = 'none';
+    bvWrap.style.display        = 'none';
+    elecWrap.style.display      = '';
+    elecWrap.style.gridColumn   = '2 / span 2';
+    hintEl.textContent          = '⚡ הסכום יחושב לפי קריאת מונה בכל חודש';
+    if (!labelEl.value) labelEl.value = 'חשמל';
+  } else {
+    amtWrap.style.display       = '';
+    bvWrap.style.display        = '';
+    elecWrap.style.display      = 'none';
+    elecWrap.style.gridColumn   = '';
+    if (next === 'variable') {
+      hintEl.textContent = '⚠️ הסכום יוזן ידנית בכל חודש';
+    } else {
+      const bv = document.getElementById('ib_' + seq).value;
+      hintEl.textContent = bv ? `לפני מע"מ: ₪${bv}` : 'מלא כולל מע"מ ← יחושב לפני אוטומטית';
+    }
   }
 }
 
@@ -560,7 +734,9 @@ function saveTenant() {
   if (!name) { showToast('הכנס שם שוכר', 'error'); return; }
 
   const items = [];
+  let itemError = false;
   document.getElementById('itemsWrap').querySelectorAll('.item-row').forEach(row => {
+    if (itemError) return;
     const seq    = row.id.replace('item_','');
     const label  = document.getElementById('il_' + seq).value.trim();
     const amount = parseFloat(document.getElementById('ia_' + seq).value) || 0;
@@ -568,12 +744,21 @@ function saveTenant() {
     const notes  = document.getElementById('in_' + seq).value.trim();
     const typeBtn= document.getElementById('ityp_' + seq);
     const type   = typeBtn ? typeBtn.dataset.type : 'fixed';
+    const pkwhEl = document.getElementById('ikwh_' + seq);
+    const pkwh   = pkwhEl ? (parseFloat(pkwhEl.value) || 0) : 0;
 
     if (!label) return;
-    // Variable items don't need an amount (it's entered per period)
-    if (type === 'fixed' && amount <= 0) { return; }
-    items.push({ id: nowId(), label, amount, beforeVat: bv, type, notes });
+    if (type === 'fixed' && amount <= 0) return;
+    if (type === 'electricity' && pkwh <= 0) {
+      itemError = true;
+      showToast('הכנס מחיר לקוטש עבור פריט חשמל', 'error');
+      return;
+    }
+    const itemData = { id: nowId(), label, amount, beforeVat: bv, type, notes };
+    if (type === 'electricity') itemData.pricePerKwh = pkwh;
+    items.push(itemData);
   });
+  if (itemError) return;
 
   if (!items.length) {
     showToast('הוסף לפחות פריט חיוב אחד', 'error');

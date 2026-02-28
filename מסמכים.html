@@ -86,6 +86,45 @@
       display: flex; gap: 20px; flex-wrap: wrap;
     }
     .check-row label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+
+    /* ── Checklist ──────────────────────────────── */
+    .cl-legend {
+      display:flex; gap:8px; flex-wrap:wrap;
+      margin-bottom:12px; font-size:12px; align-items:center;
+    }
+    .cl-legend-badge { padding:2px 10px; border-radius:20px; font-weight:700; }
+    .check-item-row {
+      display:flex; align-items:center; gap:8px;
+      padding:8px 4px; border-bottom:1px solid var(--border);
+    }
+    .check-item-row:last-child { border-bottom:none; }
+    .check-item-name { flex:1; font-size:14px; font-weight:600; }
+    .status-btns { display:flex; gap:4px; flex-shrink:0; }
+    .status-btn {
+      width:38px; height:38px; border-radius:8px;
+      border:2px solid #e2e8f0; background:#f8fafc;
+      font-size:18px; cursor:pointer; transition:all .15s;
+      display:inline-flex; align-items:center; justify-content:center;
+    }
+    .status-btn:hover { transform:scale(1.12); border-color:#94a3b8; }
+    .status-btn.active-ok   { background:#dcfce7; border-color:#16a34a; box-shadow:0 0 0 2px #86efac; }
+    .status-btn.active-warn { background:#fef9c3; border-color:#d97706; box-shadow:0 0 0 2px #fde68a; }
+    .status-btn.active-bad  { background:#fee2e2; border-color:#dc2626; box-shadow:0 0 0 2px #fca5a5; }
+    .status-btn.active-buy  { background:#ede9fe; border-color:#7c3aed; box-shadow:0 0 0 2px #c4b5fd; }
+    .cl-remove-btn {
+      background:none; border:none; color:#cbd5e1; cursor:pointer;
+      font-size:16px; padding:4px 6px; border-radius:4px; line-height:1;
+    }
+    .cl-remove-btn:hover { color:var(--danger); background:#fee2e2; }
+    .cl-add-row {
+      display:flex; gap:8px; margin-top:12px; padding-top:10px;
+      border-top:1px dashed var(--border);
+    }
+    .cl-add-input {
+      flex:1; padding:8px 12px; border:1.5px dashed var(--border);
+      border-radius:8px; font-family:inherit; font-size:13px;
+    }
+    .cl-add-input:focus { outline:none; border-color:var(--primary); }
   </style>
 </head>
 <body>
@@ -189,6 +228,73 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     checklistModal – בדיקת רכב
+══════════════════════════════════════════════ -->
+<div id="checklistModal" class="modal-overlay">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <h3>🔍 בדיקת רכב</h3>
+      <button class="modal-close" onclick="closeChecklist()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:80vh;overflow-y:auto">
+
+      <!-- פרטי רכב – אופציונלי, יודפסו בכותרת -->
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
+        💡 מלא פרטים שיודפסו בכותרת, או השאר ריק לסימון ידני בשטח
+      </div>
+      <div class="grid-inputs" style="margin-bottom:16px">
+        <div class="field">
+          <label>🚗 מספר רכב</label>
+          <input type="text" id="cl_car" placeholder="123-45-678" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>👤 שם לקוח</label>
+          <input type="text" id="cl_owner" placeholder="שם מלא" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>📞 טלפון</label>
+          <input type="text" id="cl_phone" placeholder="050-0000000" oninput="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>📅 תאריך</label>
+          <input type="text" id="cl_date" placeholder="DD/MM/YYYY" oninput="markFilled(this)">
+        </div>
+      </div>
+
+      <!-- רשימת פריטים -->
+      <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--text-muted)">
+        פריטי הבדיקה (✕ להסרה מהרשימה):
+      </div>
+      <div id="clItemsList"></div>
+
+      <!-- הוסף פריט -->
+      <div class="cl-add-row">
+        <input type="text" id="cl_new_item" class="cl-add-input"
+          placeholder="הוסף פריט בדיקה..."
+          onkeydown="if(event.key==='Enter')addClItem()">
+        <button class="btn btn-secondary btn-sm" onclick="addClItem()">+ הוסף</button>
+      </div>
+
+      <!-- אפשרויות -->
+      <div style="margin-top:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:13px;color:var(--text-muted)">עותקים:</label>
+          <input type="number" id="cl_copies" value="1" min="1" max="10"
+            style="width:55px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:14px;text-align:center">
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="saveClTemplate()">💾 שמור כרשימת ברירת מחדל</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetClTemplate()">↩️ שחזר ברירת מחדל</button>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeChecklist()">סגור</button>
+      <button class="btn btn-primary" onclick="printChecklist()">🖨️ הדפס טופס</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 <div id="confirmOverlay" class="confirm-overlay">
   <div class="confirm-box">
@@ -223,15 +329,31 @@ function render() {
     </div>`;
 
   const grid = document.getElementById('formsGrid');
+  // Built-in: vehicle inspection checklist card (always first)
+  const clCard = `<div class="form-card" style="border-right-color:#1a9e5c">
+    <div class="form-card-title">🔍 בדיקת רכב</div>
+    <div class="form-card-cols">נורות · שמן · מגבים · צמיגים · בלמים · מצבר...</div>
+    <div class="form-card-meta">טופס בדיקה לנייר עם עמודות סימון · כולל שלדת צמיגים · עמוד יחיד</div>
+    <div class="form-card-actions">
+      <div class="copies-wrap">
+        <label>עותקים:</label>
+        <input type="number" class="copies-input" id="cl_copies" value="1" min="1" max="10">
+      </div>
+      <button class="btn btn-primary" style="padding:8px 14px" onclick="openChecklist()">🖨️ הדפס</button>
+      <button class="btn btn-secondary" style="padding:8px 10px" onclick="openChecklistEdit()" title="ערוך פריטים">✏️</button>
+      <button class="btn btn-danger" style="padding:8px 10px" onclick="deleteClTemplate()" title="מחק רשימה">🗑️</button>
+    </div>
+  </div>`;
+
   if (!forms.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <p>אין תבניות עדיין</p>
+    grid.innerHTML = clCard + `<div class="empty-state" style="grid-column:1/-1;margin-top:8px">
+      <p>אין תבניות נוספות עדיין</p>
       <button class="btn btn-primary" onclick="openForm()">➕ צור תבנית ראשונה</button>
     </div>`;
     return;
   }
 
-  grid.innerHTML = forms.map(f => {
+  grid.innerHTML = clCard + forms.map(f => {
     const colNames = f.columns.map(c => c.label).join(' · ');
     return `<div class="form-card">
       <div class="form-card-title">${f.icon || '📋'} ${f.name}</div>
@@ -480,6 +602,284 @@ function printForm(id) {
     @media screen {
       body { background: #f0f0f0; padding: 20px; }
       .print-page { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2); margin-bottom: 20px; padding: 15mm; }
+    }
+  </style>
+</head>
+<body>
+  ${Array(copies).fill(pageHTML).join('\n')}
+  <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank');
+  if (!w) { showToast('אפשר חלונות קופצים בדפדפן', 'error'); return; }
+  w.document.write(html);
+  w.document.close();
+}
+
+/* ════════════════════════════════════════════
+   CHECKLIST – בדיקת רכב
+════════════════════════════════════════════ */
+const DB_CL_ITEMS = 'pnc_checklist_items';
+
+const _CL_DEFAULTS = [
+  { name:'נורות קדמיות',     icon:'💡' },
+  { name:'נורות אחוריות',    icon:'💡' },
+  { name:'נורות עצירה',      icon:'💡' },
+  { name:'מגבים ונוזל ווישר', icon:'🌧️' },
+  { name:'מים – קירור מנוע', icon:'💧' },
+  { name:'שמן מנוע',         icon:'🛢️' },
+  { name:'צמיג קד׳ ימין',   icon:'🔵' },
+  { name:'צמיג קד׳ שמאל',   icon:'🔵' },
+  { name:'צמיג אח׳ ימין',   icon:'🔵' },
+  { name:'צמיג אח׳ שמאל',   icon:'🔵' },
+  { name:'מצבר',             icon:'🔋' },
+  { name:'בלמים',            icon:'🛑' },
+];
+
+let _clItems = [];
+
+function _clLoadItems() {
+  const saved = getDB(DB_CL_ITEMS);
+  const base  = (saved && saved.length) ? saved : _CL_DEFAULTS;
+  return base.map(x => ({ name: x.name, icon: x.icon }));
+}
+
+// Open in print mode (just car info, no item editing)
+function openChecklist() {
+  _clItems = _clLoadItems();
+  document.getElementById('cl_car').value   = '';
+  document.getElementById('cl_owner').value = '';
+  document.getElementById('cl_phone').value = '';
+  document.getElementById('cl_date').value  = '';
+  document.getElementById('cl_copies').value = document.getElementById('cl_copies').value || 1;
+  _renderClItems();
+  document.getElementById('checklistModal').classList.add('open');
+  document.getElementById('cl_car').focus();
+}
+
+// Open in edit mode (manage items)
+function openChecklistEdit() {
+  _clItems = _clLoadItems();
+  _renderClItems();
+  document.getElementById('checklistModal').classList.add('open');
+}
+
+function closeChecklist() {
+  document.getElementById('checklistModal').classList.remove('open');
+}
+
+function _renderClItems() {
+  document.getElementById('clItemsList').innerHTML = _clItems.map((item, i) => `
+    <div class="check-item-row">
+      <div class="check-item-name">${item.icon} ${item.name}</div>
+      <button class="cl-remove-btn" onclick="removeClItem(${i})" title="הסר פריט">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeClItem(idx) {
+  _clItems.splice(idx, 1);
+  _renderClItems();
+}
+
+function addClItem() {
+  const inp  = document.getElementById('cl_new_item');
+  const name = inp.value.trim();
+  if (!name) { inp.focus(); return; }
+  _clItems.push({ name, icon: '🔧' });
+  inp.value = '';
+  _renderClItems();
+  document.getElementById('clItemsList').lastElementChild?.scrollIntoView({ behavior:'smooth' });
+}
+
+function saveClTemplate() {
+  setDB(DB_CL_ITEMS, _clItems.map(x => ({ name: x.name, icon: x.icon })));
+  showToast('רשימת ברירת מחדל עודכנה ✓', 'success');
+}
+
+function resetClTemplate() {
+  setDB(DB_CL_ITEMS, []);
+  _clItems = _clLoadItems();
+  _renderClItems();
+  showToast('רשימה אופסה לברירת מחדל');
+}
+
+function deleteClTemplate() {
+  showConfirm('למחוק את רשימת בדיקת הרכב? הרשימה תאופס לברירת המחדל.', () => {
+    setDB(DB_CL_ITEMS, []);
+    _clItems = _clLoadItems();
+    showToast('רשימת בדיקת הרכב נמחקה ✓');
+  });
+}
+
+function printChecklist() {
+  const settings = getSettings();
+  const biz   = settings.businessName || 'אוטוליין';
+  const car   = document.getElementById('cl_car').value.trim();
+  const owner = document.getElementById('cl_owner').value.trim();
+  const phone = document.getElementById('cl_phone').value.trim();
+  const date  = document.getElementById('cl_date').value.trim();
+  const copies = Math.max(1, parseInt(document.getElementById('cl_copies').value) || 1);
+
+  // Car info header fields (blank line if not filled)
+  const carLine   = car   ? car   : '______________________';
+  const ownerLine = owner ? owner : '______________________';
+  const phoneLine = phone ? phone : '______________________';
+  const dateLine  = date  ? date  : '______________________';
+
+  // Checklist rows – תקין / לא תקין columns for manual marking
+  const itemRows = _clItems.map(item => `
+    <tr>
+      <td class="item-td">${item.icon} ${item.name}</td>
+      <td class="sym-td">תקין ○</td>
+      <td class="sym-td">לא תקין ○</td>
+    </tr>`).join('');
+
+  // Extra blank rows for custom additions
+  const blankRows = Array(4).fill(`
+    <tr>
+      <td class="item-td" style="color:#ccc">_________________________</td>
+      <td class="sym-td">תקין ○</td>
+      <td class="sym-td">לא תקין ○</td>
+    </tr>`).join('');
+
+  // SVG car chassis with 4 wheel circles to mark
+  const chassisSVG = `
+    <svg width="175" height="138" viewBox="0 0 175 138" xmlns="http://www.w3.org/2000/svg">
+      <!-- Direction labels -->
+      <text x="87" y="10" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="Arial">▲ קדמי</text>
+      <text x="87" y="133" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="Arial">▼ אחורי</text>
+      <!-- Car body -->
+      <rect x="42" y="18" width="91" height="100" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+      <!-- Windshield -->
+      <rect x="52" y="24" width="71" height="18" rx="4" fill="#bae6fd" stroke="#94a3b8" stroke-width="1"/>
+      <!-- Rear window -->
+      <rect x="52" y="96" width="71" height="16" rx="4" fill="#bae6fd" stroke="#94a3b8" stroke-width="1"/>
+      <!-- Wheel: ימין קדמי -->
+      <circle cx="24" cy="38" r="20" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+      <text x="24" y="42" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial">ימין</text>
+      <text x="24" y="50" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial">קדמי</text>
+      <!-- Wheel: שמאל קדמי -->
+      <circle cx="151" cy="38" r="20" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+      <text x="151" y="42" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial">שמאל</text>
+      <text x="151" y="50" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial">קדמי</text>
+      <!-- Wheel: ימין אחורי -->
+      <circle cx="24" cy="100" r="20" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+      <text x="24" y="104" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial">ימין</text>
+      <text x="24" y="112" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial">אחורי</text>
+      <!-- Wheel: שמאל אחורי -->
+      <circle cx="151" cy="100" r="20" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+      <text x="151" y="104" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial">שמאל</text>
+      <text x="151" y="112" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial">אחורי</text>
+    </svg>`;
+
+  const pageHTML = `
+    <div class="print-page">
+      <!-- Header -->
+      <div class="header">
+        <div>
+          <div class="biz-name">${biz}</div>
+          <div class="doc-title">🔍 רשימת בדיקת רכב</div>
+        </div>
+        <div class="car-info">
+          <div>🚗 רכב: <strong>${carLine}</strong> &nbsp;&nbsp; 👤 לקוח: <strong>${ownerLine}</strong></div>
+          <div>📞 טלפון: <strong>${phoneLine}</strong> &nbsp;&nbsp; 📅 תאריך: <strong>${dateLine}</strong></div>
+        </div>
+      </div>
+
+      <!-- Main body: table + chassis -->
+      <div class="body-row">
+        <!-- Checklist table -->
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="item-th">פריט לבדיקה</th>
+                <th class="sym-th">תקין</th>
+                <th class="sym-th">לא תקין</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemRows}
+              ${blankRows}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Chassis + notes -->
+        <div class="side-col">
+          <div class="chassis-box">
+            <div style="font-size:8pt;font-weight:bold;margin-bottom:3mm;color:#374151">סמן צמיג בעייתי:</div>
+            ${chassisSVG}
+          </div>
+          <div class="notes-box">
+            <div style="font-size:8pt;font-weight:bold;margin-bottom:2mm">הערות:</div>
+            <div class="note-line"></div>
+            <div class="note-line"></div>
+            <div class="note-line"></div>
+            <div class="note-line"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer: signatures -->
+      <div class="sig-row">
+        <div class="sig-field"><div class="sig-line"></div>חתימת לקוח</div>
+        <div class="sig-field"><div class="sig-line"></div>חתימת טכנאי</div>
+      </div>
+    </div>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    @page { size:A4 portrait; margin:10mm 12mm; }
+    body { font-family:Arial,'Heebo',sans-serif; direction:rtl; background:#fff; font-size:10pt; }
+
+    .print-page {
+      width:100%; height:calc(297mm - 20mm);
+      display:flex; flex-direction:column;
+      page-break-after:always;
+    }
+    .print-page:last-child { page-break-after:avoid; }
+
+    /* Header */
+    .header {
+      display:flex; justify-content:space-between; align-items:flex-start;
+      border-bottom:2.5px solid #1e293b; padding-bottom:3mm; margin-bottom:3mm; flex-shrink:0;
+    }
+    .biz-name  { font-size:15pt; font-weight:900; }
+    .doc-title { font-size:10pt; font-weight:bold; color:#1a9e5c; margin-top:1mm; }
+    .car-info  { text-align:left; font-size:9.5pt; line-height:1.8; }
+
+    /* Body: table + side column */
+    .body-row  { display:flex; gap:4mm; flex:1; overflow:hidden; }
+    .table-wrap { flex:1; overflow:hidden; }
+
+    /* Table */
+    table { width:100%; border-collapse:collapse; height:100%; }
+    .item-th { background:#1e293b; color:#fff; padding:2mm 2.5mm; font-size:9.5pt; text-align:right; }
+    .sym-th  { background:#1e293b; color:#fff; padding:1.5mm 1mm; font-size:9pt; text-align:center; width:20%; line-height:1.2; }
+    .item-td { padding:1.5mm 2.5mm; border:1px solid #cbd5e1; font-size:9.5pt; vertical-align:middle; height:7.5mm; }
+    .sym-td  { border:1px solid #cbd5e1; text-align:center; font-size:9pt; color:#374151; vertical-align:middle; width:20%; }
+
+    /* Side column */
+    .side-col { width:50mm; flex-shrink:0; display:flex; flex-direction:column; gap:3mm; }
+    .chassis-box { border:1.5px solid #e2e8f0; border-radius:6px; padding:3mm; background:#fafafa; }
+    .notes-box   { flex:1; border:1.5px solid #e2e8f0; border-radius:6px; padding:3mm; }
+    .note-line   { border-bottom:1px solid #94a3b8; height:7mm; margin-bottom:2mm; }
+
+    /* Footer */
+    .sig-row   { display:flex; gap:15mm; margin-top:3mm; padding-top:2mm; border-top:1.5px solid #cbd5e1; flex-shrink:0; }
+    .sig-field { flex:1; font-size:9pt; color:#555; }
+    .sig-line  { border-bottom:1px solid #374151; height:6mm; margin-bottom:1mm; }
+
+    @media screen {
+      body { background:#e5e7eb; padding:15px; }
+      .print-page { background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.2); margin-bottom:20px; padding:10mm 12mm; }
     }
   </style>
 </head>

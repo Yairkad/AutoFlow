@@ -29,6 +29,10 @@
     .gas-instructions ol { padding-right:20px; }
     .gas-instructions code { background:#e2e8f0; border-radius:4px; padding:2px 6px; font-family:monospace; font-size:12px; display:block; margin:6px 0; white-space:pre-wrap; word-break:break-all; }
     details summary { cursor:pointer; font-weight:700; font-size:14px; color:var(--primary); }
+    .danger-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+    @media(max-width:540px){ .danger-grid { grid-template-columns:1fr; } }
+    .danger-row { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:8px 14px; }
+    .danger-row span { font-size:13px; font-weight:500; color:var(--text); }
   </style>
 </head>
 <body>
@@ -233,21 +237,26 @@
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
       פעולות אלו בלתי הפיכות! מומלץ לגבות לפני.
     </p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_expenses','הוצאות')">🗑 הוצאות</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_products','מוצרים')">🗑 מוצרים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_tires','צמיגים')">🗑 צמיגים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_quotes_tires','הצעות מחיר צמיגים')">🗑 הצעות צמיגים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_quotes_parts','הצעות מחיר חלקים')">🗑 הצעות חלקים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_suppliers','ספקים')">🗑 ספקים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('mualem_db_v3','בדיקות קניה')">🗑 בדיקות קניה</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_cars_inventory','רכבים')">🗑 רכבים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_cars_buys','קנייה רכבים')">🗑 קנייה רכבים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_cars_sells','מכירה רכבים')">🗑 מכירה רכבים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_employees','עובדים')">🗑 עובדים</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_salaries','משכורות')">🗑 משכורות</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_customer_debts','חובות לקוחות')">🗑 חובות לקוחות</button>
-      <button class="btn btn-danger btn-sm" onclick="clearModule('pnc_supplier_debts','חובות לספקים')">🗑 חובות לספקים</button>
+    <div class="danger-grid">
+      <div class="danger-row"><span>💰 הוצאות</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_expenses','הוצאות')">🗑 מחק</button></div>
+      <div class="danger-row"><span>🧾 חשבונות – חיובים</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_tenants','חשבונות – חיובים')">🗑 מחק</button></div>
+      <div class="danger-row"><span>🧾 חשבונות – תשלומים</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_payments','חשבונות – תשלומים')">🗑 מחק</button></div>
+      <div class="danger-row"><span>💳 חובות לקוחות</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_customer_debts','חובות לקוחות')">🗑 מחק</button></div>
+      <div class="danger-row"><span>💳 חובות לספקים</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_supplier_debts','חובות לספקים')">🗑 מחק</button></div>
+      <div class="danger-row"><span>👷 עובדים</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_employees','עובדים')">🗑 מחק</button></div>
+      <div class="danger-row"><span>👷 משכורות</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_salaries','משכורות')">🗑 מחק</button></div>
+      <div class="danger-row"><span>📦 מוצרים</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_products','מוצרים')">🗑 מחק</button></div>
+      <div class="danger-row"><span>🔵 צמיגים</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_tires','צמיגים')">🗑 מחק</button></div>
+      <div class="danger-row"><span>🚗 רכבים – מלאי</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_cars_inventory','רכבים – מלאי')">🗑 מחק</button></div>
+      <div class="danger-row"><span>🚗 רכבים – קניות</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_cars_buys','רכבים – קניות')">🗑 מחק</button></div>
+      <div class="danger-row"><span>🚗 רכבים – מכירות</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_cars_sells','רכבים – מכירות')">🗑 מחק</button></div>
+      <div class="danger-row"><span>💬 הצעות מחיר – צמיגים</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_quotes_tires','הצעות מחיר – צמיגים')">🗑 מחק</button></div>
+      <div class="danger-row"><span>💬 הצעות מחיר – חלקים</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_quotes_parts','הצעות מחיר – חלקים')">🗑 מחק</button></div>
+      <div class="danger-row"><span>🏭 ספקים</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_suppliers','ספקים')">🗑 מחק</button></div>
+      <div class="danger-row"><span>📝 בדיקות קניה</span><button class="btn btn-danger btn-sm" onclick="clearModule('mualem_db_v3','בדיקות קניה')">🗑 מחק</button></div>
+      <div class="danger-row"><span>🔔 תזכורות</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_reminders','תזכורות')">🗑 מחק</button></div>
+      <div class="danger-row"><span>📄 מסמכים – תבניות</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_forms','מסמכים – תבניות')">🗑 מחק</button></div>
+      <div class="danger-row"><span>🔍 בדיקת רכב – רשימה</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_checklist_items','בדיקת רכב – רשימה')">🗑 מחק</button></div>
     </div>
     <hr style="border:none;border-top:1px solid var(--danger-light);margin-bottom:14px">
     <button class="btn btn-danger" onclick="clearAllData()" style="font-size:14px">💣 מחק את כל הנתונים (איפוס מלא)</button>
@@ -532,20 +541,25 @@ function restoreWithPin(input) {
 
 function loadDataCounts() {
   const counts = [
-    { label:'הוצאות',        key:'pnc_expenses',      color:'' },
-    { label:'מוצרים',        key:'pnc_products',      color:'blue' },
-    { label:'צמיגים',        key:'pnc_tires',         color:'orange' },
-    { label:'הצעות צמיגים', key:'pnc_quotes_tires',  color:'' },
-    { label:'הצעות חלקים',  key:'pnc_quotes_parts',  color:'' },
-    { label:'ספקים',         key:'pnc_suppliers',     color:'orange' },
-    { label:'בדיקות',        key:'mualem_db_v3',          color:'' },
-    { label:'רכבים',   key:'pnc_cars_inventory',    color:'orange' },
-    { label:'קנייה רכבים',  key:'pnc_cars_buys',         color:'' },
-    { label:'מכירה רכבים',  key:'pnc_cars_sells',        color:'' },
-    { label:'עובדים',        key:'pnc_employees',         color:'' },
-    { label:'משכורות',       key:'pnc_salaries',          color:'' },
-    { label:'חובות לקוחות', key:'pnc_customer_debts',    color:'' },
-    { label:'חובות לספקים', key:'pnc_supplier_debts',    color:'' },
+    { label:'הוצאות',            key:'pnc_expenses',          color:'' },
+    { label:'חשבונות – חיובים',  key:'pnc_tenants',           color:'' },
+    { label:'חשבונות – תשלומים', key:'pnc_payments',          color:'' },
+    { label:'חובות לקוחות',      key:'pnc_customer_debts',    color:'' },
+    { label:'חובות לספקים',      key:'pnc_supplier_debts',    color:'' },
+    { label:'עובדים',            key:'pnc_employees',         color:'' },
+    { label:'משכורות',           key:'pnc_salaries',          color:'' },
+    { label:'מוצרים',            key:'pnc_products',          color:'blue' },
+    { label:'צמיגים',            key:'pnc_tires',             color:'orange' },
+    { label:'רכבים',             key:'pnc_cars_inventory',    color:'orange' },
+    { label:'קנייה רכבים',       key:'pnc_cars_buys',         color:'' },
+    { label:'מכירה רכבים',       key:'pnc_cars_sells',        color:'' },
+    { label:'הצעות צמיגים',      key:'pnc_quotes_tires',      color:'' },
+    { label:'הצעות חלקים',       key:'pnc_quotes_parts',      color:'' },
+    { label:'ספקים',             key:'pnc_suppliers',         color:'orange' },
+    { label:'בדיקות קניה',       key:'mualem_db_v3',          color:'' },
+    { label:'תזכורות',           key:'pnc_reminders',         color:'' },
+    { label:'תבניות מסמכים',     key:'pnc_forms',             color:'' },
+    { label:'בדיקת רכב',         key:'pnc_checklist_items',   color:'' },
   ];
   document.getElementById('dataCounts').innerHTML = counts.map(c => {
     const db = getDB(c.key);
@@ -608,7 +622,7 @@ function clearModule(key, label) {
 function clearAllData() {
   requirePin(() => {
     showConfirm('למחוק את כל הנתונים? הוצאות, מוצרים, צמיגים, הצעות, ספקים ובדיקות – הכל! פעולה זו בלתי הפיכה לחלוטין!', () => {
-      ['pnc_expenses','pnc_products','pnc_tires','pnc_quotes_tires','pnc_quotes_parts','pnc_suppliers','mualem_db_v3','pnc_cars_inventory','pnc_cars_buys','pnc_cars_sells','pnc_employees','pnc_salaries','pnc_customer_debts','pnc_supplier_debts'].forEach(k => setDB(k, []));
+      ['pnc_expenses','pnc_tenants','pnc_payments','pnc_customer_debts','pnc_supplier_debts','pnc_employees','pnc_salaries','pnc_products','pnc_tires','pnc_cars_inventory','pnc_cars_buys','pnc_cars_sells','pnc_quotes_tires','pnc_quotes_parts','pnc_suppliers','mualem_db_v3','pnc_reminders','pnc_forms','pnc_checklist_items'].forEach(k => setDB(k, []));
       loadDataCounts();
       showToast('כל הנתונים נמחקו ✓');
     });
