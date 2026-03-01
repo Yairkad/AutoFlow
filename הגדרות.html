@@ -29,12 +29,18 @@
     .gas-instructions ol { padding-right:20px; }
     .gas-instructions code { background:#e2e8f0; border-radius:4px; padding:2px 6px; font-family:monospace; font-size:12px; display:block; margin:6px 0; white-space:pre-wrap; word-break:break-all; }
     details summary { cursor:pointer; font-weight:700; font-size:14px; color:var(--primary); }
-    .danger-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
-    @media(max-width:540px){ .danger-grid { grid-template-columns:1fr; } }
-    .danger-row { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:8px 14px; }
-    .danger-row span { font-size:13px; font-weight:500; color:var(--text); }
-    .scan-folder-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-    .scan-folder-row input { min-width:0; }
+    .danger-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-bottom:14px; }
+    @media(max-width:800px){ .danger-grid { grid-template-columns:repeat(3,1fr); } }
+    @media(max-width:540px){ .danger-grid { grid-template-columns:repeat(2,1fr); } }
+    @media(max-width:340px){ .danger-grid { grid-template-columns:1fr; } }
+    .danger-row { display:flex; align-items:center; justify-content:space-between; gap:6px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:4px 8px; }
+    .danger-row span { font-size:12px; font-weight:500; color:var(--text); }
+    .scan-folder-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; background:var(--bg); border:1.5px solid var(--border); border-radius:10px; padding:8px 12px; transition:border-color .15s; }
+    .scan-folder-row:focus-within { border-color:var(--primary); background:white; }
+    .scan-folder-row input { min-width:0; background:transparent; border:none; outline:none; padding:4px 6px; font-size:13px; font-family:inherit; color:var(--text); }
+    .scan-folder-row input::placeholder { color:var(--text-muted); }
+    .scan-folder-row .sf-divider { width:1px; height:24px; background:var(--border); flex-shrink:0; }
+    .scan-folder-row .sf-icon { font-size:17px; flex-shrink:0; }
   </style>
 </head>
 <body>
@@ -43,7 +49,7 @@
   <div class="header-brand">
     <img class="header-logo" src="" alt="לוגו">
     <div class="header-title">
-      <h1>אוטוליין</h1>
+      <h1>AutoFlow</h1>
       <p>מערכת עזר לניהול</p>
     </div>
   </div>
@@ -675,9 +681,11 @@ function loadScanFolders() {
   }
   list.innerHTML = folders.map((f, i) => `
     <div class="scan-folder-row">
-      <input type="text" value="${f.name}" placeholder="שם קטגוריה (חשבוניות, צ'קים...)" style="flex:1" data-sf-name="${i}" oninput="markFilled(this)">
-      <input type="text" value="${f.folderId}" placeholder="URL או ID של תיקיית Drive" style="flex:2" data-sf-id="${i}" oninput="markFilled(this)">
-      <button class="btn btn-danger btn-sm" onclick="removeScanFolder(${i})">✕</button>
+      <span class="sf-icon">📁</span>
+      <input type="text" value="${f.name}" placeholder="שם קטגוריה" style="flex:1;min-width:80px" data-sf-name="${i}" oninput="markFilled(this)">
+      <span class="sf-divider"></span>
+      <input type="text" value="${f.folderId}" placeholder="URL או ID תיקיית Drive" style="flex:2" data-sf-id="${i}" oninput="markFilled(this)">
+      <button style="background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0" onmouseover="this.style.color='#dc2626';this.style.background='#fee2e2'" onmouseout="this.style.color='#cbd5e1';this.style.background='none'" onclick="removeScanFolder(${i})" title="הסר">✕</button>
     </div>`).join('');
 }
 

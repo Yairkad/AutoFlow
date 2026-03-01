@@ -126,6 +126,14 @@
     }
     .cl-add-input:focus { outline:none; border-color:var(--primary); }
 
+    /* ── Tabs ───────────────────────────────────── */
+    .tabs-bar { display:flex; gap:4px; border-bottom:2px solid var(--border); margin-bottom:16px; }
+    .tab-btn { background:none; border:none; padding:8px 20px; font-size:14px; font-weight:700; color:var(--text-muted); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all .15s; border-radius:6px 6px 0 0; font-family:inherit; }
+    .tab-btn:hover { color:var(--text); background:var(--bg); }
+    .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); background:white; }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
     /* ── Scans to Drive ─────────────────────────── */
     .scans-section { background:white; border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; margin-bottom:20px; }
     .scans-section h3 { font-size:15px; font-weight:700; margin:0 0 14px; padding-bottom:10px; border-bottom:1px solid var(--border); }
@@ -146,7 +154,7 @@
   <div class="header-brand">
     <img class="header-logo" src="" alt="לוגו">
     <div class="header-title">
-      <h1>אוטוליין</h1>
+      <h1>AutoFlow</h1>
       <p>מערכת עזר לניהול</p>
     </div>
   </div>
@@ -173,31 +181,42 @@
   <!-- Stats -->
   <div class="stats-row" id="statsRow"></div>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <button class="btn btn-primary" onclick="openForm()">➕ תבנית חדשה</button>
+  <!-- Tabs -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" id="tabForms" onclick="switchTab('forms')">📋 תבניות</button>
+    <button class="tab-btn" id="tabScans" onclick="switchTab('scans')">📂 סריקות Drive</button>
   </div>
 
-  <!-- Scans to Drive -->
-  <div class="scans-section">
-    <h3>📂 סריקות ל-Drive</h3>
-    <div class="scan-upload-row">
-      <select id="scanCategory">
-        <option value="">— ללא קטגוריה —</option>
-      </select>
-      <input type="text" id="scanNote" placeholder="תיאור (אופציונלי)">
-      <label class="btn btn-secondary" style="cursor:pointer;white-space:nowrap">
-        📁 בחר קובץ
-        <input type="file" id="scanFileInput" style="display:none" onchange="onScanFileChosen(this)">
-      </label>
-      <button class="btn btn-primary" onclick="uploadScan()" style="white-space:nowrap">⬆️ שלח ל-Drive</button>
+  <!-- Forms panel -->
+  <div id="panelForms" class="tab-panel active">
+    <div class="toolbar" style="margin-bottom:16px">
+      <button class="btn btn-primary" onclick="openForm()">➕ תבנית חדשה</button>
     </div>
-    <div class="scan-chosen" id="scanChosen">לא נבחר קובץ</div>
-    <div id="scansList"></div>
+    <div class="forms-grid" id="formsGrid"></div>
   </div>
 
-  <!-- Cards -->
-  <div class="forms-grid" id="formsGrid"></div>
+  <!-- Scans panel -->
+  <div id="panelScans" class="tab-panel">
+    <div class="scans-section">
+      <h3>📂 סריקות ל-Drive</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+        💡 להגדרת קטגוריות (תיקיות Drive): <a href="הגדרות.html" style="color:var(--accent);text-decoration:none;font-weight:600">הגדרות ← תיקיות Drive</a>
+      </p>
+      <div class="scan-upload-row">
+        <select id="scanCategory">
+          <option value="">— ללא קטגוריה —</option>
+        </select>
+        <input type="text" id="scanNote" placeholder="תיאור (אופציונלי)">
+        <label class="btn btn-secondary" style="cursor:pointer;white-space:nowrap">
+          📁 בחר קובץ
+          <input type="file" id="scanFileInput" style="display:none" onchange="onScanFileChosen(this)">
+        </label>
+        <button class="btn btn-primary" onclick="uploadScan()" style="white-space:nowrap">⬆️ שלח ל-Drive</button>
+      </div>
+      <div class="scan-chosen" id="scanChosen">לא נבחר קובץ</div>
+      <div id="scansList"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════
@@ -1020,6 +1039,15 @@ function deleteScan(id) {
     renderScans();
     showToast('רשומה נמחקה ✓');
   });
+}
+
+/* ── tabs ────────────────────────────────── */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const key = tab.charAt(0).toUpperCase() + tab.slice(1);
+  document.getElementById('tab' + key).classList.add('active');
+  document.getElementById('panel' + key).classList.add('active');
 }
 
 /* ── init ────────────────────────────────── */

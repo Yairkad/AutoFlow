@@ -16,25 +16,28 @@
     .welcome { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
     .modules-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 18px; margin-bottom: 28px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px; margin-bottom: 24px;
     }
+    @media(max-width:900px){ .modules-grid { grid-template-columns: repeat(3,1fr); } }
+    @media(max-width:620px){ .modules-grid { grid-template-columns: repeat(2,1fr); } }
+    @media(max-width:380px){ .modules-grid { grid-template-columns: 1fr; } }
     .module-card {
       background: white; border-radius: var(--radius);
-      box-shadow: var(--shadow); padding: 24px;
+      box-shadow: var(--shadow); padding: 14px 16px;
       text-decoration: none; color: var(--text);
-      display: flex; flex-direction: column; gap: 10px;
+      display: flex; flex-direction: column; gap: 5px;
       transition: all 0.2s; border-right: 5px solid var(--primary);
     }
-    .module-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .module-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
     .module-card.blue  { border-right-color: var(--accent); }
     .module-card.orange{ border-right-color: var(--warning); }
     .module-card.gray  { border-right-color: var(--border-dark); }
-    .module-card .mod-icon { font-size: 36px; }
-    .module-card h2 { font-size: 17px; font-weight: 900; margin: 0; }
-    .module-card p { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5; }
+    .module-card .mod-icon { font-size: 26px; }
+    .module-card h2 { font-size: 15px; font-weight: 900; margin: 0; }
+    .module-card p { font-size: 12px; color: var(--text-muted); margin: 0; line-height: 1.4; }
     .module-card .mod-stat {
-      font-size: 22px; font-weight: 900; color: var(--primary); margin-top: 4px;
+      font-size: 18px; font-weight: 900; color: var(--primary); margin-top: 2px;
     }
     .module-card.blue  .mod-stat { color: var(--accent); }
     .module-card.orange .mod-stat { color: var(--warning); }
@@ -65,7 +68,7 @@
   <div class="header-brand">
     <img class="header-logo" src="" alt="לוגו">
     <div class="header-title">
-      <h1>אוטוליין</h1>
+      <h1>AutoFlow</h1>
       <p>מערכת עזר לניהול</p>
     </div>
   </div>
