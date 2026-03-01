@@ -125,6 +125,19 @@
       border-radius:8px; font-family:inherit; font-size:13px;
     }
     .cl-add-input:focus { outline:none; border-color:var(--primary); }
+
+    /* ── Scans to Drive ─────────────────────────── */
+    .scans-section { background:white; border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; margin-bottom:20px; }
+    .scans-section h3 { font-size:15px; font-weight:700; margin:0 0 14px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+    .scan-upload-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+    .scan-upload-row select { padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; min-width:120px; }
+    .scan-upload-row input[type=text] { flex:1; min-width:120px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; }
+    .scan-chosen { font-size:12px; color:var(--text-muted); margin-bottom:10px; min-height:16px; }
+    .scans-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:12px; }
+    .scans-table th { background:var(--bg); padding:8px 10px; text-align:right; border-bottom:2px solid var(--border); font-weight:700; white-space:nowrap; }
+    .scans-table td { padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle; word-break:break-word; }
+    .scans-table tr:last-child td { border-bottom:none; }
+    .scans-empty { font-size:13px; color:var(--text-muted); text-align:center; padding:20px 0; }
   </style>
 </head>
 <body>
@@ -163,6 +176,24 @@
   <!-- Toolbar -->
   <div class="toolbar">
     <button class="btn btn-primary" onclick="openForm()">➕ תבנית חדשה</button>
+  </div>
+
+  <!-- Scans to Drive -->
+  <div class="scans-section">
+    <h3>📂 סריקות ל-Drive</h3>
+    <div class="scan-upload-row">
+      <select id="scanCategory">
+        <option value="">— ללא קטגוריה —</option>
+      </select>
+      <input type="text" id="scanNote" placeholder="תיאור (אופציונלי)">
+      <label class="btn btn-secondary" style="cursor:pointer;white-space:nowrap">
+        📁 בחר קובץ
+        <input type="file" id="scanFileInput" style="display:none" onchange="onScanFileChosen(this)">
+      </label>
+      <button class="btn btn-primary" onclick="uploadScan()" style="white-space:nowrap">⬆️ שלח ל-Drive</button>
+    </div>
+    <div class="scan-chosen" id="scanChosen">לא נבחר קובץ</div>
+    <div id="scansList"></div>
   </div>
 
   <!-- Cards -->
@@ -895,8 +926,106 @@ function printChecklist() {
   w.document.close();
 }
 
+/* ── Scans to Drive ──────────────────────── */
+const DB_SCANS = 'pnc_scans';
+let _scanFile = null;
+
+function loadScanCategories() {
+  const folders = getSettings().scanFolders || [];
+  const sel = document.getElementById('scanCategory');
+  sel.innerHTML = '<option value="">— ללא קטגוריה —</option>' +
+    folders.map(f => `<option value="${f.folderId}">${f.name}</option>`).join('');
+}
+
+function onScanFileChosen(input) {
+  _scanFile = input.files[0] || null;
+  document.getElementById('scanChosen').textContent = _scanFile
+    ? `📄 ${_scanFile.name} (${(_scanFile.size / 1024).toFixed(1)} KB)`
+    : 'לא נבחר קובץ';
+}
+
+async function uploadScan() {
+  const url = (getSettings().gasUrl || '').trim();
+  if (!url) { showToast('הגדר כתובת GAS בהגדרות תחילה', 'error'); return; }
+  if (!_scanFile) { showToast('בחר קובץ תחילה', 'error'); return; }
+
+  const sel      = document.getElementById('scanCategory');
+  const folderId = sel.value.trim();
+  const catName  = sel.selectedOptions[0]?.text || 'ללא קטגוריה';
+  const note     = document.getElementById('scanNote').value.trim();
+  const btn      = document.querySelector('[onclick="uploadScan()"]');
+  btn.disabled = true; btn.textContent = '⏳ מעלה...';
+
+  try {
+    const base64 = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload  = e => res(e.target.result.split(',')[1]);
+      reader.onerror = rej;
+      reader.readAsDataURL(_scanFile);
+    });
+
+    const resp = await fetch(url, {
+      method: 'POST',
+      redirect: 'follow',
+      body: JSON.stringify({
+        type: '__file__',
+        data: base64,
+        mimeType: _scanFile.type || 'application/octet-stream',
+        fileName: _scanFile.name,
+        folderId: folderId || null
+      })
+    });
+    const json = await resp.json();
+    if (json.error) throw new Error(json.error);
+
+    const scans = getDB(DB_SCANS);
+    scans.unshift({ id: nowId(), name: _scanFile.name, category: catName, note, date: todayStr(), fileId: json.fileId, driveUrl: json.driveUrl });
+    setDB(DB_SCANS, scans);
+    renderScans();
+
+    _scanFile = null;
+    document.getElementById('scanFileInput').value = '';
+    document.getElementById('scanNote').value = '';
+    document.getElementById('scanChosen').textContent = 'לא נבחר קובץ';
+    showToast('הקובץ הועלה ל-Drive ✓', 'success');
+  } catch(e) {
+    showToast('שגיאה בהעלאה: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '⬆️ שלח ל-Drive';
+  }
+}
+
+function renderScans() {
+  const scans = getDB(DB_SCANS);
+  const el = document.getElementById('scansList');
+  if (!scans.length) {
+    el.innerHTML = '<div class="scans-empty">אין סריקות עדיין – העלה קובץ ראשון ⬆️</div>';
+    return;
+  }
+  el.innerHTML = `<table class="scans-table">
+    <thead><tr><th>שם קובץ</th><th>קטגוריה</th><th>תיאור</th><th>תאריך</th><th></th></tr></thead>
+    <tbody>${scans.map(s => `<tr>
+      <td><a href="${s.driveUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">🔗 ${s.name}</a></td>
+      <td>${s.category || '—'}</td>
+      <td>${s.note || '—'}</td>
+      <td style="white-space:nowrap">${s.date}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteScan(${s.id})">🗑</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function deleteScan(id) {
+  showConfirm('למחוק את הרשומה? הקובץ ב-Drive לא יימחק.', () => {
+    setDB(DB_SCANS, getDB(DB_SCANS).filter(s => s.id !== id));
+    renderScans();
+    showToast('רשומה נמחקה ✓');
+  });
+}
+
 /* ── init ────────────────────────────────── */
 render();
+loadScanCategories();
+renderScans();
 </script>
 </body>
 </html>

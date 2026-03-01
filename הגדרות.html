@@ -33,6 +33,8 @@
     @media(max-width:540px){ .danger-grid { grid-template-columns:1fr; } }
     .danger-row { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:8px 14px; }
     .danger-row span { font-size:13px; font-weight:500; color:var(--text); }
+    .scan-folder-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .scan-folder-row input { min-width:0; }
   </style>
 </head>
 <body>
@@ -181,6 +183,20 @@
     </div>
   </div>
 
+  <!-- Drive Scan Folders -->
+  <div class="settings-section">
+    <h3>📂 תיקיות Drive לסריקות</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+      הגדר תיקיה ב-Google Drive לכל קטגוריה (חשבוניות, צ'קים, ספקים...).
+      הדבק את ה-URL המלא של התיקיה או את ה-ID בלבד – המערכת תחלץ אוטומטית.
+    </p>
+    <div id="scanFoldersList"></div>
+    <button class="btn btn-secondary btn-sm" onclick="addScanFolder()" style="margin-top:8px">➕ הוסף קטגוריה</button>
+    <div style="margin-top:14px">
+      <button class="btn btn-primary" style="max-width:220px" onclick="saveScanFolders()">💾 שמור תיקיות</button>
+    </div>
+  </div>
+
   <!-- Cloud Sync -->
   <div class="settings-section">
     <h3>☁️ סנכרון ענן – Google Sheets</h3>
@@ -257,6 +273,7 @@
       <div class="danger-row"><span>🔔 תזכורות</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_reminders','תזכורות')">🗑 מחק</button></div>
       <div class="danger-row"><span>📄 מסמכים – תבניות</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_forms','מסמכים – תבניות')">🗑 מחק</button></div>
       <div class="danger-row"><span>🔍 בדיקת רכב – רשימה</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_checklist_items','בדיקת רכב – רשימה')">🗑 מחק</button></div>
+      <div class="danger-row"><span>📂 סריקות Drive (רשומות)</span><button class="btn btn-danger btn-sm" onclick="clearModule('pnc_scans','סריקות Drive')">🗑 מחק</button></div>
     </div>
     <hr style="border:none;border-top:1px solid var(--danger-light);margin-bottom:14px">
     <button class="btn btn-danger" onclick="clearAllData()" style="font-size:14px">💣 מחק את כל הנתונים (איפוס מלא)</button>
@@ -351,9 +368,9 @@ function doPost(e) {
   var payload = JSON.parse(e.postData.contents);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // ===== העלאת תמונה לדרייב =====
-  if (payload.type === '__photo__') {
-    return _savePhotoToDrive(payload);
+  // ===== העלאת קובץ לדרייב =====
+  if (payload.type === '__file__') {
+    return _saveFileToDrive(payload);
   }
 
   var dataMap = payload.type === '__all__' ? payload.data : {};
@@ -389,17 +406,20 @@ function doPost(e) {
   return ContentService.createTextOutput('ok');
 }
 
-// ===== שמירת תמונה לתיקיית Drive =====
-function _savePhotoToDrive(payload) {
+// ===== שמירת קובץ לתיקיית Drive =====
+// payload.folderId – ID של תיקיה ספציפית (אופציונלי)
+// אם לא סופק – נוצרת תיקיה ברירת מחדל 'אוטוליין-סריקות'
+function _saveFileToDrive(payload) {
   try {
-    var folder = _getOrCreateFolder('אוטוליין-תמונות');
+    var folder = payload.folderId
+      ? DriveApp.getFolderById(payload.folderId)
+      : _getOrCreateFolder('אוטוליין-סריקות');
     var decoded = Utilities.base64Decode(payload.data);
-    var blob = Utilities.newBlob(decoded, payload.mimeType || 'image/jpeg', payload.fileName || 'photo.jpg');
+    var blob = Utilities.newBlob(decoded, payload.mimeType || 'application/octet-stream', payload.fileName || 'file');
     var file = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    var fileId = file.getId();
     return ContentService
-      .createTextOutput(JSON.stringify({ fileId: fileId }))
+      .createTextOutput(JSON.stringify({ fileId: file.getId(), driveUrl: file.getUrl() }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch(ex) {
     return ContentService
@@ -419,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (el) el.textContent = GAS_CODE;
   loadSettingsForm();
   loadDataCounts();
+  loadScanFolders();
   updateSyncStatus();
   loadPinStatus();
 });
@@ -622,7 +643,7 @@ function clearModule(key, label) {
 function clearAllData() {
   requirePin(() => {
     showConfirm('למחוק את כל הנתונים? הוצאות, מוצרים, צמיגים, הצעות, ספקים ובדיקות – הכל! פעולה זו בלתי הפיכה לחלוטין!', () => {
-      ['pnc_expenses','pnc_tenants','pnc_payments','pnc_customer_debts','pnc_supplier_debts','pnc_employees','pnc_salaries','pnc_products','pnc_tires','pnc_cars_inventory','pnc_cars_buys','pnc_cars_sells','pnc_quotes_tires','pnc_quotes_parts','pnc_suppliers','mualem_db_v3','pnc_reminders','pnc_forms','pnc_checklist_items'].forEach(k => setDB(k, []));
+      ['pnc_expenses','pnc_tenants','pnc_payments','pnc_customer_debts','pnc_supplier_debts','pnc_employees','pnc_salaries','pnc_products','pnc_tires','pnc_cars_inventory','pnc_cars_buys','pnc_cars_sells','pnc_quotes_tires','pnc_quotes_parts','pnc_suppliers','mualem_db_v3','pnc_reminders','pnc_forms','pnc_checklist_items','pnc_scans'].forEach(k => setDB(k, []));
       loadDataCounts();
       showToast('כל הנתונים נמחקו ✓');
     });
@@ -635,6 +656,62 @@ async function doSyncPull() {
     const ok = await syncPullAll();
     if (ok) { loadDataCounts(); }
   });
+}
+
+// ===== SCAN FOLDERS =====
+function _parseFolderId(input) {
+  input = (input || '').trim();
+  const m = input.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  return input; // assume raw ID
+}
+
+function loadScanFolders() {
+  const folders = getSettings().scanFolders || [];
+  const list = document.getElementById('scanFoldersList');
+  if (!folders.length) {
+    list.innerHTML = '<p style="font-size:13px;color:var(--text-muted)">אין קטגוריות מוגדרות עדיין. לחץ ➕ להוסיף.</p>';
+    return;
+  }
+  list.innerHTML = folders.map((f, i) => `
+    <div class="scan-folder-row">
+      <input type="text" value="${f.name}" placeholder="שם קטגוריה (חשבוניות, צ'קים...)" style="flex:1" data-sf-name="${i}" oninput="markFilled(this)">
+      <input type="text" value="${f.folderId}" placeholder="URL או ID של תיקיית Drive" style="flex:2" data-sf-id="${i}" oninput="markFilled(this)">
+      <button class="btn btn-danger btn-sm" onclick="removeScanFolder(${i})">✕</button>
+    </div>`).join('');
+}
+
+function addScanFolder() {
+  const s = getSettings();
+  s.scanFolders = s.scanFolders || [];
+  s.scanFolders.push({ name: '', folderId: '' });
+  saveSettings(s);
+  loadScanFolders();
+  const rows = document.querySelectorAll('[data-sf-name]');
+  if (rows.length) rows[rows.length - 1].focus();
+}
+
+function removeScanFolder(idx) {
+  const s = getSettings();
+  (s.scanFolders || []).splice(idx, 1);
+  saveSettings(s);
+  loadScanFolders();
+}
+
+function saveScanFolders() {
+  const nameInputs = [...document.querySelectorAll('[data-sf-name]')];
+  const idInputs   = [...document.querySelectorAll('[data-sf-id]')];
+  const folders = [];
+  nameInputs.forEach((el, i) => {
+    const name = el.value.trim();
+    const raw  = idInputs[i].value.trim();
+    if (name && raw) folders.push({ name, folderId: _parseFolderId(raw) });
+  });
+  const s = getSettings();
+  s.scanFolders = folders;
+  saveSettings(s);
+  loadScanFolders();
+  showToast('תיקיות Drive נשמרו ✓', 'success');
 }
 
 </script>
