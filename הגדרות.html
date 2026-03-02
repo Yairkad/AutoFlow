@@ -417,9 +417,13 @@ function doPost(e) {
 // אם לא סופק – נוצרת תיקיה ברירת מחדל 'אוטוליין-סריקות'
 function _saveFileToDrive(payload) {
   try {
-    var folder = payload.folderId
-      ? DriveApp.getFolderById(payload.folderId)
-      : _getOrCreateFolder('אוטוליין-סריקות');
+    var folder;
+    if (payload.folderId) {
+      try { folder = DriveApp.getFolderById(payload.folderId); }
+      catch(ex) { folder = _getOrCreateFolder('אוטוליין-סריקות'); }
+    } else {
+      folder = _getOrCreateFolder('אוטוליין-סריקות');
+    }
     var decoded = Utilities.base64Decode(payload.data);
     var blob = Utilities.newBlob(decoded, payload.mimeType || 'application/octet-stream', payload.fileName || 'file');
     var file = folder.createFile(blob);
