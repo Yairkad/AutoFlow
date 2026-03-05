@@ -218,23 +218,23 @@
         <div id="stock_unit" style="font-size:12px;color:var(--text-muted)"></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <label style="color:var(--primary);font-weight:700;font-size:13px;width:110px;flex-shrink:0">➕ קיבלתי הזמנה</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <label style="color:var(--primary);font-weight:700;font-size:13px;flex:1">➕ קיבלתי הזמנה</label>
           <input type="number" id="stock_add" placeholder="0" min="0" step="1"
-            oninput="stock_sub.value='';stock_set.value=''; updateStockPreview()"
-            style="flex:1;border:2px solid var(--primary);border-radius:10px;font-size:22px;font-weight:700;text-align:center;padding:8px">
+            oninput="stock_set.value=''; updateStockPreview()"
+            style="width:90px;border:2px solid var(--primary);border-radius:10px;font-size:18px;font-weight:700;text-align:center;padding:6px 8px">
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <label style="color:var(--danger);font-weight:700;font-size:13px;width:110px;flex-shrink:0">➖ מכרתי</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <label style="color:var(--danger);font-weight:700;font-size:13px;flex:1">➖ מכרתי</label>
           <input type="number" id="stock_sub" placeholder="0" min="0" step="1"
-            oninput="stock_add.value='';stock_set.value=''; updateStockPreview()"
-            style="flex:1;border:2px solid var(--danger);border-radius:10px;font-size:22px;font-weight:700;text-align:center;padding:8px">
+            oninput="stock_set.value=''; updateStockPreview()"
+            style="width:90px;border:2px solid var(--danger);border-radius:10px;font-size:18px;font-weight:700;text-align:center;padding:6px 8px">
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <label style="color:var(--accent);font-weight:700;font-size:13px;width:110px;flex-shrink:0">= קבע ידנית</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <label style="color:var(--accent);font-weight:700;font-size:13px;flex:1">= קבע ידנית</label>
           <input type="number" id="stock_set" placeholder="" min="0" step="1"
             oninput="stock_add.value='';stock_sub.value=''; updateStockPreview()"
-            style="flex:1;border:2px solid var(--accent);border-radius:10px;font-size:22px;font-weight:700;text-align:center;padding:8px">
+            style="width:90px;border:2px solid var(--accent);border-radius:10px;font-size:18px;font-weight:700;text-align:center;padding:6px 8px">
         </div>
       </div>
       <div id="stock_preview" style="text-align:center;margin-top:12px;font-size:13px;color:var(--text-muted)"></div>
@@ -495,38 +495,36 @@ function openStockUpdate(id, focusField) {
 }
 function updateStockPreview() {
   const cur  = parseFloat(document.getElementById('stock_current').textContent)||0;
-  const add  = parseFloat(document.getElementById('stock_add').value);
-  const sub  = parseFloat(document.getElementById('stock_sub').value);
-  const set  = parseFloat(document.getElementById('stock_set').value);
+  const add  = parseFloat(document.getElementById('stock_add').value)||0;
+  const sub  = parseFloat(document.getElementById('stock_sub').value)||0;
+  const setV = document.getElementById('stock_set').value;
+  const addF = document.getElementById('stock_add').value;
+  const subF = document.getElementById('stock_sub').value;
   const unit = document.getElementById('stock_unit').textContent;
-  if (!isNaN(add) && document.getElementById('stock_add').value !== '') {
+  if (setV !== '') {
     document.getElementById('stock_preview').innerHTML =
-      `כמות חדשה: <strong style="color:var(--primary);font-size:16px">${cur + add} ${unit}</strong>`;
-  } else if (!isNaN(sub) && document.getElementById('stock_sub').value !== '') {
-    const newQ = Math.max(0, cur - sub);
+      `כמות חדשה: <strong style="color:var(--accent);font-size:16px">${parseFloat(setV)} ${unit}</strong>`;
+  } else if (addF !== '' || subF !== '') {
+    const newQ = Math.max(0, cur + add - sub);
     document.getElementById('stock_preview').innerHTML =
-      `כמות חדשה: <strong style="color:var(--danger);font-size:16px">${newQ} ${unit}</strong>`;
-  } else if (!isNaN(set) && document.getElementById('stock_set').value !== '') {
-    document.getElementById('stock_preview').innerHTML =
-      `כמות חדשה: <strong style="color:var(--accent);font-size:16px">${set} ${unit}</strong>`;
+      `כמות חדשה: <strong style="color:var(--primary);font-size:16px">${newQ} ${unit}</strong>`;
   } else {
     document.getElementById('stock_preview').textContent = '';
   }
 }
 function saveStock() {
   if(!_stockId) return;
-  const cur = parseFloat(document.getElementById('stock_current').textContent)||0;
-  const add = document.getElementById('stock_add').value;
-  const sub = document.getElementById('stock_sub').value;
-  const set = document.getElementById('stock_set').value;
+  const cur  = parseFloat(document.getElementById('stock_current').textContent)||0;
+  const addV = document.getElementById('stock_add').value;
+  const subV = document.getElementById('stock_sub').value;
+  const setV = document.getElementById('stock_set').value;
   let newQty, soldQty = 0;
-  if (add !== '') {
-    newQty = cur + (parseFloat(add)||0);
-  } else if (sub !== '') {
-    soldQty = parseFloat(sub)||0;
-    newQty = Math.max(0, cur - soldQty);
-  } else if (set !== '') {
-    newQty = parseFloat(set)||0;
+  if (setV !== '') {
+    newQty = parseFloat(setV)||0;
+  } else if (addV !== '' || subV !== '') {
+    const add = parseFloat(addV)||0;
+    soldQty   = parseFloat(subV)||0;
+    newQty = Math.max(0, cur + add - soldQty);
   } else {
     return showToast('יש להזין כמות','error');
   }

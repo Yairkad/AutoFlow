@@ -146,11 +146,12 @@
         </div>
         <div class="field">
           <label>מחיר מכירה ללקוח (₪)</label>
-          <input type="number" id="f_sellPrice" placeholder="0.00" min="0" step="0.01" oninput="markFilled(this)">
+          <input type="number" id="f_sellPrice" placeholder="0.00" min="0" step="0.01" oninput="updateBeforeVat('f_sellPrice','f_sellBeforeVat'); markFilled(this)">
+          <small id="f_sellBeforeVat" style="color:var(--text-muted);font-size:11px;margin-top:2px;display:block"></small>
         </div>
         <div class="field">
           <label>כמות במלאי <span class="required-star">*</span></label>
-          <input type="number" id="f_quantity" placeholder="0" min="0" oninput="markFilled(this)">
+          <input type="number" id="f_quantity" placeholder="1" min="0" oninput="markFilled(this)">
         </div>
         <div class="field">
           <label>מיקום במחסן</label>
@@ -248,23 +249,23 @@
         <div style="font-size:12px;color:var(--text-muted)">יחידות</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <label style="color:var(--primary);font-weight:700;font-size:13px;width:110px;flex-shrink:0">➕ קיבלתי הזמנה</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <label style="color:var(--primary);font-weight:700;font-size:13px;flex:1">➕ קיבלתי הזמנה</label>
           <input type="number" id="stock_add" placeholder="0" min="0" step="1"
-            oninput="stock_sub.value='';stock_set.value=''; updateStockPreview()"
-            style="flex:1;border:2px solid var(--primary);border-radius:10px;font-size:22px;font-weight:700;text-align:center;padding:8px">
+            oninput="stock_set.value=''; updateStockPreview()"
+            style="width:90px;border:2px solid var(--primary);border-radius:10px;font-size:18px;font-weight:700;text-align:center;padding:6px 8px">
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <label style="color:var(--danger);font-weight:700;font-size:13px;width:110px;flex-shrink:0">➖ מכרתי</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <label style="color:var(--danger);font-weight:700;font-size:13px;flex:1">➖ מכרתי</label>
           <input type="number" id="stock_sub" placeholder="0" min="0" step="1"
-            oninput="stock_add.value='';stock_set.value=''; updateStockPreview()"
-            style="flex:1;border:2px solid var(--danger);border-radius:10px;font-size:22px;font-weight:700;text-align:center;padding:8px">
+            oninput="stock_set.value=''; updateStockPreview()"
+            style="width:90px;border:2px solid var(--danger);border-radius:10px;font-size:18px;font-weight:700;text-align:center;padding:6px 8px">
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <label style="color:var(--accent);font-weight:700;font-size:13px;width:110px;flex-shrink:0">= קבע ידנית</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <label style="color:var(--accent);font-weight:700;font-size:13px;flex:1">= קבע ידנית</label>
           <input type="number" id="stock_set" placeholder="" min="0" step="1"
             oninput="stock_add.value='';stock_sub.value=''; updateStockPreview()"
-            style="flex:1;border:2px solid var(--accent);border-radius:10px;font-size:22px;font-weight:700;text-align:center;padding:8px">
+            style="width:90px;border:2px solid var(--accent);border-radius:10px;font-size:18px;font-weight:700;text-align:center;padding:6px 8px">
         </div>
       </div>
       <div id="stock_preview" style="text-align:center;margin-top:12px;font-size:13px;color:var(--text-muted)"></div>
@@ -301,7 +302,11 @@
           <small id="e_costVat" style="color:var(--text-muted);font-size:11px;margin-top:2px;display:block"></small>
         </div>
         <div class="field"><label>% רווח</label><input type="number" id="e_margin" oninput="calcEditSell(); markFilled(this)"></div>
-        <div class="field"><label>מחיר מכירה</label><input type="number" id="e_sellPrice" oninput="markFilled(this)"></div>
+        <div class="field">
+          <label>מחיר מכירה</label>
+          <input type="number" id="e_sellPrice" oninput="updateBeforeVat('e_sellPrice','e_sellBeforeVat'); markFilled(this)">
+          <small id="e_sellBeforeVat" style="color:var(--text-muted);font-size:11px;margin-top:2px;display:block"></small>
+        </div>
         <div class="field"><label>כמות</label><input type="number" id="e_quantity" oninput="markFilled(this)"></div>
         <div class="field"><label>מיקום</label><input type="text" id="e_location" oninput="markFilled(this)"></div>
         <div class="field"><label>הערות</label><input type="text" id="e_notes" oninput="markFilled(this)"></div>
@@ -343,12 +348,19 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTable();
 });
 
-// ===== VAT HELPER =====
+// ===== VAT HELPERS =====
 function updateVat(inputId, displayId) {
   const v = parseFloat(document.getElementById(inputId).value);
   const el = document.getElementById(displayId);
   el.textContent = (!isNaN(v) && v > 0)
     ? 'כולל מע"מ: ₪' + (v * 1.18).toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2})
+    : '';
+}
+function updateBeforeVat(inputId, displayId) {
+  const v = parseFloat(document.getElementById(inputId).value);
+  const el = document.getElementById(displayId);
+  el.textContent = (!isNaN(v) && v > 0)
+    ? 'לפני מע"מ: ₪' + (v / 1.18).toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2})
     : '';
 }
 
@@ -359,6 +371,7 @@ function calcTireSell() {
   if (cost > 0 && !isNaN(margin)) {
     document.getElementById('f_sellPrice').value = (cost * (1 + margin/100)).toFixed(2);
     markFilled(document.getElementById('f_sellPrice'));
+    updateBeforeVat('f_sellPrice', 'f_sellBeforeVat');
   }
 }
 function calcEditSell() {
@@ -366,6 +379,7 @@ function calcEditSell() {
   const margin = parseFloat(document.getElementById('e_margin').value);
   if (cost > 0 && !isNaN(margin)) {
     document.getElementById('e_sellPrice').value = (cost * (1 + margin/100)).toFixed(2);
+    updateBeforeVat('e_sellPrice', 'e_sellBeforeVat');
   }
 }
 
@@ -381,7 +395,6 @@ function saveTire() {
   const qty     = document.getElementById('f_quantity').value;
 
   if (!width||!profile||!rim) return showToast('יש להזין מידה מלאה (רוחב/פרופיל/קוטר)', 'error');
-  if (qty==='')       return showToast('יש להזין כמות', 'error');
 
   const margin    = parseFloat(document.getElementById('f_margin').value)||0;
   const sellPrice = parseFloat(document.getElementById('f_sellPrice').value) || (cost*(1+margin/100));
@@ -392,7 +405,7 @@ function saveTire() {
     loadIdx: document.getElementById('f_loadIdx').value.trim(),
     speedIdx: document.getElementById('f_speedIdx').value.trim(),
     costPrice: cost, margin, sellPrice,
-    quantity: parseFloat(qty)||0,
+    quantity: qty === '' ? 1 : parseFloat(qty)||0,
     location: document.getElementById('f_location').value.trim(),
     notes:    document.getElementById('f_notes').value.trim()
   };
@@ -552,19 +565,18 @@ function openStockUpdate(id, focusField) {
 }
 function updateStockPreview() {
   const cur  = parseFloat(document.getElementById('stock_current').textContent)||0;
-  const add  = parseFloat(document.getElementById('stock_add').value);
-  const sub  = parseFloat(document.getElementById('stock_sub').value);
-  const set  = parseFloat(document.getElementById('stock_set').value);
-  if (!isNaN(add) && document.getElementById('stock_add').value !== '') {
+  const add  = parseFloat(document.getElementById('stock_add').value)||0;
+  const sub  = parseFloat(document.getElementById('stock_sub').value)||0;
+  const setV = document.getElementById('stock_set').value;
+  const addF = document.getElementById('stock_add').value;
+  const subF = document.getElementById('stock_sub').value;
+  if (setV !== '') {
     document.getElementById('stock_preview').innerHTML =
-      `כמות חדשה: <strong style="color:var(--primary);font-size:16px">${cur + add} יח'</strong>`;
-  } else if (!isNaN(sub) && document.getElementById('stock_sub').value !== '') {
-    const newQ = Math.max(0, cur - sub);
+      `כמות חדשה: <strong style="color:var(--accent);font-size:16px">${parseFloat(setV)} יח'</strong>`;
+  } else if (addF !== '' || subF !== '') {
+    const newQ = Math.max(0, cur + add - sub);
     document.getElementById('stock_preview').innerHTML =
-      `כמות חדשה: <strong style="color:var(--danger);font-size:16px">${newQ} יח'</strong>`;
-  } else if (!isNaN(set) && document.getElementById('stock_set').value !== '') {
-    document.getElementById('stock_preview').innerHTML =
-      `כמות חדשה: <strong style="color:var(--accent);font-size:16px">${set} יח'</strong>`;
+      `כמות חדשה: <strong style="color:var(--primary);font-size:16px">${newQ} יח'</strong>`;
   } else {
     document.getElementById('stock_preview').textContent = '';
   }
@@ -572,17 +584,16 @@ function updateStockPreview() {
 function saveStock() {
   if(!_stockId) return;
   const cur = parseFloat(document.getElementById('stock_current').textContent)||0;
-  const add = document.getElementById('stock_add').value;
-  const sub = document.getElementById('stock_sub').value;
-  const set = document.getElementById('stock_set').value;
+  const addV = document.getElementById('stock_add').value;
+  const subV = document.getElementById('stock_sub').value;
+  const setV = document.getElementById('stock_set').value;
   let newQty, soldQty = 0;
-  if (add !== '') {
-    newQty = cur + (parseFloat(add)||0);
-  } else if (sub !== '') {
-    soldQty = parseFloat(sub)||0;
-    newQty = Math.max(0, cur - soldQty);
-  } else if (set !== '') {
-    newQty = parseFloat(set)||0;
+  if (setV !== '') {
+    newQty = parseFloat(setV)||0;
+  } else if (addV !== '' || subV !== '') {
+    const add = parseFloat(addV)||0;
+    soldQty   = parseFloat(subV)||0;
+    newQty = Math.max(0, cur + add - soldQty);
   } else {
     return showToast('יש להזין כמות','error');
   }
@@ -618,6 +629,7 @@ function openEdit(id) {
   updateVat('e_costPrice','e_costVat');
   document.getElementById('e_margin').value   = t.margin   || '';
   document.getElementById('e_sellPrice').value= t.sellPrice|| '';
+  updateBeforeVat('e_sellPrice','e_sellBeforeVat');
   document.getElementById('e_quantity').value = t.quantity || '';
   document.getElementById('e_location').value = t.location || '';
   document.getElementById('e_notes').value    = t.notes    || '';

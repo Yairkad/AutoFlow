@@ -97,7 +97,7 @@ body {
 .grid-inputs.wide { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 .grid-inputs.narrow { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 
-.field { display: flex; flex-direction: column; }
+.field { display: flex; flex-direction: column; min-width: 0; }
 .field.full { grid-column: 1 / -1; }
 .field label {
   font-size: 11px; font-weight: 700; color: var(--text-muted);
@@ -260,7 +260,7 @@ body {
   font-size: 22px; color: var(--text-muted); padding: 2px 6px; border-radius: 4px; line-height: 1;
 }
 .modal-close:hover { background: var(--bg); color: var(--text); }
-.modal-body { padding: 20px 24px; }
+.modal-body { padding: 20px 24px; overflow-x: hidden; }
 .modal-footer {
   padding: 14px 24px; border-top: 1px solid var(--border);
   display: flex; gap: 10px; justify-content: flex-end;

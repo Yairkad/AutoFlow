@@ -319,15 +319,6 @@ function loadDashboard() {
       alerts.push({ color: qty === 0 ? '' : 'orange', text: `מלאי נמוך: ${p.name} – נותרו ${qty} ${p.unit || 'יח׳'}` });
     }
   });
-  // Low stock tires
-  tires.forEach(t => {
-    const qty = parseFloat(t.quantity) || 0;
-    if (qty === 0) {
-      alerts.push({ color: '', text: `צמיג אזל: ${t.brand} ${t.width}/${t.profile}R${t.rim}` });
-    } else if (qty <= 2) {
-      alerts.push({ color: 'orange', text: `מלאי נמוך: ${t.brand} ${t.width}/${t.profile}R${t.rim} – נותרו ${qty}` });
-    }
-  });
 
   const list = document.getElementById('alertsList');
   if (alerts.length === 0) {
