@@ -79,6 +79,34 @@ function loadHeaderBranding() {
   if (s.businessSub  && sub) sub.textContent = s.businessSub;
   if (s.logoBase64 && logo) { logo.src = s.logoBase64; logo.style.display = ''; }
   else if (logo) logo.style.display = 'none';
+  applyLogoBg();
+}
+
+// ===== LOGO BACKGROUND WATERMARK =====
+function applyLogoBg() {
+  const s = getSettings();
+  let el = document.getElementById('__logoBg');
+  if (!s.logoBase64) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '__logoBg';
+    document.body.appendChild(el);
+  }
+  Object.assign(el.style, {
+    position:           'fixed',
+    top:                '0',
+    left:               '0',
+    width:              '100%',
+    height:             '100%',
+    pointerEvents:      'none',
+    zIndex:             '-1',
+    backgroundImage:    `url(${s.logoBase64})`,
+    backgroundRepeat:   'no-repeat',
+    backgroundPosition: 'center center',
+    backgroundSize:     '75%',
+    opacity:            '0.08',
+    mixBlendMode:       'multiply'
+  });
 }
 
 // ===== CONFIRM DIALOG =====
