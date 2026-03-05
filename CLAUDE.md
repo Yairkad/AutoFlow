@@ -164,7 +164,7 @@ PWA מלא (Service Worker, manifest, offline, אייקון).
 ---
 
 ## Service Worker
-- גרסה נוכחית: **autoline-v20**
+- גרסה נוכחית: **autoline-v21**
 - בכל עדכון גדול: bump מספר ב-`sw.js` + עדכן `style.css?v=X` / `shared.js?v=X` ב-SHELL ובכל HTML
 
 ---
