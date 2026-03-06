@@ -146,6 +146,45 @@
     .scans-table td { padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle; word-break:break-word; }
     .scans-table tr:last-child td { border-bottom:none; }
     .scans-empty { font-size:13px; color:var(--text-muted); text-align:center; padding:20px 0; }
+
+    /* ── Multi-file upload UI ───────────────────── */
+    .scan-drop-zone {
+      border:2px dashed var(--border); border-radius:var(--radius);
+      padding:18px 16px; text-align:center; cursor:pointer;
+      transition:all 0.2s; margin-bottom:10px;
+    }
+    .scan-drop-zone:hover, .scan-drop-zone.dragover {
+      border-color:var(--accent); background:#eff6ff;
+    }
+    .scan-drop-zone p { margin:0; font-size:13px; color:var(--text-muted); }
+    .scan-drop-zone strong { color:var(--accent); }
+    .scan-offline-warn {
+      background:#fce7f3; border:1px solid #f472b6; color:#9d174d;
+      border-radius:8px; padding:10px 12px; font-size:12px; margin-bottom:10px; display:none;
+    }
+    .scan-file-list { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; max-height:260px; overflow-y:auto; }
+    .scan-file-item {
+      padding:8px 10px; background:var(--bg); border:1px solid var(--border);
+      border-radius:8px; display:flex; flex-direction:column; gap:4px; font-size:13px;
+    }
+    .scan-file-header { display:flex; align-items:center; gap:8px; }
+    .scan-file-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+    .scan-file-size { color:var(--text-muted); font-size:11px; flex-shrink:0; }
+    .scan-file-status { font-size:11px; font-weight:700; flex-shrink:0; }
+    .scan-file-status.waiting   { color:var(--text-muted); }
+    .scan-file-status.uploading { color:var(--accent); }
+    .scan-file-status.done      { color:var(--primary); }
+    .scan-file-status.queued    { color:var(--warning); }
+    .scan-file-status.error     { color:var(--danger); }
+    .progress-wrap { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+    .progress-fill { height:100%; background:var(--primary); border-radius:2px; transition:width 0.2s; width:0; }
+    .scan-queue-section { margin-top:16px; border-top:1px solid var(--border); padding-top:12px; display:none; }
+    .scan-queue-title {
+      font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;
+      margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .scan-queue-item { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--border); font-size:12px; }
+    .scan-queue-item:last-child { border-bottom:none; }
   </style>
 </head>
 <body>
@@ -202,19 +241,45 @@
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
         💡 להגדרת קטגוריות (תיקיות Drive): <a href="הגדרות.html" style="color:var(--accent);text-decoration:none;font-weight:600">הגדרות ← תיקיות Drive</a>
       </p>
-      <div class="scan-upload-row">
-        <select id="scanCategory">
+
+      <div id="scanOfflineWarn" class="scan-offline-warn">
+        📵 אין חיבור לאינטרנט – הקבצים יישמרו ויועלו אוטומטית כשיחזור החיבור.
+      </div>
+
+      <div class="scan-upload-row" style="margin-bottom:10px">
+        <select id="scanCategory" style="flex:0 0 auto">
           <option value="">— ללא קטגוריה —</option>
         </select>
-        <input type="text" id="scanNote" placeholder="תיאור (אופציונלי)">
-        <label class="btn btn-secondary" style="cursor:pointer;white-space:nowrap">
-          📁 בחר קובץ
-          <input type="file" id="scanFileInput" style="display:none" onchange="onScanFileChosen(this)">
-        </label>
-        <button class="btn btn-primary" onclick="uploadScan()" style="white-space:nowrap">⬆️ שלח ל-Drive</button>
+        <input type="text" id="scanNote" placeholder="תיאור (אופציונלי)" style="flex:1">
       </div>
-      <div class="scan-chosen" id="scanChosen">לא נבחר קובץ</div>
-      <div id="scansList"></div>
+
+      <!-- Drop zone -->
+      <div class="scan-drop-zone" id="scanDropZone" onclick="document.getElementById('scanFileInput').click()">
+        <div style="font-size:28px;margin-bottom:6px">📂</div>
+        <p><strong>לחץ לבחירת קבצים</strong> או גרור לכאן</p>
+        <p style="font-size:11px;margin-top:3px">מרובים – תמונות, PDF, Word, Excel, כל סוג</p>
+        <input type="file" id="scanFileInput" multiple style="display:none" onchange="onScanFilesChosen(this)">
+      </div>
+
+      <!-- Per-file progress list -->
+      <div id="scanFileList" class="scan-file-list"></div>
+
+      <!-- Upload button -->
+      <button class="btn btn-primary" id="uploadScanBtn" onclick="uploadScan()" disabled style="width:100%;margin-bottom:4px">⬆️ שלח ל-Drive</button>
+
+      <!-- Offline queue -->
+      <div id="scanQueueSection" class="scan-queue-section">
+        <div class="scan-queue-title">
+          📋 בתור להעלאה
+          <div style="display:flex;gap:6px">
+            <button onclick="retryScanQueue()" style="font-size:11px;background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;font-family:inherit">נסה שוב</button>
+            <button onclick="clearDoneScanQueue()" style="font-size:11px;background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;font-family:inherit">נקה הושלמו</button>
+          </div>
+        </div>
+        <div id="scanQueueList"></div>
+      </div>
+
+      <div id="scansList" style="margin-top:16px"></div>
     </div>
   </div>
 </div>
@@ -946,8 +1011,16 @@ function printChecklist() {
 }
 
 /* ── Scans to Drive ──────────────────────── */
-const DB_SCANS = 'pnc_scans';
-let _scanFile = null;
+const DB_SCANS      = 'pnc_scans';
+const DB_SCAN_QUEUE = 'pnc_scan_queue';
+let _scanFiles = [];
+
+function getScanQueue() {
+  try { return JSON.parse(localStorage.getItem(DB_SCAN_QUEUE)) || []; } catch { return []; }
+}
+function saveScanQueue(q) {
+  try { localStorage.setItem(DB_SCAN_QUEUE, JSON.stringify(q)); } catch(e) { console.error(e); }
+}
 
 function loadScanCategories() {
   const folders = getSettings().scanFolders || [];
@@ -956,62 +1029,214 @@ function loadScanCategories() {
     folders.map(f => `<option value="${f.folderId}">${f.name}</option>`).join('');
 }
 
-function onScanFileChosen(input) {
-  _scanFile = input.files[0] || null;
-  document.getElementById('scanChosen').textContent = _scanFile
-    ? `📄 ${_scanFile.name} (${(_scanFile.size / 1024).toFixed(1)} KB)`
-    : 'לא נבחר קובץ';
+// Drag & drop
+(function() {
+  const zone = document.getElementById('scanDropZone');
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    _scanFiles = Array.from(e.dataTransfer.files);
+    renderScanFileList();
+  });
+})();
+
+// Online/offline indicator
+function updateScanOfflineWarn() {
+  const el = document.getElementById('scanOfflineWarn');
+  if (el) el.style.display = navigator.onLine ? 'none' : 'block';
+}
+window.addEventListener('online',  updateScanOfflineWarn);
+window.addEventListener('offline', updateScanOfflineWarn);
+updateScanOfflineWarn();
+
+function onScanFilesChosen(input) {
+  _scanFiles = Array.from(input.files);
+  renderScanFileList();
+}
+
+function renderScanFileList() {
+  const list = document.getElementById('scanFileList');
+  const btn  = document.getElementById('uploadScanBtn');
+  if (!_scanFiles.length) { list.innerHTML = ''; btn.disabled = true; return; }
+  list.innerHTML = _scanFiles.map((f, i) => `
+    <div class="scan-file-item" id="sfi_${i}">
+      <div class="scan-file-header">
+        <span class="scan-file-name" title="${escScan(f.name)}">${escScan(f.name)}</span>
+        <span class="scan-file-size">${fmtScanSize(f.size)}</span>
+        <span class="scan-file-status waiting" id="sfs_${i}">ממתין</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill" id="sfp_${i}"></div></div>
+    </div>`).join('');
+  btn.disabled = false;
+}
+
+function escScan(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtScanSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+function setScanFileStatus(i, cls, txt) {
+  const el = document.getElementById(`sfs_${i}`);
+  if (el) { el.className = `scan-file-status ${cls}`; el.textContent = txt; }
+}
+function setScanFileProgress(i, pct) {
+  const el = document.getElementById(`sfp_${i}`);
+  if (el) el.style.width = pct + '%';
+}
+
+// XHR upload with progress + JSON response (follows GAS redirect)
+function uploadScanFileWithProgress(url, payload, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'text/plain');
+    if (onProgress) {
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100));
+      };
+    }
+    xhr.onload = () => {
+      if (onProgress) onProgress(100);
+      try { resolve(JSON.parse(xhr.responseText)); } catch { resolve({}); }
+    };
+    xhr.onerror   = () => reject(new Error('שגיאת רשת'));
+    xhr.ontimeout = () => reject(new Error('פסק זמן'));
+    xhr.timeout   = 60000;
+    xhr.send(JSON.stringify(payload));
+  });
 }
 
 async function uploadScan() {
-  const url = (getSettings().gasUrl || '').trim();
-  if (!url) { showToast('הגדר כתובת GAS בהגדרות תחילה', 'error'); return; }
-  if (!_scanFile) { showToast('בחר קובץ תחילה', 'error'); return; }
-
-  const sel      = document.getElementById('scanCategory');
-  const folderId = sel.value.trim();
-  const catName  = sel.selectedOptions[0]?.text || 'ללא קטגוריה';
-  const note     = document.getElementById('scanNote').value.trim();
-  const btn      = document.querySelector('[onclick="uploadScan()"]');
+  if (!_scanFiles.length) { showToast('בחר קובץ תחילה', 'error'); return; }
+  const url     = (getSettings().gasUrl || '').trim();
+  const sel     = document.getElementById('scanCategory');
+  const folderId  = sel.value.trim();
+  const catName   = sel.selectedOptions[0]?.text || 'ללא קטגוריה';
+  const note      = document.getElementById('scanNote').value.trim();
+  const btn       = document.getElementById('uploadScanBtn');
   btn.disabled = true; btn.textContent = '⏳ מעלה...';
 
-  try {
-    const base64 = await new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.onload  = e => res(e.target.result.split(',')[1]);
-      reader.onerror = rej;
-      reader.readAsDataURL(_scanFile);
-    });
+  let uploaded = 0, queued = 0, failed = 0;
 
-    const resp = await fetch(url, {
-      method: 'POST',
-      redirect: 'follow',
-      body: JSON.stringify({
-        type: '__file__',
-        data: base64,
-        mimeType: _scanFile.type || 'application/octet-stream',
-        fileName: _scanFile.name,
-        folderId: folderId || null
-      })
-    });
-    const json = await resp.json();
-    if (json.error) throw new Error(json.error);
+  for (let i = 0; i < _scanFiles.length; i++) {
+    const file = _scanFiles[i];
+    setScanFileStatus(i, 'uploading', 'קורא...');
 
-    const scans = getDB(DB_SCANS);
-    scans.unshift({ id: nowId(), name: _scanFile.name, category: catName, note, date: todayStr(), fileId: json.fileId, driveUrl: json.driveUrl });
-    setDB(DB_SCANS, scans);
-    renderScans();
+    let base64;
+    try {
+      base64 = await fileToBase64(file);
+    } catch {
+      setScanFileStatus(i, 'error', '✗ שגיאת קריאה');
+      failed++; continue;
+    }
 
-    _scanFile = null;
+    if (!navigator.onLine || !url) {
+      // Save to offline queue with full metadata
+      const q = getScanQueue();
+      q.push({ id: nowId() + '_' + i, fileName: file.name, mimeType: file.type || 'application/octet-stream', data: base64, folderId, catName, note, status: 'pending', date: todayStr() });
+      saveScanQueue(q);
+      setScanFileStatus(i, 'queued', '📋 בתור');
+      setScanFileProgress(i, 0);
+      queued++;
+    } else {
+      setScanFileStatus(i, 'uploading', 'מעלה...');
+      try {
+        const json = await uploadScanFileWithProgress(url, {
+          type: '__file__', data: base64,
+          mimeType: file.type || 'application/octet-stream',
+          fileName: file.name, folderId: folderId || null
+        }, pct => setScanFileProgress(i, pct));
+
+        if (json.error) throw new Error(json.error);
+
+        // Save to history
+        const scans = getDB(DB_SCANS);
+        scans.unshift({ id: nowId(), name: file.name, category: catName, note, date: todayStr(), fileId: json.fileId || '', driveUrl: json.driveUrl || '' });
+        setDB(DB_SCANS, scans);
+        setScanFileStatus(i, 'done', '✓ הועלה');
+        uploaded++;
+      } catch(err) {
+        // Network error → fallback to queue
+        const q = getScanQueue();
+        q.push({ id: nowId() + '_' + i, fileName: file.name, mimeType: file.type || 'application/octet-stream', data: base64, folderId, catName, note, status: 'error', date: todayStr() });
+        saveScanQueue(q);
+        setScanFileStatus(i, 'queued', '📋 בתור');
+        failed++;
+      }
+    }
+  }
+
+  const parts = [];
+  if (uploaded) parts.push(uploaded + ' הועלו ✓');
+  if (queued)   parts.push(queued   + ' נשמרו לתור');
+  if (failed)   parts.push(failed   + ' נכשלו (בתור)');
+  showToast(parts.join(' · '), failed > 0 && !queued ? 'error' : 'success');
+
+  setTimeout(() => {
+    _scanFiles = [];
     document.getElementById('scanFileInput').value = '';
     document.getElementById('scanNote').value = '';
-    document.getElementById('scanChosen').textContent = 'לא נבחר קובץ';
-    showToast('הקובץ הועלה ל-Drive ✓', 'success');
-  } catch(e) {
-    showToast('שגיאה בהעלאה: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = '⬆️ שלח ל-Drive';
+    document.getElementById('scanFileList').innerHTML = '';
+    btn.disabled = true; btn.textContent = '⬆️ שלח ל-Drive';
+    renderScans();
+    renderScanQueue();
+  }, 1200);
+}
+
+// Process offline queue (called on reconnect or manual retry)
+async function processScanQueue() {
+  const url = (getSettings().gasUrl || '').trim();
+  if (!url || !navigator.onLine) return;
+  const q = getScanQueue();
+  const pending = q.filter(f => f.status === 'pending' || f.status === 'error');
+  let processed = 0;
+  for (const item of pending) {
+    item.status = 'uploading'; saveScanQueue(q);
+    try {
+      const json = await uploadScanFileWithProgress(url, {
+        type: '__file__', data: item.data,
+        mimeType: item.mimeType, fileName: item.fileName, folderId: item.folderId || null
+      }, null);
+      if (json.error) throw new Error(json.error);
+      item.status = 'done';
+      const scans = getDB(DB_SCANS);
+      scans.unshift({ id: nowId(), name: item.fileName, category: item.catName, note: item.note, date: item.date || todayStr(), fileId: json.fileId || '', driveUrl: json.driveUrl || '' });
+      setDB(DB_SCANS, scans);
+      processed++;
+    } catch { item.status = 'error'; }
+    saveScanQueue(q);
   }
+  if (processed > 0) {
+    renderScans(); renderScanQueue();
+    showToast(processed + ' קבצים מהתור הועלו ✓', 'success');
+  }
+}
+
+window.addEventListener('online', () => processScanQueue());
+
+function retryScanQueue() { processScanQueue(); }
+
+function clearDoneScanQueue() {
+  saveScanQueue(getScanQueue().filter(f => f.status !== 'done'));
+  renderScanQueue();
+}
+
+function renderScanQueue() {
+  const q = getScanQueue();
+  const pending = q.filter(f => f.status !== 'done');
+  const sec = document.getElementById('scanQueueSection');
+  if (!sec) return;
+  if (!pending.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  document.getElementById('scanQueueList').innerHTML = pending.map(item => `
+    <div class="scan-queue-item">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escScan(item.fileName)}</span>
+      <span style="color:var(--text-muted);font-size:11px;flex-shrink:0">${item.catName || ''}${item.date ? ' · '+item.date : ''}</span>
+      <span style="font-weight:700;flex-shrink:0;color:${item.status==='error'?'var(--danger)':'var(--warning)'}">${item.status==='error'?'✗ שגיאה':'⏳'}</span>
+    </div>`).join('');
 }
 
 function renderScans() {
@@ -1054,6 +1279,9 @@ function switchTab(tab) {
 render();
 loadScanCategories();
 renderScans();
+renderScanQueue();
+// Process any queued uploads on page load (if online)
+if (navigator.onLine) processScanQueue();
 </script>
 </body>
 </html>

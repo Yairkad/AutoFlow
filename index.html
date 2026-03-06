@@ -66,27 +66,12 @@
 
     /* ── Header actions ── */
     .header-actions { display: flex; align-items: center; gap: 8px; }
-    .header-btn {
-      background: none; border: 1.5px solid var(--border); border-radius: 20px;
-      padding: 5px 12px; font-size: 15px; cursor: pointer; position: relative;
-      transition: all 0.2s; font-family: inherit; color: var(--text);
+    .date-chip {
+      background: #d1fae5; color: #065f46;
+      padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
     }
-    .header-btn:hover { border-color: var(--primary); background: var(--primary-light); }
-    .queue-badge {
-      position: absolute; top: -5px; left: -5px;
-      background: var(--warning); color: white; border-radius: 50%;
-      width: 17px; height: 17px; font-size: 10px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Heebo', sans-serif;
-    }
-    .online-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--primary); display: inline-block;
-      transition: background 0.3s;
-    }
-    .online-dot.offline { background: var(--danger); }
 
-    /* ── Top actions bar (search + buttons) ── */
+    /* ── Top actions bar (search + charts button) ── */
     .top-actions {
       display: flex; gap: 8px; align-items: stretch;
       flex-wrap: wrap; margin-bottom: 20px;
@@ -107,13 +92,6 @@
     .toggle-btn:hover, .toggle-btn.active {
       border-color: var(--accent); color: var(--accent); background: #eff6ff;
     }
-    .upload-toggle-btn {
-      padding: 10px 16px; border: 1.5px solid var(--border); border-radius: var(--radius);
-      background: white; font-size: 13px; font-weight: 700; cursor: pointer;
-      color: var(--text-muted); font-family: inherit; transition: all 0.2s; white-space: nowrap;
-      position: relative;
-    }
-    .upload-toggle-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 
     /* ── Charts section ── */
     .charts-section { display: none; margin-bottom: 24px; }
@@ -128,53 +106,6 @@
     }
     .chart-card canvas { max-height: 220px; }
     .chart-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; }
-
-    /* ── Upload modal ── */
-    .upload-folder-select {
-      width: 100%; padding: 10px 12px;
-      border: 1.5px solid var(--border); border-radius: var(--radius);
-      font-size: 14px; font-family: inherit; background: white; direction: rtl;
-      margin-bottom: 12px;
-    }
-    .upload-drop-zone {
-      border: 2px dashed var(--border); border-radius: var(--radius);
-      padding: 28px 20px; text-align: center; cursor: pointer;
-      transition: all 0.2s; margin-bottom: 12px;
-    }
-    .upload-drop-zone:hover, .upload-drop-zone.dragover {
-      border-color: var(--primary); background: var(--primary-light);
-    }
-    .upload-drop-zone p { margin: 0; color: var(--text-muted); font-size: 13px; }
-    .upload-drop-zone strong { color: var(--primary); }
-    .upload-file-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
-    .upload-file-item {
-      padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
-      display: flex; flex-direction: column; gap: 5px;
-    }
-    .upload-file-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .upload-file-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-    .upload-file-size { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
-    .upload-file-status { font-size: 11px; font-weight: 700; flex-shrink: 0; }
-    .upload-file-status.waiting  { color: var(--text-muted); }
-    .upload-file-status.uploading{ color: var(--accent); }
-    .upload-file-status.done     { color: var(--primary); }
-    .upload-file-status.queued   { color: var(--warning); }
-    .upload-file-status.error    { color: var(--danger); }
-    .progress-bar-wrap { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
-    .progress-bar { height: 100%; background: var(--primary); border-radius: 3px; transition: width 0.2s; width: 0; }
-    .upload-queue-section { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
-    .upload-queue-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
-    .queue-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
-    .queue-item:last-child { border-bottom: none; }
-    .queue-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-    .queue-item-meta { color: var(--text-muted); font-size: 11px; flex-shrink: 0; margin-right: 8px; }
-    .queue-item-status.pending { color: var(--warning); font-weight: 700; }
-    .queue-item-status.done    { color: var(--primary); }
-    .queue-item-status.error   { color: var(--danger); font-weight: 700; }
-    .no-gas-warning {
-      background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px;
-      padding: 12px 14px; font-size: 13px; color: #92400e; margin-bottom: 12px;
-    }
 
     /* ── Search results modal ── */
     .search-result-group { margin-bottom: 16px; }
@@ -208,11 +139,6 @@
     </div>
   </div>
   <div class="header-actions">
-    <span id="onlineDot" class="online-dot" title="מחובר לאינטרנט"></span>
-    <button class="header-btn" onclick="openUploadModal()" title="העלאת קבצים לדרייב">
-      📎
-      <span id="queueBadge" class="queue-badge" style="display:none">0</span>
-    </button>
     <span class="date-chip" id="todayChip"></span>
   </div>
 </header>
@@ -246,10 +172,6 @@
       <button class="btn btn-primary" onclick="doGlobalSearch()">חפש</button>
     </div>
     <button class="toggle-btn" id="chartsToggleBtn" onclick="toggleCharts()">📊 גרפים</button>
-    <button class="upload-toggle-btn" onclick="openUploadModal()">
-      📎 סריקות
-      <span id="uploadQueueCount" style="display:none;background:var(--warning);color:white;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:4px"></span>
-    </button>
   </div>
 
   <!-- Stats -->
@@ -366,58 +288,6 @@
   </div>
 </div>
 
-<!-- ══════════ UPLOAD MODAL ══════════ -->
-<div id="uploadModal" class="modal-overlay">
-  <div class="modal" style="max-width:560px">
-    <div class="modal-header">
-      <h3>📎 העלאת קבצים לדרייב</h3>
-      <button class="modal-close" onclick="closeUploadModal()">✕</button>
-    </div>
-    <div class="modal-body" style="padding:16px 20px">
-
-      <div id="uploadNoGasWarn" class="no-gas-warning" style="display:none">
-        ⚠️ לא הוגדר לינק GAS – קבצים יישמרו בתור ויועלו כשיוגדר.
-        <a href="הגדרות.html" style="color:inherit;font-weight:700">פתח הגדרות ←</a>
-      </div>
-
-      <div id="uploadOfflineWarn" class="no-gas-warning" style="display:none;background:#fce7f3;border-color:#f472b6;color:#9d174d">
-        📵 אין חיבור לאינטרנט – קבצים יישמרו בתור ויועלו בחיבור הבא.
-      </div>
-
-      <!-- Folder selector -->
-      <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">תיקיית יעד בדרייב</label>
-      <select id="uploadFolderSelect" class="upload-folder-select">
-        <option value="">— ללא תיקייה מוגדרת —</option>
-      </select>
-
-      <!-- Drop zone -->
-      <div class="upload-drop-zone" id="uploadDropZone" onclick="document.getElementById('uploadFileInput').click()">
-        <div style="font-size:32px;margin-bottom:8px">📂</div>
-        <p><strong>לחץ לבחירת קבצים</strong> או גרור לכאן</p>
-        <p style="font-size:11px;margin-top:4px">תמונות, PDF, Word, Excel – כל סוג קובץ</p>
-      </div>
-      <input type="file" id="uploadFileInput" multiple accept="*/*" style="display:none" onchange="handleFileSelect(this.files)">
-
-      <!-- File list with progress -->
-      <div id="uploadFileList" class="upload-file-list"></div>
-
-      <!-- Queue section -->
-      <div id="uploadQueueSection" class="upload-queue-section" style="display:none">
-        <div class="upload-queue-title">
-          📋 תור המתנה
-          <button onclick="retryQueue()" style="float:left;font-size:11px;background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;font-family:inherit">נסה שוב</button>
-          <button onclick="clearDoneQueue()" style="float:left;margin-left:6px;font-size:11px;background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;font-family:inherit;margin-left:4px">נקה הושלמו</button>
-        </div>
-        <div id="uploadQueueList"></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeUploadModal()">סגור</button>
-      <button class="btn btn-primary" id="startUploadBtn" onclick="startUpload()" disabled>⬆️ העלה</button>
-    </div>
-  </div>
-</div>
-
 <!-- Confirm overlay (shared.js injects but needs placeholder) -->
 <div id="confirmOverlay" class="confirm-overlay">
   <div class="confirm-box">
@@ -438,31 +308,6 @@
 //  INIT
 // ════════════════════════════════════════════
 document.getElementById('todayChip').textContent = todayStr();
-
-// Online/offline indicator
-function updateOnlineStatus() {
-  const dot = document.getElementById('onlineDot');
-  if (!dot) return;
-  if (navigator.onLine) {
-    dot.className = 'online-dot'; dot.title = 'מחובר לאינטרנט';
-  } else {
-    dot.className = 'online-dot offline'; dot.title = 'אין חיבור לאינטרנט';
-  }
-}
-window.addEventListener('online',  updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
-updateOnlineStatus();
-
-// Queue badge counter
-function refreshQueueBadge() {
-  const q = getUploadQueue();
-  const pending = q.filter(f => f.status === 'pending' || f.status === 'error').length;
-  const badge = document.getElementById('queueBadge');
-  const cnt   = document.getElementById('uploadQueueCount');
-  if (badge) { badge.style.display = pending > 0 ? 'flex' : 'none'; badge.textContent = pending; }
-  if (cnt)   { cnt.style.display   = pending > 0 ? 'inline' : 'none'; cnt.textContent  = pending; }
-}
-refreshQueueBadge();
 
 // ════════════════════════════════════════════
 //  DASHBOARD
@@ -937,153 +782,6 @@ function renderDebtsChart() {
   });
 }
 
-// ════════════════════════════════════════════
-//  FILE UPLOAD
-// ════════════════════════════════════════════
-let _selectedFiles = [];
-
-function openUploadModal() {
-  _selectedFiles = [];
-  document.getElementById('uploadFileList').innerHTML = '';
-  document.getElementById('startUploadBtn').disabled = true;
-  document.getElementById('uploadFileInput').value = '';
-
-  // Warn states
-  const noGas = !getSyncUrl();
-  const offline = !navigator.onLine;
-  document.getElementById('uploadNoGasWarn').style.display  = noGas    ? 'block' : 'none';
-  document.getElementById('uploadOfflineWarn').style.display = offline && !noGas ? 'block' : 'none';
-
-  // Populate folder selector
-  const sel = document.getElementById('uploadFolderSelect');
-  sel.innerHTML = '<option value="">— ללא תיקייה מוגדרת —</option>';
-  const s = getSettings();
-  (s.scanFolders || []).forEach(f => {
-    sel.innerHTML += `<option value="${escHtml(f.folderId)}">${escHtml(f.name)}</option>`;
-  });
-
-  refreshQueueDisplay();
-  document.getElementById('uploadModal').classList.add('open');
-}
-
-function closeUploadModal() {
-  document.getElementById('uploadModal').classList.remove('open');
-}
-
-// Drag & drop
-const dropZone = document.getElementById('uploadDropZone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  handleFileSelect(e.dataTransfer.files);
-});
-
-function handleFileSelect(files) {
-  _selectedFiles = Array.from(files);
-  const list = document.getElementById('uploadFileList');
-  list.innerHTML = _selectedFiles.map((f, i) => `
-    <div class="upload-file-item" id="ufi_${i}">
-      <div class="upload-file-header">
-        <span class="upload-file-name" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
-        <span class="upload-file-size">${formatFileSize(f.size)}</span>
-        <span class="upload-file-status waiting" id="ufs_${i}">ממתין</span>
-      </div>
-      <div class="progress-bar-wrap">
-        <div class="progress-bar" id="upb_${i}" style="width:0"></div>
-      </div>
-    </div>`).join('');
-  document.getElementById('startUploadBtn').disabled = _selectedFiles.length === 0;
-}
-
-function formatFileSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
-  return (bytes/(1024*1024)).toFixed(1) + ' MB';
-}
-
-async function startUpload() {
-  if (!_selectedFiles.length) return;
-  const btn = document.getElementById('startUploadBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ מעלה...';
-
-  const sel = document.getElementById('uploadFolderSelect');
-  const folderId   = sel.value;
-  const folderName = sel.options[sel.selectedIndex]?.text || '';
-
-  await uploadFilesToDrive(_selectedFiles, folderId, folderName, {
-    onFileStart: (i) => {
-      setFileStatus(i, 'uploading', 'מעלה...');
-      setFileProgress(i, 0);
-    },
-    onProgress: (i, pct) => setFileProgress(i, pct),
-    onFileDone: (i, mode) => {
-      if (mode === 'queued') setFileStatus(i, 'queued', '📋 בתור');
-      else setFileStatus(i, 'done', '✓ הועלה');
-      setFileProgress(i, 100);
-    },
-    onFileError: (i, err) => {
-      setFileStatus(i, 'error', '⚠ שגיאה');
-      setFileProgress(i, 0);
-    },
-    onAllDone: (uploaded, failed, queued) => {
-      const parts = [];
-      if (uploaded > 0) parts.push(`${uploaded} הועלו`);
-      if (queued   > 0) parts.push(`${queued} בתור`);
-      if (failed   > 0) parts.push(`${failed} נכשלו`);
-      const type = failed > 0 ? 'error' : 'success';
-      showToast(parts.join(' · '), type);
-      btn.textContent = '⬆️ העלה';
-      _selectedFiles = [];
-      document.getElementById('startUploadBtn').disabled = true;
-      refreshQueueDisplay();
-      refreshQueueBadge();
-    }
-  });
-}
-
-function setFileStatus(i, cls, text) {
-  const el = document.getElementById(`ufs_${i}`);
-  if (el) { el.className = `upload-file-status ${cls}`; el.textContent = text; }
-}
-function setFileProgress(i, pct) {
-  const el = document.getElementById(`upb_${i}`);
-  if (el) el.style.width = pct + '%';
-}
-
-function refreshQueueDisplay() {
-  const q = getUploadQueue();
-  const sec  = document.getElementById('uploadQueueSection');
-  const list = document.getElementById('uploadQueueList');
-  if (!q.length) { sec.style.display = 'none'; return; }
-  sec.style.display = 'block';
-  list.innerHTML = q.slice().reverse().slice(0, 30).map(item => `
-    <div class="queue-item">
-      <span class="queue-item-name" title="${escHtml(item.fileName)}">${escHtml(item.fileName)}</span>
-      <span class="queue-item-meta">${item.timestamp || ''}</span>
-      <span class="queue-item-status ${item.status}">${{pending:'⏳ ממתין',done:'✓',error:'✗ שגיאה',uploading:'⬆️'}[item.status]||item.status}</span>
-    </div>`).join('');
-}
-
-async function retryQueue() {
-  const btn = event.target;
-  btn.disabled = true; btn.textContent = '...';
-  const { uploaded, failed } = await processUploadQueue().catch(() => ({ uploaded:0, failed:0 }));
-  if (uploaded > 0) showToast(`${uploaded} קבצים הועלו בהצלחה ✓`, 'success');
-  if (failed   > 0) showToast(`${failed} קבצים נכשלו`, 'error');
-  refreshQueueDisplay();
-  refreshQueueBadge();
-  btn.disabled = false; btn.textContent = 'נסה שוב';
-}
-
-function clearDoneQueue() {
-  const q = getUploadQueue().filter(f => f.status !== 'done');
-  saveUploadQueue(q);
-  refreshQueueDisplay();
-  refreshQueueBadge();
-}
 </script>
 </body>
 </html>
