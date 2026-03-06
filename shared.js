@@ -415,3 +415,155 @@ function requirePin(cb) {
   setTimeout(() => input.focus(), 80);
   window._pinCb = cb;
 }
+
+// =============================================
+//  FILE UPLOAD TO GOOGLE DRIVE (via GAS)
+//  תמיכה בתור offline + חיווי התקדמות
+// =============================================
+
+function getUploadQueue() {
+  try { return JSON.parse(localStorage.getItem('pnc_upload_queue')) || []; } catch { return []; }
+}
+function saveUploadQueue(q) {
+  try { localStorage.setItem('pnc_upload_queue', JSON.stringify(q)); } catch(e) { console.error(e); }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result.split(',')[1]);
+    reader.onerror = () => reject(new Error('שגיאה בקריאת הקובץ'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function uploadFileViaXhr(url, payload, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'text/plain');
+    if (onProgress) {
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100));
+      };
+    }
+    xhr.onload = () => { if (onProgress) onProgress(100); resolve(); };
+    xhr.onerror = () => reject(new Error('שגיאת רשת'));
+    xhr.ontimeout = () => reject(new Error('פסק זמן'));
+    xhr.timeout = 60000;
+    xhr.send(JSON.stringify(payload));
+  });
+}
+
+// Upload multiple files — handles online/offline automatically
+// callbacks: { onFileStart(i,name), onProgress(i,pct), onFileDone(i,mode), onFileError(i,err), onAllDone(uploaded,failed,queued) }
+async function uploadFilesToDrive(files, folderId, folderName, callbacks) {
+  const url = getSyncUrl();
+  const cb = callbacks || {};
+  let uploaded = 0, failed = 0, queued = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (cb.onFileStart) cb.onFileStart(i, file.name);
+
+    let base64;
+    try {
+      base64 = await fileToBase64(file);
+    } catch (err) {
+      failed++;
+      if (cb.onFileError) cb.onFileError(i, 'שגיאה בקריאת הקובץ');
+      continue;
+    }
+
+    const payload = {
+      type: '__file__',
+      fileName: file.name,
+      mimeType: file.type || 'application/octet-stream',
+      data: base64,
+      folderId: folderId || ''
+    };
+
+    if (!navigator.onLine || !url) {
+      const q = getUploadQueue();
+      q.push({
+        id: nowId() + '_' + i,
+        fileName: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        data: base64,
+        folderId: folderId || '',
+        folderName: folderName || '',
+        status: 'pending',
+        timestamp: todayStr()
+      });
+      saveUploadQueue(q);
+      queued++;
+      if (cb.onFileDone) cb.onFileDone(i, 'queued');
+    } else {
+      try {
+        await uploadFileViaXhr(url, payload, pct => { if (cb.onProgress) cb.onProgress(i, pct); });
+        uploaded++;
+        if (cb.onFileDone) cb.onFileDone(i, 'uploaded');
+      } catch (err) {
+        // Save to queue as fallback on error
+        const q = getUploadQueue();
+        q.push({
+          id: nowId() + '_' + i,
+          fileName: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          data: base64,
+          folderId: folderId || '',
+          folderName: folderName || '',
+          status: 'error',
+          timestamp: todayStr()
+        });
+        saveUploadQueue(q);
+        failed++;
+        if (cb.onFileError) cb.onFileError(i, err.message);
+      }
+    }
+  }
+
+  if (cb.onAllDone) cb.onAllDone(uploaded, failed, queued);
+}
+
+// Process pending queue items (called on coming online or manually)
+async function processUploadQueue(onItemProgress) {
+  const url = getSyncUrl();
+  if (!url || !navigator.onLine) return { uploaded: 0, failed: 0 };
+  const queue = getUploadQueue();
+  const pending = queue.filter(f => f.status === 'pending' || f.status === 'error');
+  let uploaded = 0, failed = 0;
+
+  for (const item of pending) {
+    item.status = 'uploading';
+    saveUploadQueue(queue);
+    if (onItemProgress) onItemProgress(item.fileName);
+    try {
+      await uploadFileViaXhr(url, {
+        type: '__file__',
+        fileName: item.fileName,
+        mimeType: item.mimeType,
+        data: item.data,
+        folderId: item.folderId
+      }, null);
+      item.status = 'done';
+      uploaded++;
+    } catch {
+      item.status = 'error';
+      failed++;
+    }
+    saveUploadQueue(queue);
+  }
+  return { uploaded, failed };
+}
+
+// Auto-process queue when internet returns
+window.addEventListener('online', async () => {
+  const q = getUploadQueue();
+  if (q.some(f => f.status === 'pending' || f.status === 'error')) {
+    showToast('מתחבר – מעלה קבצים בתור...', '');
+    const { uploaded, failed } = await processUploadQueue().catch(() => ({ uploaded: 0, failed: 0 }));
+    if (uploaded > 0) showToast(`${uploaded} קבצים הועלו בהצלחה ✓`, 'success');
+    if (failed > 0) showToast(`${failed} קבצים נכשלו בהעלאה`, 'error');
+  }
+});

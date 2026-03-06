@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -12,8 +12,9 @@
   <link rel="manifest" href="manifest.json">
   <title>אוטוליין – ראשי</title>
   <link rel="stylesheet" href="style.css?v=1.7">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    .welcome { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .welcome { font-size: 14px; color: var(--text-muted); margin-bottom: 16px; }
     .modules-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -45,6 +46,8 @@
     .module-card.red   .mod-stat { color: var(--danger); }
 
     .section-title { font-size: 14px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .section-header .section-title { margin-bottom: 0; }
 
     .alerts-box { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 24px; }
     .alert-item {
@@ -60,6 +63,138 @@
       background: var(--primary-light); color: var(--primary-dark);
       padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
     }
+
+    /* ── Header actions ── */
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .header-btn {
+      background: none; border: 1.5px solid var(--border); border-radius: 20px;
+      padding: 5px 12px; font-size: 15px; cursor: pointer; position: relative;
+      transition: all 0.2s; font-family: inherit; color: var(--text);
+    }
+    .header-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+    .queue-badge {
+      position: absolute; top: -5px; left: -5px;
+      background: var(--warning); color: white; border-radius: 50%;
+      width: 17px; height: 17px; font-size: 10px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Heebo', sans-serif;
+    }
+    .online-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--primary); display: inline-block;
+      transition: background 0.3s;
+    }
+    .online-dot.offline { background: var(--danger); }
+
+    /* ── Top actions bar (search + buttons) ── */
+    .top-actions {
+      display: flex; gap: 8px; align-items: stretch;
+      flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .search-wrap { flex: 1; min-width: 200px; display: flex; gap: 6px; }
+    .search-wrap input {
+      flex: 1; padding: 10px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      font-size: 14px; font-family: inherit; background: white; direction: rtl;
+      transition: border-color 0.2s;
+    }
+    .search-wrap input:focus { outline: none; border-color: var(--primary); }
+    .toggle-btn {
+      padding: 10px 16px; border: 1.5px solid var(--border); border-radius: var(--radius);
+      background: white; font-size: 13px; font-weight: 700; cursor: pointer;
+      color: var(--text-muted); font-family: inherit; transition: all 0.2s; white-space: nowrap;
+    }
+    .toggle-btn:hover, .toggle-btn.active {
+      border-color: var(--accent); color: var(--accent); background: #eff6ff;
+    }
+    .upload-toggle-btn {
+      padding: 10px 16px; border: 1.5px solid var(--border); border-radius: var(--radius);
+      background: white; font-size: 13px; font-weight: 700; cursor: pointer;
+      color: var(--text-muted); font-family: inherit; transition: all 0.2s; white-space: nowrap;
+      position: relative;
+    }
+    .upload-toggle-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+    /* ── Charts section ── */
+    .charts-section { display: none; margin-bottom: 24px; }
+    .charts-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+    }
+    @media(max-width:640px){ .charts-grid { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: white; border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 16px 20px;
+      min-height: 220px; display: flex; align-items: center; justify-content: center;
+    }
+    .chart-card canvas { max-height: 220px; }
+    .chart-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; }
+
+    /* ── Upload modal ── */
+    .upload-folder-select {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      font-size: 14px; font-family: inherit; background: white; direction: rtl;
+      margin-bottom: 12px;
+    }
+    .upload-drop-zone {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 28px 20px; text-align: center; cursor: pointer;
+      transition: all 0.2s; margin-bottom: 12px;
+    }
+    .upload-drop-zone:hover, .upload-drop-zone.dragover {
+      border-color: var(--primary); background: var(--primary-light);
+    }
+    .upload-drop-zone p { margin: 0; color: var(--text-muted); font-size: 13px; }
+    .upload-drop-zone strong { color: var(--primary); }
+    .upload-file-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
+    .upload-file-item {
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .upload-file-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .upload-file-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .upload-file-size { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+    .upload-file-status { font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .upload-file-status.waiting  { color: var(--text-muted); }
+    .upload-file-status.uploading{ color: var(--accent); }
+    .upload-file-status.done     { color: var(--primary); }
+    .upload-file-status.queued   { color: var(--warning); }
+    .upload-file-status.error    { color: var(--danger); }
+    .progress-bar-wrap { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--primary); border-radius: 3px; transition: width 0.2s; width: 0; }
+    .upload-queue-section { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+    .upload-queue-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+    .queue-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+    .queue-item:last-child { border-bottom: none; }
+    .queue-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+    .queue-item-meta { color: var(--text-muted); font-size: 11px; flex-shrink: 0; margin-right: 8px; }
+    .queue-item-status.pending { color: var(--warning); font-weight: 700; }
+    .queue-item-status.done    { color: var(--primary); }
+    .queue-item-status.error   { color: var(--danger); font-weight: 700; }
+    .no-gas-warning {
+      background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px;
+      padding: 12px 14px; font-size: 13px; color: #92400e; margin-bottom: 12px;
+    }
+
+    /* ── Search results modal ── */
+    .search-result-group { margin-bottom: 16px; }
+    .search-group-title {
+      font-size: 11px; font-weight: 800; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 4px; padding-bottom: 4px; border-bottom: 2px solid var(--border);
+    }
+    .search-result-item {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 9px 8px; border-bottom: 1px solid var(--border);
+      text-decoration: none; color: var(--text); border-radius: 4px;
+      transition: background 0.15s;
+    }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item:hover { background: var(--bg); }
+    .search-result-title { font-size: 14px; font-weight: 700; }
+    .search-result-detail { font-size: 12px; color: var(--text-muted); }
+    .search-empty { text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: 14px; }
+    .search-count { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
   </style>
 </head>
 <body>
@@ -72,7 +207,14 @@
       <p>מערכת עזר לניהול</p>
     </div>
   </div>
-  <span class="date-chip" id="todayChip"></span>
+  <div class="header-actions">
+    <span id="onlineDot" class="online-dot" title="מחובר לאינטרנט"></span>
+    <button class="header-btn" onclick="openUploadModal()" title="העלאת קבצים לדרייב">
+      📎
+      <span id="queueBadge" class="queue-badge" style="display:none">0</span>
+    </button>
+    <span class="date-chip" id="todayChip"></span>
+  </div>
 </header>
 
 <nav class="main-nav">
@@ -95,8 +237,33 @@
 <div class="container">
   <p class="welcome">ברוך הבא! בחר מודול להמשיך.</p>
 
+  <!-- Top Actions: Search + Charts toggle + Upload -->
+  <div class="top-actions">
+    <div class="search-wrap">
+      <input type="text" id="globalSearchInput"
+        placeholder="🔍 חיפוש לפי שם, לוחית רכב, טלפון..."
+        onkeyup="if(event.key==='Enter') doGlobalSearch()">
+      <button class="btn btn-primary" onclick="doGlobalSearch()">חפש</button>
+    </div>
+    <button class="toggle-btn" id="chartsToggleBtn" onclick="toggleCharts()">📊 גרפים</button>
+    <button class="upload-toggle-btn" onclick="openUploadModal()">
+      📎 סריקות
+      <span id="uploadQueueCount" style="display:none;background:var(--warning);color:white;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:4px"></span>
+    </button>
+  </div>
+
   <!-- Stats -->
   <div class="stats-row" id="statsRow"></div>
+
+  <!-- Charts Section -->
+  <div id="chartsSection" class="charts-section">
+    <div class="charts-grid">
+      <div class="chart-card"><canvas id="expensesChart"></canvas></div>
+      <div class="chart-card" id="categoriesChartWrap"><canvas id="categoriesChart"></canvas></div>
+      <div class="chart-card" id="carsChartWrap"><canvas id="carsChart"></canvas></div>
+      <div class="chart-card"><canvas id="debtsChart"></canvas></div>
+    </div>
+  </div>
 
   <!-- Modules -->
   <div class="section-title">מודולים</div>
@@ -186,24 +353,128 @@
   </div>
 </div>
 
+<!-- ══════════ SEARCH MODAL ══════════ -->
+<div id="searchModal" class="modal-overlay">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <h3>🔍 תוצאות חיפוש</h3>
+      <button class="modal-close" onclick="closeSearchModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:65vh; overflow-y:auto; padding:16px 20px">
+      <div id="searchResults"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ UPLOAD MODAL ══════════ -->
+<div id="uploadModal" class="modal-overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3>📎 העלאת קבצים לדרייב</h3>
+      <button class="modal-close" onclick="closeUploadModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px">
+
+      <div id="uploadNoGasWarn" class="no-gas-warning" style="display:none">
+        ⚠️ לא הוגדר לינק GAS – קבצים יישמרו בתור ויועלו כשיוגדר.
+        <a href="הגדרות.html" style="color:inherit;font-weight:700">פתח הגדרות ←</a>
+      </div>
+
+      <div id="uploadOfflineWarn" class="no-gas-warning" style="display:none;background:#fce7f3;border-color:#f472b6;color:#9d174d">
+        📵 אין חיבור לאינטרנט – קבצים יישמרו בתור ויועלו בחיבור הבא.
+      </div>
+
+      <!-- Folder selector -->
+      <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">תיקיית יעד בדרייב</label>
+      <select id="uploadFolderSelect" class="upload-folder-select">
+        <option value="">— ללא תיקייה מוגדרת —</option>
+      </select>
+
+      <!-- Drop zone -->
+      <div class="upload-drop-zone" id="uploadDropZone" onclick="document.getElementById('uploadFileInput').click()">
+        <div style="font-size:32px;margin-bottom:8px">📂</div>
+        <p><strong>לחץ לבחירת קבצים</strong> או גרור לכאן</p>
+        <p style="font-size:11px;margin-top:4px">תמונות, PDF, Word, Excel – כל סוג קובץ</p>
+      </div>
+      <input type="file" id="uploadFileInput" multiple accept="*/*" style="display:none" onchange="handleFileSelect(this.files)">
+
+      <!-- File list with progress -->
+      <div id="uploadFileList" class="upload-file-list"></div>
+
+      <!-- Queue section -->
+      <div id="uploadQueueSection" class="upload-queue-section" style="display:none">
+        <div class="upload-queue-title">
+          📋 תור המתנה
+          <button onclick="retryQueue()" style="float:left;font-size:11px;background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;font-family:inherit">נסה שוב</button>
+          <button onclick="clearDoneQueue()" style="float:left;margin-left:6px;font-size:11px;background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;font-family:inherit;margin-left:4px">נקה הושלמו</button>
+        </div>
+        <div id="uploadQueueList"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeUploadModal()">סגור</button>
+      <button class="btn btn-primary" id="startUploadBtn" onclick="startUpload()" disabled>⬆️ העלה</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm overlay (shared.js injects but needs placeholder) -->
+<div id="confirmOverlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="big-icon" id="confirmIcon">🗑️</div>
+    <p id="confirmMsg"></p>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="confirmNo()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmYes()" id="confirmYesBtn">אישור</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script src="shared.js?v=1.7"></script>
 <script>
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
 document.getElementById('todayChip').textContent = todayStr();
 
-function loadDashboard() {
-  const expenses = getDB('pnc_expenses');
-  const products = getDB('pnc_products');
-  const tires    = getDB('pnc_tires');
-  const checks   = (() => { try { return JSON.parse(localStorage.getItem('mualem_db_v3')) || []; } catch { return []; } })();
+// Online/offline indicator
+function updateOnlineStatus() {
+  const dot = document.getElementById('onlineDot');
+  if (!dot) return;
+  if (navigator.onLine) {
+    dot.className = 'online-dot'; dot.title = 'מחובר לאינטרנט';
+  } else {
+    dot.className = 'online-dot offline'; dot.title = 'אין חיבור לאינטרנט';
+  }
+}
+window.addEventListener('online',  updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
 
-  // This month expenses
+// Queue badge counter
+function refreshQueueBadge() {
+  const q = getUploadQueue();
+  const pending = q.filter(f => f.status === 'pending' || f.status === 'error').length;
+  const badge = document.getElementById('queueBadge');
+  const cnt   = document.getElementById('uploadQueueCount');
+  if (badge) { badge.style.display = pending > 0 ? 'flex' : 'none'; badge.textContent = pending; }
+  if (cnt)   { cnt.style.display   = pending > 0 ? 'inline' : 'none'; cnt.textContent  = pending; }
+}
+refreshQueueBadge();
+
+// ════════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════════
+function loadDashboard() {
+  const expenses  = getDB('pnc_expenses');
+  const products  = getDB('pnc_products');
+  const tires     = getDB('pnc_tires');
+  const checks    = (() => { try { return JSON.parse(localStorage.getItem('mualem_db_v3')) || []; } catch { return []; } })();
+
   const now = new Date();
-  const thisMonth = String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear();
-  const monthExp = expenses.filter(e => (e.date || '').includes('/' + thisMonth.replace('/','/').slice(0,2) + '/') || (e.date || '').endsWith(thisMonth.slice(-4)));
-  // simpler: filter where date contains /MM/YYYY
-  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const mm   = String(now.getMonth()+1).padStart(2,'0');
   const yyyy = now.getFullYear();
   const expThisMonth = expenses.filter(e => {
     const p = (e.date || '').split('/');
@@ -211,34 +482,30 @@ function loadDashboard() {
   });
   const totalExpMonth = expThisMonth.reduce((s,e) => s + (parseFloat(e.amount) || 0), 0);
 
-  const quotesT = getDB('pnc_quotes_tires');
-  const quotesP = getDB('pnc_quotes_parts');
-  const suppliers = getDB('pnc_suppliers');
+  const quotesT    = getDB('pnc_quotes_tires');
+  const quotesP    = getDB('pnc_quotes_parts');
+  const suppliers  = getDB('pnc_suppliers');
 
-  // Reminders
-  const reminders = getDB('pnc_reminders');
+  const reminders  = getDB('pnc_reminders');
   const today = new Date(); today.setHours(0,0,0,0);
   const openRems    = reminders.filter(r => !r.done);
   const overdueRems = reminders.filter(r => !r.done && r.due && new Date(r.due) < today);
   const highRems    = reminders.filter(r => !r.done && r.priority === 'high' && !(r.due && new Date(r.due) < today));
 
-  // Invoices (current month)
-  const tenants  = getDB('pnc_tenants');
-  const payments = getDB('pnc_payments');
-  const curPeriod = String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear();
-  const curPmts   = payments.filter(p => p.period === curPeriod);
+  const tenants    = getDB('pnc_tenants');
+  const payments   = getDB('pnc_payments');
+  const curPeriod  = String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear();
+  const curPmts    = payments.filter(p => p.period === curPeriod);
   const unpaidTenants = tenants.filter(t => {
     const pmt = curPmts.find(p => p.tenantId === t.id);
     return !pmt || !pmt.paid;
   });
 
-  // Cars inventory
-  const carsInv  = getDB('pnc_cars_inventory');
-  const availCars = carsInv.filter(c => c.status === 'available');
+  const carsInv    = getDB('pnc_cars_inventory');
+  const availCars  = carsInv.filter(c => c.status === 'available');
 
-  // Employees
-  const employees = getDB('pnc_employees');
-  const empSals   = getDB('pnc_salaries');
+  const employees  = getDB('pnc_employees');
+  const empSals    = getDB('pnc_salaries');
   const activeEmps = employees.filter(e => e.active);
   const empCurSals = empSals.filter(s => s.period === curPeriod);
   const empUnpaid  = activeEmps.filter(e => {
@@ -257,67 +524,46 @@ function loadDashboard() {
   document.getElementById('statCars').textContent      = availCars.length + ' זמינים' + (carsInv.length > availCars.length ? ` / ${carsInv.length} סה״כ` : '');
   document.getElementById('statEmployees').textContent = activeEmps.length + ' פעילים' + (empUnpaid > 0 ? ` · ${empUnpaid} ממתינים` : '');
 
-  // Debts
-  const custDebts  = getDB('pnc_customer_debts');
-  const suppDebts  = getDB('pnc_supplier_debts');
-  const openCust   = custDebts.filter(d => {
+  const custDebts = getDB('pnc_customer_debts');
+  const suppDebts = getDB('pnc_supplier_debts');
+  const openCust  = custDebts.filter(d => {
     const paid = (d.payments||[]).reduce((s,p) => s+(parseFloat(p.amount)||0), 0);
     return Math.max(0, (parseFloat(d.amount)||0) - paid) > 0;
   });
-  const openSupp   = suppDebts.filter(d => !d.paid);
-  const debtParts  = [];
-  if (openCust.length)  debtParts.push(openCust.length + ' לקוחות');
-  if (openSupp.length)  debtParts.push(openSupp.length + ' ספקים');
+  const openSupp = suppDebts.filter(d => !d.paid);
+  const debtParts = [];
+  if (openCust.length) debtParts.push(openCust.length + ' לקוחות');
+  if (openSupp.length) debtParts.push(openSupp.length + ' ספקים');
   document.getElementById('statDebts').textContent = debtParts.length ? debtParts.join(' · ') : '✓ אין חובות פתוחים';
 
-  // Forms
   const forms = getDB('pnc_forms');
   document.getElementById('statForms').textContent = forms.length + ' תבניות';
 
   // Alerts
   const alerts = [];
-
-  // Overdue reminders (most urgent – red)
-  overdueRems.forEach(r => {
-    alerts.push({ color: '', text: `🔔 תזכורת באיחור: ${r.text}` });
-  });
-  // High priority open reminders (orange)
-  highRems.forEach(r => {
-    alerts.push({ color: 'orange', text: `🔔 תזכורת דחופה: ${r.text}` });
-  });
-  // Unpaid employee salaries
+  overdueRems.forEach(r => alerts.push({ color: '', text: `🔔 תזכורת באיחור: ${r.text}` }));
+  highRems.forEach(r => alerts.push({ color: 'orange', text: `🔔 תזכורת דחופה: ${r.text}` }));
   activeEmps.forEach(e => {
     const sal = empCurSals.find(s => s.employeeId === e.id);
     if (!sal || !sal.paid) {
       const amount = sal ? sal.total : (e.payType === 'monthly' ? (parseFloat(e.baseSalary)||0) : 0);
-      if (amount > 0)
-        alerts.push({ color: 'orange', text: `👷 שכר לא שולם: ${e.name} – ₪${amount.toLocaleString('he-IL',{maximumFractionDigits:0})} (${curPeriod})` });
+      if (amount > 0) alerts.push({ color: 'orange', text: `👷 שכר לא שולם: ${e.name} – ₪${amount.toLocaleString('he-IL',{maximumFractionDigits:0})} (${curPeriod})` });
     }
   });
-
-  // Overdue supplier debts
   openSupp.forEach(d => {
     if (!d.dueDate) return;
     const parts = d.dueDate.split('/');
     const due = parts.length === 3 ? new Date(parts[2], parts[1]-1, parts[0]) : null;
-    if (due && due < today) {
-      alerts.push({ color: '', text: `🏭 חשבונית פגת תוקף: ${d.supplierName} – ₪${(parseFloat(d.amount)||0).toLocaleString('he-IL',{maximumFractionDigits:0})} (עד ${d.dueDate})` });
-    }
+    if (due && due < today) alerts.push({ color: '', text: `🏭 חשבונית פגת תוקף: ${d.supplierName} – ₪${(parseFloat(d.amount)||0).toLocaleString('he-IL',{maximumFractionDigits:0})} (עד ${d.dueDate})` });
   });
-
-  // Unpaid invoices current month
   unpaidTenants.forEach(t => {
     const total = (t.items||[]).reduce((s,item)=>s+(parseFloat(item.amount)||0),0);
     alerts.push({ color: 'orange', text: `🧾 חשבון לא שולם: ${t.name} – ₪${total.toLocaleString('he-IL')} (${curPeriod})` });
   });
-
-  // Low stock products
   products.forEach(p => {
     const qty = parseFloat(p.quantity) || 0;
     const min = parseFloat(p.minQuantity) || 0;
-    if (min > 0 && qty <= min) {
-      alerts.push({ color: qty === 0 ? '' : 'orange', text: `מלאי נמוך: ${p.name} – נותרו ${qty} ${p.unit || 'יח׳'}` });
-    }
+    if (min > 0 && qty <= min) alerts.push({ color: qty === 0 ? '' : 'orange', text: `📦 מלאי נמוך: ${p.name} – נותרו ${qty} ${p.unit || 'יח׳'}` });
   });
 
   const list = document.getElementById('alertsList');
@@ -325,15 +571,519 @@ function loadDashboard() {
     list.innerHTML = '<div class="empty-state" style="padding:20px"><p>✅ אין התראות פעילות</p></div>';
   } else {
     list.innerHTML = alerts.map(a =>
-      `<div class="alert-item">
-         <div class="alert-dot ${a.color}"></div>
-         <span>${a.text}</span>
-       </div>`
+      `<div class="alert-item"><div class="alert-dot ${a.color}"></div><span>${a.text}</span></div>`
     ).join('');
   }
 }
-
 loadDashboard();
+
+// ════════════════════════════════════════════
+//  GLOBAL SEARCH
+// ════════════════════════════════════════════
+function doGlobalSearch() {
+  const term = (document.getElementById('globalSearchInput').value || '').trim();
+  if (!term) return;
+  const results = globalSearch(term);
+  renderSearchResults(results, term);
+  document.getElementById('searchModal').classList.add('open');
+}
+
+function closeSearchModal() {
+  document.getElementById('searchModal').classList.remove('open');
+}
+
+function globalSearch(term) {
+  const t = term.toLowerCase();
+  const results = [];
+
+  function match(obj, fields) {
+    return fields.some(f => (String(obj[f] || '')).toLowerCase().includes(t));
+  }
+
+  // Cars inventory
+  getDB('pnc_cars_inventory').forEach(c => {
+    if (match(c, ['plate','make','model','color','year','notes'])) {
+      results.push({
+        module: '🚗 רכבים – מלאי', url: 'רכבים.html',
+        title: [c.make, c.model, c.year].filter(Boolean).join(' ') || c.plate || '—',
+        detail: [c.plate, c.color, c.status === 'available' ? 'זמין' : 'נמכר'].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Cars buys
+  getDB('pnc_cars_buys').forEach(c => {
+    if (match(c, ['plate','make','model','sellerName','sellerPhone','notes'])) {
+      results.push({
+        module: '🚗 רכבים – קניות', url: 'רכבים.html',
+        title: [c.make, c.model, c.year].filter(Boolean).join(' ') || c.plate || '—',
+        detail: [c.plate, c.sellerName, c.buyDate].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Cars sells
+  getDB('pnc_cars_sells').forEach(c => {
+    if (match(c, ['plate','make','model','buyerName','buyerPhone','notes'])) {
+      results.push({
+        module: '🚗 רכבים – מכירות', url: 'רכבים.html',
+        title: [c.make, c.model, c.year].filter(Boolean).join(' ') || c.plate || '—',
+        detail: [c.plate, c.buyerName, c.sellDate].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Customer debts
+  getDB('pnc_customer_debts').forEach(d => {
+    if (match(d, ['customerName','plate','description','phone'])) {
+      const paid = (d.payments||[]).reduce((s,p) => s+(parseFloat(p.amount)||0), 0);
+      const balance = Math.max(0, (parseFloat(d.amount)||0) - paid);
+      results.push({
+        module: '💳 חובות לקוחות', url: 'חובות.html',
+        title: d.customerName || '—',
+        detail: [d.plate, `יתרה: ₪${balance.toLocaleString('he-IL',{maximumFractionDigits:0})}`, d.date].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Supplier debts
+  getDB('pnc_supplier_debts').forEach(d => {
+    if (match(d, ['supplierName','description','invoiceNum'])) {
+      results.push({
+        module: '🏭 חובות ספקים', url: 'חובות.html',
+        title: d.supplierName || '—',
+        detail: [`₪${(parseFloat(d.amount)||0).toLocaleString('he-IL',{maximumFractionDigits:0})}`, d.paid ? 'שולם ✓' : 'פתוח', d.dueDate].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Employees
+  getDB('pnc_employees').forEach(e => {
+    if (match(e, ['name','phone','role','id_num','notes'])) {
+      results.push({
+        module: '👷 עובדים', url: 'עובדים.html',
+        title: e.name || '—',
+        detail: [e.role, e.phone, e.active ? 'פעיל' : 'לא פעיל'].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Products
+  getDB('pnc_products').forEach(p => {
+    if (match(p, ['name','sku','category','notes'])) {
+      results.push({
+        module: '📦 מוצרים', url: 'מוצרים.html',
+        title: p.name || '—',
+        detail: [p.category, `${p.quantity || 0} ${p.unit || 'יח\''}`, p.sku].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Tires
+  getDB('pnc_tires').forEach(ti => {
+    if (match(ti, ['brand','size','season','notes'])) {
+      results.push({
+        module: '🔵 צמיגים', url: 'צמיגים.html',
+        title: [ti.brand, ti.size].filter(Boolean).join(' ') || '—',
+        detail: [ti.season, `${ti.quantity || 0} יח'`, ti.price ? `₪${ti.price}` : ''].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Suppliers
+  getDB('pnc_suppliers').forEach(s => {
+    if (match(s, ['name','contact','phone','email','category'])) {
+      results.push({
+        module: '🏭 ספקים', url: 'ספקים.html',
+        title: s.name || '—',
+        detail: [s.contact, s.phone, s.category].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Expenses
+  getDB('pnc_expenses').forEach(e => {
+    if (match(e, ['description','category','notes','supplier'])) {
+      results.push({
+        module: '💰 הוצאות', url: 'הוצאות.html',
+        title: e.description || e.category || '—',
+        detail: [`₪${(parseFloat(e.amount)||0).toLocaleString('he-IL',{maximumFractionDigits:0})}`, e.date, e.category].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Reminders
+  getDB('pnc_reminders').forEach(r => {
+    if (match(r, ['text','notes'])) {
+      results.push({
+        module: '🔔 תזכורות', url: 'תזכורות.html',
+        title: r.text || '—',
+        detail: [r.due, r.priority === 'high' ? '⚡ דחוף' : '', r.done ? 'הושלם ✓' : 'פתוח'].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Car inspections
+  const checks = (() => { try { return JSON.parse(localStorage.getItem('mualem_db_v3')) || []; } catch { return []; } })();
+  checks.forEach(c => {
+    if (match(c, ['plate','owner','make','model','notes'])) {
+      results.push({
+        module: '📝 בדיקות קניה', url: 'בדיקות-קניה.html',
+        title: [c.make, c.model, c.year].filter(Boolean).join(' ') || c.plate || '—',
+        detail: [c.plate, c.owner, c.date].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  // Tenants (invoices)
+  getDB('pnc_tenants').forEach(t => {
+    if (match(t, ['name','phone','address','notes'])) {
+      results.push({
+        module: '🧾 חשבונות', url: 'חשבונות.html',
+        title: t.name || '—',
+        detail: [t.phone, t.address].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  return results;
+}
+
+function renderSearchResults(results, term) {
+  const el = document.getElementById('searchResults');
+  if (results.length === 0) {
+    el.innerHTML = `<div class="search-empty">🔍 לא נמצאו תוצאות עבור "<strong>${escHtml(term)}</strong>"</div>`;
+    return;
+  }
+
+  // Group by module
+  const groups = {};
+  results.forEach(r => {
+    if (!groups[r.module]) groups[r.module] = [];
+    groups[r.module].push(r);
+  });
+
+  let html = `<div class="search-count">נמצאו ${results.length} תוצאות</div>`;
+  for (const [mod, items] of Object.entries(groups)) {
+    html += `<div class="search-result-group">
+      <div class="search-group-title">${mod} (${items.length})</div>`;
+    items.slice(0, 12).forEach(item => {
+      html += `<a href="${item.url}" class="search-result-item">
+        <div class="search-result-title">${escHtml(item.title)}</div>
+        <div class="search-result-detail">${escHtml(item.detail)}</div>
+      </a>`;
+    });
+    if (items.length > 12) html += `<div style="font-size:12px;color:var(--text-muted);padding:6px 8px">...ועוד ${items.length - 12} תוצאות. עבור לדף המתאים לחיפוש מפורט.</div>`;
+    html += `</div>`;
+  }
+  el.innerHTML = html;
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ════════════════════════════════════════════
+//  CHARTS
+// ════════════════════════════════════════════
+let chartsVisible = false;
+const chartInstances = {};
+
+function toggleCharts() {
+  chartsVisible = !chartsVisible;
+  const section = document.getElementById('chartsSection');
+  const btn     = document.getElementById('chartsToggleBtn');
+  section.style.display = chartsVisible ? 'block' : 'none';
+  btn.classList.toggle('active', chartsVisible);
+  btn.textContent = chartsVisible ? '📊 הסתר' : '📊 גרפים';
+  if (chartsVisible) renderCharts();
+}
+
+function renderCharts() {
+  Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch {} });
+  for (const k in chartInstances) delete chartInstances[k];
+  renderExpensesChart();
+  renderCategoriesChart();
+  renderCarsChart();
+  renderDebtsChart();
+}
+
+Chart.defaults.font.family = "'Heebo', sans-serif";
+Chart.defaults.font.size   = 12;
+
+function renderExpensesChart() {
+  const ctx = document.getElementById('expensesChart');
+  if (!ctx) return;
+  const expenses = getDB('pnc_expenses');
+  const now = new Date();
+  const labels = [], totals = [];
+  for (let i = 5; i >= 0; i--) {
+    const d  = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = String(d.getFullYear());
+    labels.push(monthLabel(`01/${mm}/${yy}`));
+    totals.push(expenses.filter(e => {
+      const p = (e.date||'').split('/');
+      return p.length === 3 && p[1] === mm && p[2] === yy;
+    }).reduce((s,e) => s+(parseFloat(e.amount)||0), 0));
+  }
+  chartInstances.expenses = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: 'הוצאות', data: totals,
+        backgroundColor: 'rgba(220,38,38,0.7)', borderColor: '#dc2626',
+        borderWidth: 1, borderRadius: 6 }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'הוצאות לפי חודש (6 חודשים אחרונים)', font: { size: 13, weight: '700' } }
+      },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => '₪' + Number(v).toLocaleString('he-IL') } } }
+    }
+  });
+}
+
+function renderCategoriesChart() {
+  const wrap = document.getElementById('categoriesChartWrap');
+  const ctx  = document.getElementById('categoriesChart');
+  if (!ctx) return;
+  const now = new Date();
+  const expenses = getDB('pnc_expenses').filter(e => {
+    const p = (e.date||'').split('/');
+    if (p.length !== 3) return false;
+    const d = new Date(p[2], p[1]-1, p[0]);
+    return (now - d) / (1000*60*60*24) <= 90;
+  });
+  const catMap = {};
+  expenses.forEach(e => { const c = e.category || 'אחר'; catMap[c] = (catMap[c]||0) + (parseFloat(e.amount)||0); });
+  const entries = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  if (!entries.length) {
+    wrap.innerHTML = '<div class="chart-empty">אין נתוני הוצאות ב-90 יום האחרונים</div>'; return;
+  }
+  const colors = ['#1a9e5c','#2563eb','#d97706','#dc2626','#7c3aed','#0891b2'];
+  chartInstances.categories = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(e=>e[0]),
+      datasets: [{ data: entries.map(e=>e[1]), backgroundColor: colors.slice(0,entries.length), borderWidth: 2 }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
+        title: { display: true, text: 'הוצאות לפי קטגוריה (90 יום)', font: { size: 13, weight: '700' } }
+      }
+    }
+  });
+}
+
+function renderCarsChart() {
+  const wrap = document.getElementById('carsChartWrap');
+  const ctx  = document.getElementById('carsChart');
+  if (!ctx) return;
+  const cars = getDB('pnc_cars_inventory');
+  const avail = cars.filter(c=>c.status==='available').length;
+  const sold  = cars.length - avail;
+  if (!cars.length) {
+    wrap.innerHTML = '<div class="chart-empty">אין נתוני רכבים במלאי</div>'; return;
+  }
+  chartInstances.cars = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['זמינים', 'נמכרו'],
+      datasets: [{ data: [avail, sold], backgroundColor: ['#1a9e5c','#64748b'], borderWidth: 2 }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
+        title: { display: true, text: 'סטטוס מלאי רכבים', font: { size: 13, weight: '700' } }
+      }
+    }
+  });
+}
+
+function renderDebtsChart() {
+  const ctx = document.getElementById('debtsChart');
+  if (!ctx) return;
+  const custDebts = getDB('pnc_customer_debts');
+  const suppDebts = getDB('pnc_supplier_debts');
+  const custTotal = custDebts.reduce((s,d) => {
+    const paid = (d.payments||[]).reduce((a,p)=>a+(parseFloat(p.amount)||0),0);
+    return s + Math.max(0,(parseFloat(d.amount)||0)-paid);
+  }, 0);
+  const suppTotal = suppDebts.filter(d=>!d.paid).reduce((s,d)=>s+(parseFloat(d.amount)||0), 0);
+  chartInstances.debts = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['חובות לקוחות', 'חובות לספקים'],
+      datasets: [{
+        data: [custTotal, suppTotal],
+        backgroundColor: ['rgba(37,99,235,0.7)', 'rgba(217,119,6,0.7)'],
+        borderColor: ['#2563eb','#d97706'], borderWidth: 1, borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'סיכום חובות פתוחים', font: { size: 13, weight: '700' } }
+      },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => '₪' + Number(v).toLocaleString('he-IL') } } }
+    }
+  });
+}
+
+// ════════════════════════════════════════════
+//  FILE UPLOAD
+// ════════════════════════════════════════════
+let _selectedFiles = [];
+
+function openUploadModal() {
+  _selectedFiles = [];
+  document.getElementById('uploadFileList').innerHTML = '';
+  document.getElementById('startUploadBtn').disabled = true;
+  document.getElementById('uploadFileInput').value = '';
+
+  // Warn states
+  const noGas = !getSyncUrl();
+  const offline = !navigator.onLine;
+  document.getElementById('uploadNoGasWarn').style.display  = noGas    ? 'block' : 'none';
+  document.getElementById('uploadOfflineWarn').style.display = offline && !noGas ? 'block' : 'none';
+
+  // Populate folder selector
+  const sel = document.getElementById('uploadFolderSelect');
+  sel.innerHTML = '<option value="">— ללא תיקייה מוגדרת —</option>';
+  const s = getSettings();
+  (s.scanFolders || []).forEach(f => {
+    sel.innerHTML += `<option value="${escHtml(f.folderId)}">${escHtml(f.name)}</option>`;
+  });
+
+  refreshQueueDisplay();
+  document.getElementById('uploadModal').classList.add('open');
+}
+
+function closeUploadModal() {
+  document.getElementById('uploadModal').classList.remove('open');
+}
+
+// Drag & drop
+const dropZone = document.getElementById('uploadDropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFileSelect(e.dataTransfer.files);
+});
+
+function handleFileSelect(files) {
+  _selectedFiles = Array.from(files);
+  const list = document.getElementById('uploadFileList');
+  list.innerHTML = _selectedFiles.map((f, i) => `
+    <div class="upload-file-item" id="ufi_${i}">
+      <div class="upload-file-header">
+        <span class="upload-file-name" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
+        <span class="upload-file-size">${formatFileSize(f.size)}</span>
+        <span class="upload-file-status waiting" id="ufs_${i}">ממתין</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="upb_${i}" style="width:0"></div>
+      </div>
+    </div>`).join('');
+  document.getElementById('startUploadBtn').disabled = _selectedFiles.length === 0;
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+async function startUpload() {
+  if (!_selectedFiles.length) return;
+  const btn = document.getElementById('startUploadBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ מעלה...';
+
+  const sel = document.getElementById('uploadFolderSelect');
+  const folderId   = sel.value;
+  const folderName = sel.options[sel.selectedIndex]?.text || '';
+
+  await uploadFilesToDrive(_selectedFiles, folderId, folderName, {
+    onFileStart: (i) => {
+      setFileStatus(i, 'uploading', 'מעלה...');
+      setFileProgress(i, 0);
+    },
+    onProgress: (i, pct) => setFileProgress(i, pct),
+    onFileDone: (i, mode) => {
+      if (mode === 'queued') setFileStatus(i, 'queued', '📋 בתור');
+      else setFileStatus(i, 'done', '✓ הועלה');
+      setFileProgress(i, 100);
+    },
+    onFileError: (i, err) => {
+      setFileStatus(i, 'error', '⚠ שגיאה');
+      setFileProgress(i, 0);
+    },
+    onAllDone: (uploaded, failed, queued) => {
+      const parts = [];
+      if (uploaded > 0) parts.push(`${uploaded} הועלו`);
+      if (queued   > 0) parts.push(`${queued} בתור`);
+      if (failed   > 0) parts.push(`${failed} נכשלו`);
+      const type = failed > 0 ? 'error' : 'success';
+      showToast(parts.join(' · '), type);
+      btn.textContent = '⬆️ העלה';
+      _selectedFiles = [];
+      document.getElementById('startUploadBtn').disabled = true;
+      refreshQueueDisplay();
+      refreshQueueBadge();
+    }
+  });
+}
+
+function setFileStatus(i, cls, text) {
+  const el = document.getElementById(`ufs_${i}`);
+  if (el) { el.className = `upload-file-status ${cls}`; el.textContent = text; }
+}
+function setFileProgress(i, pct) {
+  const el = document.getElementById(`upb_${i}`);
+  if (el) el.style.width = pct + '%';
+}
+
+function refreshQueueDisplay() {
+  const q = getUploadQueue();
+  const sec  = document.getElementById('uploadQueueSection');
+  const list = document.getElementById('uploadQueueList');
+  if (!q.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  list.innerHTML = q.slice().reverse().slice(0, 30).map(item => `
+    <div class="queue-item">
+      <span class="queue-item-name" title="${escHtml(item.fileName)}">${escHtml(item.fileName)}</span>
+      <span class="queue-item-meta">${item.timestamp || ''}</span>
+      <span class="queue-item-status ${item.status}">${{pending:'⏳ ממתין',done:'✓',error:'✗ שגיאה',uploading:'⬆️'}[item.status]||item.status}</span>
+    </div>`).join('');
+}
+
+async function retryQueue() {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '...';
+  const { uploaded, failed } = await processUploadQueue().catch(() => ({ uploaded:0, failed:0 }));
+  if (uploaded > 0) showToast(`${uploaded} קבצים הועלו בהצלחה ✓`, 'success');
+  if (failed   > 0) showToast(`${failed} קבצים נכשלו`, 'error');
+  refreshQueueDisplay();
+  refreshQueueBadge();
+  btn.disabled = false; btn.textContent = 'נסה שוב';
+}
+
+function clearDoneQueue() {
+  const q = getUploadQueue().filter(f => f.status !== 'done');
+  saveUploadQueue(q);
+  refreshQueueDisplay();
+  refreshQueueBadge();
+}
 </script>
 </body>
 </html>
