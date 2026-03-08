@@ -66,31 +66,42 @@
       padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
     }
 
+    /* ── Nav outer wrapper ── */
+    .nav-outer {
+      display: flex; align-items: stretch;
+      background: white;
+      border-bottom: 2px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .nav-outer .main-nav {
+      flex: 1;
+      border-bottom: none;
+      box-shadow: none;
+      position: static;
+    }
+
     /* ── Nav search button ── */
     .nav-search-btn {
-      position: sticky;
-      left: 0;
-      background: white;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 18px;
+      background: transparent;
       border: none;
-      padding: 0 14px;
-      font-size: 18px;
+      border-right: 1px solid var(--border);
+      font-size: 20px;
       cursor: pointer;
       color: var(--text-muted);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      height: 100%;
-      border-left: 1px solid var(--border);
       transition: color 0.2s, background 0.2s;
-      z-index: 2;
     }
-    .nav-search-btn:hover { color: var(--primary); background: #f0fdf4; }
+    .nav-search-btn:hover { color: var(--primary); background: var(--bg); }
 
     /* ── View toggle (cards / charts) ── */
     .view-toggle {
-      display: flex; align-items: center;
+      display: inline-flex; align-items: center;
       background: var(--bg); border: 1.5px solid var(--border);
       border-radius: 10px; padding: 3px;
-      gap: 2px; margin-bottom: 14px; align-self: flex-start;
+      gap: 2px; margin-bottom: 14px;
     }
     .vt-btn {
       padding: 6px 14px; border: none; border-radius: 7px;
@@ -165,23 +176,25 @@
   </div>
 </header>
 
-<nav class="main-nav">
-  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
-  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
-  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
-  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
-  <a href="עובדים.html"          class="nav-link">👷 <span class="label">עובדים</span></a>
-  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
-  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
-  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
-  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
-  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
-  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
-  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
-  <a href="מסמכים.html"         class="nav-link">📄 <span class="label">מסמכים</span></a>
-  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+<div class="nav-outer">
+  <nav class="main-nav">
+    <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+    <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+    <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+    <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+    <a href="עובדים.html"          class="nav-link">👷 <span class="label">עובדים</span></a>
+    <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+    <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+    <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
+    <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+    <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+    <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+    <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
+    <a href="מסמכים.html"         class="nav-link">📄 <span class="label">מסמכים</span></a>
+    <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+  </nav>
   <button class="nav-search-btn" onclick="openSearchModal()" title="חיפוש גלובלי">🔍</button>
-</nav>
+</div>
 
 <div class="container">
   <p class="welcome">ברוך הבא! בחר מודול להמשיך.</p>
