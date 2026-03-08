@@ -59,38 +59,48 @@
     .alert-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); flex-shrink: 0; }
     .alert-dot.orange { background: var(--warning); }
 
-    .date-chip {
-      background: var(--primary-light); color: var(--primary-dark);
-      padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
-    }
-
-    /* ── Header actions ── */
+    /* ── Date chip ── */
     .header-actions { display: flex; align-items: center; gap: 8px; }
     .date-chip {
       background: #d1fae5; color: #065f46;
       padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
     }
 
-    /* ── Top actions bar (search + charts button) ── */
-    .top-actions {
-      display: flex; gap: 8px; align-items: stretch;
-      flex-wrap: wrap; margin-bottom: 20px;
+    /* ── Nav search button ── */
+    .nav-search-btn {
+      position: sticky;
+      left: 0;
+      background: white;
+      border: none;
+      padding: 0 14px;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      height: 100%;
+      border-left: 1px solid var(--border);
+      transition: color 0.2s, background 0.2s;
+      z-index: 2;
     }
-    .search-wrap { flex: 1; min-width: 200px; display: flex; gap: 6px; }
-    .search-wrap input {
-      flex: 1; padding: 10px 14px;
-      border: 1.5px solid var(--border); border-radius: var(--radius);
-      font-size: 14px; font-family: inherit; background: white; direction: rtl;
-      transition: border-color 0.2s;
+    .nav-search-btn:hover { color: var(--primary); background: #f0fdf4; }
+
+    /* ── View toggle (cards / charts) ── */
+    .view-toggle {
+      display: flex; align-items: center;
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 3px;
+      gap: 2px; margin-bottom: 14px; align-self: flex-start;
     }
-    .search-wrap input:focus { outline: none; border-color: var(--primary); }
-    .toggle-btn {
-      padding: 10px 16px; border: 1.5px solid var(--border); border-radius: var(--radius);
-      background: white; font-size: 13px; font-weight: 700; cursor: pointer;
-      color: var(--text-muted); font-family: inherit; transition: all 0.2s; white-space: nowrap;
+    .vt-btn {
+      padding: 6px 14px; border: none; border-radius: 7px;
+      background: transparent; font-size: 13px; font-weight: 700;
+      cursor: pointer; color: var(--text-muted); font-family: inherit;
+      transition: all 0.18s; white-space: nowrap;
     }
-    .toggle-btn:hover, .toggle-btn.active {
-      border-color: var(--accent); color: var(--accent); background: #eff6ff;
+    .vt-btn.active {
+      background: white; color: var(--accent);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
     }
 
     /* ── Charts section ── */
@@ -107,7 +117,19 @@
     .chart-card canvas { max-height: 220px; }
     .chart-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; }
 
-    /* ── Search results modal ── */
+    /* ── Search modal input ── */
+    .search-modal-input {
+      display: flex; gap: 8px; padding: 12px 16px 0;
+    }
+    .search-modal-input input {
+      flex: 1; padding: 10px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      font-size: 14px; font-family: inherit; background: white; direction: rtl;
+      transition: border-color 0.2s;
+    }
+    .search-modal-input input:focus { outline: none; border-color: var(--primary); }
+
+    /* ── Search results ── */
     .search-result-group { margin-bottom: 16px; }
     .search-group-title {
       font-size: 11px; font-weight: 800; color: var(--text-muted);
@@ -158,24 +180,20 @@
   <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
   <a href="מסמכים.html"         class="nav-link">📄 <span class="label">מסמכים</span></a>
   <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+  <button class="nav-search-btn" onclick="openSearchModal()" title="חיפוש גלובלי">🔍</button>
 </nav>
 
 <div class="container">
   <p class="welcome">ברוך הבא! בחר מודול להמשיך.</p>
 
-  <!-- Top Actions: Search + Charts toggle + Upload -->
-  <div class="top-actions">
-    <div class="search-wrap">
-      <input type="text" id="globalSearchInput"
-        placeholder="🔍 חיפוש לפי שם, לוחית רכב, טלפון..."
-        onkeyup="if(event.key==='Enter') doGlobalSearch()">
-      <button class="btn btn-primary" onclick="doGlobalSearch()">חפש</button>
-    </div>
-    <button class="toggle-btn" id="chartsToggleBtn" onclick="toggleCharts()">📊 גרפים</button>
-  </div>
-
   <!-- Stats -->
   <div class="stats-row" id="statsRow"></div>
+
+  <!-- View Toggle -->
+  <div class="view-toggle">
+    <button class="vt-btn active" id="vtCards" onclick="setView('cards')">📦 כרטיסיות</button>
+    <button class="vt-btn" id="vtCharts" onclick="setView('charts')">📊 גרפים</button>
+  </div>
 
   <!-- Charts Section -->
   <div id="chartsSection" class="charts-section">
@@ -188,80 +206,82 @@
   </div>
 
   <!-- Modules -->
-  <div class="section-title">מודולים</div>
-  <div class="modules-grid">
-    <a href="הוצאות.html" class="module-card">
-      <div class="mod-icon">💰</div>
-      <h2>הוצאות</h2>
-      <p>מעקב הוצאות משרד ופנצריה, תיעוד קבלות וחשבוניות</p>
-      <div class="mod-stat" id="statExpenses">—</div>
-    </a>
-    <a href="מוצרים.html" class="module-card blue">
-      <div class="mod-icon">📦</div>
-      <h2>מוצרים</h2>
-      <p>ניהול מוצרים, מחירי קנייה ומכירה, התראות מלאי נמוך</p>
-      <div class="mod-stat" id="statProducts">—</div>
-    </a>
-    <a href="צמיגים.html" class="module-card orange">
-      <div class="mod-icon">🔵</div>
-      <h2>צמיגים</h2>
-      <p>מלאי ומחירון צמיגים לפי מותג, מידה ועונה. הדפסת מחירון ללקוחות</p>
-      <div class="mod-stat" id="statTires">—</div>
-    </a>
-    <a href="הצעות-מחיר.html" class="module-card blue">
-      <div class="mod-icon">💬</div>
-      <h2>הצעות מחיר</h2>
-      <p>בקשות הצעות מחיר לצמיגים וחלקים, מעקב רווחיות</p>
-      <div class="mod-stat" id="statQuotes">—</div>
-    </a>
-    <a href="ספקים.html" class="module-card orange">
-      <div class="mod-icon">🏭</div>
-      <h2>ספקים</h2>
-      <p>ניהול ספקים, אנשי קשר, חובות וזיכויים</p>
-      <div class="mod-stat" id="statSuppliers">—</div>
-    </a>
-    <a href="בדיקות-קניה.html" class="module-card gray">
-      <div class="mod-icon">📝</div>
-      <h2>בדיקות קניה</h2>
-      <p>מעקב בדיקות רכב לפני קניה, הדפסת דוחות A4</p>
-      <div class="mod-stat" id="statChecks">—</div>
-    </a>
-    <a href="תזכורות.html" class="module-card red">
-      <div class="mod-icon">🔔</div>
-      <h2>תזכורות</h2>
-      <p>משימות ותזכורות עם עדיפות ותאריך יעד, התראות על פריטים באיחור</p>
-      <div class="mod-stat" id="statReminders">—</div>
-    </a>
-    <a href="חשבונות.html" class="module-card blue">
-      <div class="mod-icon">🧾</div>
-      <h2>חשבונות</h2>
-      <p>ניהול חשבוניות חודשיות, מעקב תשלומים וחייבים</p>
-      <div class="mod-stat" id="statInvoices">—</div>
-    </a>
-    <a href="רכבים.html" class="module-card orange">
-      <div class="mod-icon">🚗</div>
-      <h2>רכבים</h2>
-      <p>ניהול קנייה ומכירה של רכבים, מעקב רווחיות ותמונות</p>
-      <div class="mod-stat" id="statCars">—</div>
-    </a>
-    <a href="עובדים.html" class="module-card gray">
-      <div class="mod-icon">👷</div>
-      <h2>עובדים ומשכורות</h2>
-      <p>ניהול עובדים, תשלום שכר חודשי, בונוסים וניכויים</p>
-      <div class="mod-stat" id="statEmployees">—</div>
-    </a>
-    <a href="חובות.html" class="module-card red">
-      <div class="mod-icon">💳</div>
-      <h2>חובות</h2>
-      <p>מעקב חובות לקוחות וחשבוניות פתוחות לספקים</p>
-      <div class="mod-stat" id="statDebts">—</div>
-    </a>
-    <a href="מסמכים.html" class="module-card blue">
-      <div class="mod-icon">📄</div>
-      <h2>מסמכים</h2>
-      <p>תבניות טפסים וטבלאות להדפסה — הזמנות, השאלות ועוד</p>
-      <div class="mod-stat" id="statForms">—</div>
-    </a>
+  <div id="modulesView">
+    <div class="section-title">מודולים</div>
+    <div class="modules-grid">
+      <a href="הוצאות.html" class="module-card">
+        <div class="mod-icon">💰</div>
+        <h2>הוצאות</h2>
+        <p>מעקב הוצאות משרד ופנצריה, תיעוד קבלות וחשבוניות</p>
+        <div class="mod-stat" id="statExpenses">—</div>
+      </a>
+      <a href="מוצרים.html" class="module-card blue">
+        <div class="mod-icon">📦</div>
+        <h2>מוצרים</h2>
+        <p>ניהול מוצרים, מחירי קנייה ומכירה, התראות מלאי נמוך</p>
+        <div class="mod-stat" id="statProducts">—</div>
+      </a>
+      <a href="צמיגים.html" class="module-card orange">
+        <div class="mod-icon">🔵</div>
+        <h2>צמיגים</h2>
+        <p>מלאי ומחירון צמיגים לפי מותג, מידה ועונה. הדפסת מחירון ללקוחות</p>
+        <div class="mod-stat" id="statTires">—</div>
+      </a>
+      <a href="הצעות-מחיר.html" class="module-card blue">
+        <div class="mod-icon">💬</div>
+        <h2>הצעות מחיר</h2>
+        <p>בקשות הצעות מחיר לצמיגים וחלקים, מעקב רווחיות</p>
+        <div class="mod-stat" id="statQuotes">—</div>
+      </a>
+      <a href="ספקים.html" class="module-card orange">
+        <div class="mod-icon">🏭</div>
+        <h2>ספקים</h2>
+        <p>ניהול ספקים, אנשי קשר, חובות וזיכויים</p>
+        <div class="mod-stat" id="statSuppliers">—</div>
+      </a>
+      <a href="בדיקות-קניה.html" class="module-card gray">
+        <div class="mod-icon">📝</div>
+        <h2>בדיקות קניה</h2>
+        <p>מעקב בדיקות רכב לפני קניה, הדפסת דוחות A4</p>
+        <div class="mod-stat" id="statChecks">—</div>
+      </a>
+      <a href="תזכורות.html" class="module-card red">
+        <div class="mod-icon">🔔</div>
+        <h2>תזכורות</h2>
+        <p>משימות ותזכורות עם עדיפות ותאריך יעד, התראות על פריטים באיחור</p>
+        <div class="mod-stat" id="statReminders">—</div>
+      </a>
+      <a href="חשבונות.html" class="module-card blue">
+        <div class="mod-icon">🧾</div>
+        <h2>חשבונות</h2>
+        <p>ניהול חשבוניות חודשיות, מעקב תשלומים וחייבים</p>
+        <div class="mod-stat" id="statInvoices">—</div>
+      </a>
+      <a href="רכבים.html" class="module-card orange">
+        <div class="mod-icon">🚗</div>
+        <h2>רכבים</h2>
+        <p>ניהול קנייה ומכירה של רכבים, מעקב רווחיות ותמונות</p>
+        <div class="mod-stat" id="statCars">—</div>
+      </a>
+      <a href="עובדים.html" class="module-card gray">
+        <div class="mod-icon">👷</div>
+        <h2>עובדים ומשכורות</h2>
+        <p>ניהול עובדים, תשלום שכר חודשי, בונוסים וניכויים</p>
+        <div class="mod-stat" id="statEmployees">—</div>
+      </a>
+      <a href="חובות.html" class="module-card red">
+        <div class="mod-icon">💳</div>
+        <h2>חובות</h2>
+        <p>מעקב חובות לקוחות וחשבוניות פתוחות לספקים</p>
+        <div class="mod-stat" id="statDebts">—</div>
+      </a>
+      <a href="מסמכים.html" class="module-card blue">
+        <div class="mod-icon">📄</div>
+        <h2>מסמכים</h2>
+        <p>תבניות טפסים וטבלאות להדפסה — הזמנות, השאלות ועוד</p>
+        <div class="mod-stat" id="statForms">—</div>
+      </a>
+    </div>
   </div>
 
   <!-- Alerts -->
@@ -279,16 +299,25 @@
 <div id="searchModal" class="modal-overlay">
   <div class="modal" style="max-width:620px">
     <div class="modal-header">
-      <h3>🔍 תוצאות חיפוש</h3>
+      <h3>🔍 חיפוש גלובלי</h3>
       <button class="modal-close" onclick="closeSearchModal()">✕</button>
     </div>
-    <div class="modal-body" style="max-height:65vh; overflow-y:auto; padding:16px 20px">
-      <div id="searchResults"></div>
+    <div class="search-modal-input">
+      <input type="text" id="globalSearchInput"
+        placeholder="חפש לפי שם, לוחית רכב, טלפון..."
+        onkeyup="if(event.key==='Enter') doGlobalSearch()"
+        autofocus>
+      <button class="btn btn-primary" onclick="doGlobalSearch()">חפש</button>
+    </div>
+    <div class="modal-body" style="max-height:60vh; overflow-y:auto; padding:16px 20px">
+      <div id="searchResults">
+        <div class="search-empty" style="padding:24px 20px">הקלד מילת חיפוש ולחץ Enter</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Confirm overlay (shared.js injects but needs placeholder) -->
+<!-- Confirm overlay -->
 <div id="confirmOverlay" class="confirm-overlay">
   <div class="confirm-box">
     <div class="big-icon" id="confirmIcon">🗑️</div>
@@ -423,14 +452,36 @@ function loadDashboard() {
 loadDashboard();
 
 // ════════════════════════════════════════════
+//  VIEW TOGGLE (cards / charts)
+// ════════════════════════════════════════════
+let currentView = 'cards';
+
+function setView(view) {
+  currentView = view;
+  const isCharts = view === 'charts';
+  document.getElementById('modulesView').style.display  = isCharts ? 'none' : 'block';
+  document.getElementById('chartsSection').style.display = isCharts ? 'block' : 'none';
+  document.getElementById('vtCards').classList.toggle('active', !isCharts);
+  document.getElementById('vtCharts').classList.toggle('active', isCharts);
+  if (isCharts) renderCharts();
+}
+
+// ════════════════════════════════════════════
 //  GLOBAL SEARCH
 // ════════════════════════════════════════════
+function openSearchModal() {
+  document.getElementById('searchResults').innerHTML =
+    '<div class="search-empty" style="padding:24px 20px">הקלד מילת חיפוש ולחץ Enter</div>';
+  document.getElementById('globalSearchInput').value = '';
+  document.getElementById('searchModal').classList.add('open');
+  setTimeout(() => document.getElementById('globalSearchInput').focus(), 100);
+}
+
 function doGlobalSearch() {
   const term = (document.getElementById('globalSearchInput').value || '').trim();
   if (!term) return;
   const results = globalSearch(term);
   renderSearchResults(results, term);
-  document.getElementById('searchModal').classList.add('open');
 }
 
 function closeSearchModal() {
@@ -631,18 +682,7 @@ function escHtml(s) {
 // ════════════════════════════════════════════
 //  CHARTS
 // ════════════════════════════════════════════
-let chartsVisible = false;
 const chartInstances = {};
-
-function toggleCharts() {
-  chartsVisible = !chartsVisible;
-  const section = document.getElementById('chartsSection');
-  const btn     = document.getElementById('chartsToggleBtn');
-  section.style.display = chartsVisible ? 'block' : 'none';
-  btn.classList.toggle('active', chartsVisible);
-  btn.textContent = chartsVisible ? '📊 הסתר' : '📊 גרפים';
-  if (chartsVisible) renderCharts();
-}
 
 function renderCharts() {
   Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch {} });
