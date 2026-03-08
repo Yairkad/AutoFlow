@@ -170,6 +170,27 @@
     </div>
   </div>
 
+  <!-- Add New Device -->
+  <div class="settings-section" style="border:2px solid #2563eb22;background:linear-gradient(135deg,#eff6ff,#f8fafc)">
+    <h3 style="color:var(--accent)">📱 הוספת מכשיר חדש</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.7">
+      כדי לחבר מכשיר נוסף לאותו חשבון:<br>
+      <strong>1.</strong> במכשיר הנוכחי – לחץ <strong>"ייצא הגדרות"</strong> ושלח את הקובץ למכשיר החדש.<br>
+      <strong>2.</strong> במכשיר החדש – פתח את האפליקציה, כנס להגדרות, לחץ <strong>"ייבא הגדרות"</strong>.<br>
+      <strong>3.</strong> לחץ <strong>"משוך מהענן"</strong> – כל הנתונים יסתנכרנו מיידית.
+    </p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-accent" onclick="exportDeviceSettings()">📤 ייצא הגדרות מכשיר</button>
+      <label class="btn btn-secondary" style="cursor:pointer">
+        📥 ייבא הגדרות מכשיר
+        <input type="file" accept=".json" style="display:none" onchange="importDeviceSettings(this)">
+      </label>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:12px">
+      ⚠️ הייצוא כולל: פרטי עסק, לוגו, GAS URL, תיקיות Drive, ברירות מחדל. <strong>אינו כולל</strong> נתונים (הוצאות, מוצרים וכו').
+    </p>
+  </div>
+
   <!-- Backup -->
   <div class="settings-section">
     <h3>💾 גיבוי ושחזור</h3>
@@ -658,6 +679,52 @@ function clearAllData() {
       showToast('כל הנתונים נמחקו ✓');
     });
   });
+}
+
+// ===== DEVICE SETUP =====
+function exportDeviceSettings() {
+  const s = getSettings();
+  const exportData = {
+    _type: 'autoline_device_settings',
+    _version: 1,
+    _date: todayStr(),
+    settings: s
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'הגדרות-מכשיר-' + todayStr().replace(/\//g, '-') + '.json';
+  a.click();
+  showToast('הגדרות יוצאו – שלח את הקובץ למכשיר החדש ✓', 'success');
+}
+
+function importDeviceSettings(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data._type !== 'autoline_device_settings' || !data.settings) {
+        showToast('קובץ לא תקין – בחר קובץ הגדרות מכשיר', 'error');
+        return;
+      }
+      // merge: keep existing data keys, override settings fields
+      const current = getSettings();
+      const incoming = data.settings;
+      const merged = { ...current, ...incoming };
+      saveSettings(merged);
+      loadSettingsForm();
+      loadHeaderBranding();
+      updateSyncStatus();
+      loadScanFolders();
+      showToast('הגדרות יובאו בהצלחה! עכשיו לחץ "משוך מהענן" ✓', 'success');
+    } catch {
+      showToast('קובץ לא תקין', 'error');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
 }
 
 async function doSyncPull() {
