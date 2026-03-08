@@ -3,6 +3,8 @@
 //  פונקציות משותפות לכל הדפים
 // =============================================
 
+const APP_VERSION = 'v24';
+
 // ===== DB =====
 function getDB(key) {
   try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
@@ -312,29 +314,32 @@ function autoSync() {
   setTimeout(() => syncPushAll().catch(() => {}), 800);
 }
 
+// ===== VERSION CHIP =====
+document.addEventListener('DOMContentLoaded', () => {
+  const chip = document.createElement('div');
+  chip.id = '__versionChip';
+  chip.textContent = APP_VERSION;
+  Object.assign(chip.style, {
+    position: 'fixed', bottom: '6px', left: '8px',
+    fontSize: '10px', color: '#94a3b8',
+    fontFamily: 'Heebo, sans-serif', pointerEvents: 'none',
+    zIndex: '9998', letterSpacing: '0.3px'
+  });
+  document.body.appendChild(chip);
+});
+
 // ===== SERVICE WORKER (PWA) =====
 if ('serviceWorker' in navigator) {
+  // When new SW takes control (auto, via skipWaiting in sw.js) → reload page to get fresh cache
+  let swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (swRefreshing) return;
+    swRefreshing = true;
+    window.location.reload();
+  });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-      reg.addEventListener('updatefound', () => {
-        const nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-            // New version ready – show update bar
-            const bar = document.createElement('div');
-            bar.innerHTML = `<span>🔄 גרסה חדשה זמינה</span><button onclick="location.reload()" style="margin-right:12px;padding:5px 14px;background:white;color:#1a9e5c;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-family:inherit">רענן עכשיו</button>`;
-            Object.assign(bar.style, {
-              position:'fixed', top:'0', left:'0', right:'0', zIndex:'9999',
-              background:'#1a9e5c', color:'white', padding:'10px 20px',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              gap:'12px', fontSize:'14px', fontWeight:'600', fontFamily:'Heebo,sans-serif'
-            });
-            document.body.prepend(bar);
-          }
-        });
-      });
-    }).catch(() => {});
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
 
