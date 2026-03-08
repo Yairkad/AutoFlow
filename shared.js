@@ -3,7 +3,7 @@
 //  פונקציות משותפות לכל הדפים
 // =============================================
 
-const APP_VERSION = 'v24';
+const APP_VERSION = 'v25';
 
 // ===== DB =====
 function getDB(key) {
@@ -314,8 +314,9 @@ function autoSync() {
   setTimeout(() => syncPushAll().catch(() => {}), 800);
 }
 
-// ===== VERSION CHIP =====
+// ===== VERSION CHIP + NAV SEARCH INJECT =====
 document.addEventListener('DOMContentLoaded', () => {
+  // Version chip
   const chip = document.createElement('div');
   chip.id = '__versionChip';
   chip.textContent = APP_VERSION;
@@ -326,7 +327,171 @@ document.addEventListener('DOMContentLoaded', () => {
     zIndex: '9998', letterSpacing: '0.3px'
   });
   document.body.appendChild(chip);
+
+  // Wrap nav in nav-outer and inject search button
+  const nav = document.querySelector('nav.main-nav');
+  if (nav && !nav.closest('.nav-outer')) {
+    const outer = document.createElement('div');
+    outer.className = 'nav-outer';
+    nav.parentNode.insertBefore(outer, nav);
+    outer.appendChild(nav);
+    const btn = document.createElement('button');
+    btn.className = 'nav-search-btn';
+    btn.title = 'חיפוש גלובלי';
+    btn.textContent = '🔍';
+    btn.onclick = openSearchModal;
+    outer.appendChild(btn);
+  }
+
+  // Inject search modal if not already present
+  if (!document.getElementById('__globalSearchModal')) {
+    const modal = document.createElement('div');
+    modal.id = '__globalSearchModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+          <h3>🔍 חיפוש גלובלי</h3>
+          <button class="modal-close" onclick="closeSearchModal()">✕</button>
+        </div>
+        <div class="search-modal-input">
+          <input type="text" id="__globalSearchInput"
+            placeholder="חפש לפי שם, לוחית רכב, טלפון..."
+            onkeyup="if(event.key==='Enter') doGlobalSearch()">
+          <button class="btn btn-primary" onclick="doGlobalSearch()">חפש</button>
+        </div>
+        <div class="modal-body" style="max-height:60vh;overflow-y:auto;padding:16px 20px">
+          <div id="__globalSearchResults">
+            <div class="search-empty" style="padding:24px 20px">הקלד מילת חיפוש ולחץ Enter</div>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
 });
+
+// ===== GLOBAL SEARCH =====
+function openSearchModal() {
+  document.getElementById('__globalSearchResults').innerHTML =
+    '<div class="search-empty" style="padding:24px 20px">הקלד מילת חיפוש ולחץ Enter</div>';
+  document.getElementById('__globalSearchInput').value = '';
+  document.getElementById('__globalSearchModal').classList.add('open');
+  setTimeout(() => document.getElementById('__globalSearchInput').focus(), 100);
+}
+function closeSearchModal() {
+  document.getElementById('__globalSearchModal').classList.remove('open');
+}
+function doGlobalSearch() {
+  const term = (document.getElementById('__globalSearchInput').value || '').trim();
+  if (!term) return;
+  const results = globalSearch(term);
+  _renderSearchResults(results, term);
+}
+function globalSearch(term) {
+  const t = term.toLowerCase();
+  const results = [];
+  function match(obj, fields) {
+    return fields.some(f => (String(obj[f] || '')).toLowerCase().includes(t));
+  }
+  getDB('pnc_cars_inventory').forEach(c => {
+    if (match(c, ['plate','make','model','color','year','notes']))
+      results.push({ module: '🚗 רכבים – מלאי', url: 'רכבים.html',
+        title: [c.make,c.model,c.year].filter(Boolean).join(' ') || c.plate || '—',
+        detail: [c.plate,c.color,c.status==='available'?'זמין':'נמכר'].filter(Boolean).join(' · ') });
+  });
+  getDB('pnc_cars_buys').forEach(c => {
+    if (match(c, ['plate','make','model','sellerName','sellerPhone','notes']))
+      results.push({ module: '🚗 רכבים – קניות', url: 'רכבים.html',
+        title: [c.make,c.model,c.year].filter(Boolean).join(' ') || c.plate || '—',
+        detail: [c.plate,c.sellerName,c.buyDate].filter(Boolean).join(' · ') });
+  });
+  getDB('pnc_cars_sells').forEach(c => {
+    if (match(c, ['plate','make','model','buyerName','buyerPhone','notes']))
+      results.push({ module: '🚗 רכבים – מכירות', url: 'רכבים.html',
+        title: [c.make,c.model,c.year].filter(Boolean).join(' ') || c.plate || '—',
+        detail: [c.plate,c.buyerName,c.sellDate].filter(Boolean).join(' · ') });
+  });
+  getDB('pnc_customer_debts').forEach(d => {
+    if (match(d, ['customerName','plate','description','phone'])) {
+      const paid = (d.payments||[]).reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
+      results.push({ module: '💳 חובות לקוחות', url: 'חובות.html',
+        title: d.customerName || '—',
+        detail: [d.plate,`יתרה: ₪${Math.max(0,(parseFloat(d.amount)||0)-paid).toLocaleString('he-IL',{maximumFractionDigits:0})}`,d.date].filter(Boolean).join(' · ') });
+    }
+  });
+  getDB('pnc_supplier_debts').forEach(d => {
+    if (match(d, ['supplierName','description','invoiceNum']))
+      results.push({ module: '🏭 חובות ספקים', url: 'חובות.html',
+        title: d.supplierName || '—',
+        detail: [`₪${(parseFloat(d.amount)||0).toLocaleString('he-IL',{maximumFractionDigits:0})}`,d.paid?'שולם ✓':'פתוח',d.dueDate].filter(Boolean).join(' · ') });
+  });
+  getDB('pnc_employees').forEach(e => {
+    if (match(e, ['name','phone','role','id_num','notes']))
+      results.push({ module: '👷 עובדים', url: 'עובדים.html',
+        title: e.name || '—',
+        detail: [e.role,e.phone,e.active?'פעיל':'לא פעיל'].filter(Boolean).join(' · ') });
+  });
+  getDB('pnc_products').forEach(p => {
+    if (match(p, ['name','sku','category','notes']))
+      results.push({ module: '📦 מוצרים', url: 'מוצרים.html',
+        title: p.name || '—',
+        detail: [p.category,`${p.quantity||0} ${p.unit||'יח\''}`,p.sku].filter(Boolean).join(' · ') });
+  });
+  getDB('pnc_tires').forEach(ti => {
+    if (match(ti, ['brand','size','season','notes']))
+      results.push({ module: '🔵 צמיגים', url: 'צמיגים.html',
+        title: [ti.brand,ti.size].filter(Boolean).join(' ') || '—',
+        detail: [ti.season,`${ti.quantity||0} יח'`,ti.price?`₪${ti.price}`:''].filter(Boolean).join(' · ') });
+  });
+  getDB('pnc_suppliers').forEach(s => {
+    if (match(s, ['name','contact','phone','email','category']))
+      results.push({ module: '🏭 ספקים', url: 'ספקים.html',
+        title: s.name || '—',
+        detail: [s.contact,s.phone,s.category].filter(Boolean).join(' · ') });
+  });
+  getDB('pnc_expenses').forEach(e => {
+    if (match(e, ['description','category','notes','supplier']))
+      results.push({ module: '💰 הוצאות', url: 'הוצאות.html',
+        title: e.description||e.category||'—',
+        detail: [`₪${(parseFloat(e.amount)||0).toLocaleString('he-IL',{maximumFractionDigits:0})}`,e.date,e.category].filter(Boolean).join(' · ') });
+  });
+  getDB('pnc_reminders').forEach(r => {
+    if (match(r, ['text','notes']))
+      results.push({ module: '🔔 תזכורות', url: 'תזכורות.html',
+        title: r.text || '—',
+        detail: [r.due,r.priority==='high'?'⚡ דחוף':'',r.done?'הושלם ✓':'פתוח'].filter(Boolean).join(' · ') });
+  });
+  try { (JSON.parse(localStorage.getItem('mualem_db_v3'))||[]).forEach(c => {
+    if (match(c, ['plate','owner','make','model','notes']))
+      results.push({ module: '📝 בדיקות קניה', url: 'בדיקות-קניה.html',
+        title: [c.make,c.model,c.year].filter(Boolean).join(' ')||c.plate||'—',
+        detail: [c.plate,c.owner,c.date].filter(Boolean).join(' · ') });
+  }); } catch {}
+  getDB('pnc_tenants').forEach(t => {
+    if (match(t, ['name','phone','address','notes']))
+      results.push({ module: '🧾 חשבונות', url: 'חשבונות.html',
+        title: t.name || '—',
+        detail: [t.phone,t.address].filter(Boolean).join(' · ') });
+  });
+  return results;
+}
+function _renderSearchResults(results, term) {
+  const el = document.getElementById('__globalSearchResults');
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  if (!results.length) { el.innerHTML = `<div class="search-empty">🔍 לא נמצאו תוצאות עבור "<strong>${esc(term)}</strong>"</div>`; return; }
+  const groups = {};
+  results.forEach(r => { if (!groups[r.module]) groups[r.module]=[]; groups[r.module].push(r); });
+  let html = `<div class="search-count">נמצאו ${results.length} תוצאות</div>`;
+  for (const [mod, items] of Object.entries(groups)) {
+    html += `<div class="search-result-group"><div class="search-group-title">${mod} (${items.length})</div>`;
+    items.slice(0,12).forEach(item => {
+      html += `<a href="${item.url}" class="search-result-item"><div class="search-result-title">${esc(item.title)}</div><div class="search-result-detail">${esc(item.detail)}</div></a>`;
+    });
+    if (items.length>12) html += `<div style="font-size:12px;color:var(--text-muted);padding:6px 8px">...ועוד ${items.length-12} תוצאות</div>`;
+    html += `</div>`;
+  }
+  el.innerHTML = html;
+}
 
 // ===== SERVICE WORKER (PWA) =====
 if ('serviceWorker' in navigator) {

@@ -66,36 +66,6 @@
       padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
     }
 
-    /* ── Nav outer wrapper ── */
-    .nav-outer {
-      display: flex; align-items: stretch;
-      background: white;
-      border-bottom: 2px solid var(--border);
-      position: sticky; top: 0; z-index: 100;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06);
-    }
-    .nav-outer .main-nav {
-      flex: 1;
-      border-bottom: none;
-      box-shadow: none;
-      position: static;
-    }
-
-    /* ── Nav search button ── */
-    .nav-search-btn {
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0 18px;
-      background: transparent;
-      border: none;
-      border-right: 1px solid var(--border);
-      font-size: 20px;
-      cursor: pointer;
-      color: var(--text-muted);
-      transition: color 0.2s, background 0.2s;
-    }
-    .nav-search-btn:hover { color: var(--primary); background: var(--bg); }
-
     /* ── View toggle (cards / charts) ── */
     .view-toggle {
       display: inline-flex; align-items: center;
@@ -128,37 +98,6 @@
     .chart-card canvas { max-height: 220px; }
     .chart-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; }
 
-    /* ── Search modal input ── */
-    .search-modal-input {
-      display: flex; gap: 8px; padding: 12px 16px 0;
-    }
-    .search-modal-input input {
-      flex: 1; padding: 10px 14px;
-      border: 1.5px solid var(--border); border-radius: var(--radius);
-      font-size: 14px; font-family: inherit; background: white; direction: rtl;
-      transition: border-color 0.2s;
-    }
-    .search-modal-input input:focus { outline: none; border-color: var(--primary); }
-
-    /* ── Search results ── */
-    .search-result-group { margin-bottom: 16px; }
-    .search-group-title {
-      font-size: 11px; font-weight: 800; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.5px;
-      margin-bottom: 4px; padding-bottom: 4px; border-bottom: 2px solid var(--border);
-    }
-    .search-result-item {
-      display: flex; flex-direction: column; gap: 2px;
-      padding: 9px 8px; border-bottom: 1px solid var(--border);
-      text-decoration: none; color: var(--text); border-radius: 4px;
-      transition: background 0.15s;
-    }
-    .search-result-item:last-child { border-bottom: none; }
-    .search-result-item:hover { background: var(--bg); }
-    .search-result-title { font-size: 14px; font-weight: 700; }
-    .search-result-detail { font-size: 12px; color: var(--text-muted); }
-    .search-empty { text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: 14px; }
-    .search-count { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
   </style>
 </head>
 <body>
@@ -176,25 +115,22 @@
   </div>
 </header>
 
-<div class="nav-outer">
-  <nav class="main-nav">
-    <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
-    <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
-    <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
-    <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
-    <a href="עובדים.html"          class="nav-link">👷 <span class="label">עובדים</span></a>
-    <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
-    <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
-    <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
-    <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
-    <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
-    <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
-    <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
-    <a href="מסמכים.html"         class="nav-link">📄 <span class="label">מסמכים</span></a>
-    <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
-  </nav>
-  <button class="nav-search-btn" onclick="openSearchModal()" title="חיפוש גלובלי">🔍</button>
-</div>
+<nav class="main-nav">
+  <a href="index.html"          class="nav-link">🏠 <span class="label">ראשי</span></a>
+  <a href="הוצאות.html"         class="nav-link">💰 <span class="label">הוצאות</span></a>
+  <a href="חשבונות.html"        class="nav-link">🧾 <span class="label">חשבונות</span></a>
+  <a href="חובות.html"          class="nav-link">💳 <span class="label">חובות</span></a>
+  <a href="עובדים.html"          class="nav-link">👷 <span class="label">עובדים</span></a>
+  <a href="מוצרים.html"         class="nav-link">📦 <span class="label">מוצרים</span></a>
+  <a href="צמיגים.html"         class="nav-link">🔵 <span class="label">צמיגים</span></a>
+  <a href="רכבים.html"          class="nav-link">🚗 <span class="label">רכבים</span></a>
+  <a href="הצעות-מחיר.html"    class="nav-link">💬 <span class="label">הצעות מחיר</span></a>
+  <a href="ספקים.html"          class="nav-link">🏭 <span class="label">ספקים</span></a>
+  <a href="בדיקות-קניה.html"    class="nav-link">📝 <span class="label">בדיקות קניה</span></a>
+  <a href="תזכורות.html"        class="nav-link">🔔 <span class="label">תזכורות</span></a>
+  <a href="מסמכים.html"         class="nav-link">📄 <span class="label">מסמכים</span></a>
+  <a href="הגדרות.html"         class="nav-link">⚙️ <span class="label">הגדרות</span></a>
+</nav>
 
 <div class="container">
   <p class="welcome">ברוך הבא! בחר מודול להמשיך.</p>
@@ -303,28 +239,6 @@
     <div id="alertsList">
       <div class="empty-state" style="padding:20px">
         <p>✅ אין התראות פעילות</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════ SEARCH MODAL ══════════ -->
-<div id="searchModal" class="modal-overlay">
-  <div class="modal" style="max-width:620px">
-    <div class="modal-header">
-      <h3>🔍 חיפוש גלובלי</h3>
-      <button class="modal-close" onclick="closeSearchModal()">✕</button>
-    </div>
-    <div class="search-modal-input">
-      <input type="text" id="globalSearchInput"
-        placeholder="חפש לפי שם, לוחית רכב, טלפון..."
-        onkeyup="if(event.key==='Enter') doGlobalSearch()"
-        autofocus>
-      <button class="btn btn-primary" onclick="doGlobalSearch()">חפש</button>
-    </div>
-    <div class="modal-body" style="max-height:60vh; overflow-y:auto; padding:16px 20px">
-      <div id="searchResults">
-        <div class="search-empty" style="padding:24px 20px">הקלד מילת חיפוש ולחץ Enter</div>
       </div>
     </div>
   </div>
@@ -477,219 +391,6 @@ function setView(view) {
   document.getElementById('vtCards').classList.toggle('active', !isCharts);
   document.getElementById('vtCharts').classList.toggle('active', isCharts);
   if (isCharts) renderCharts();
-}
-
-// ════════════════════════════════════════════
-//  GLOBAL SEARCH
-// ════════════════════════════════════════════
-function openSearchModal() {
-  document.getElementById('searchResults').innerHTML =
-    '<div class="search-empty" style="padding:24px 20px">הקלד מילת חיפוש ולחץ Enter</div>';
-  document.getElementById('globalSearchInput').value = '';
-  document.getElementById('searchModal').classList.add('open');
-  setTimeout(() => document.getElementById('globalSearchInput').focus(), 100);
-}
-
-function doGlobalSearch() {
-  const term = (document.getElementById('globalSearchInput').value || '').trim();
-  if (!term) return;
-  const results = globalSearch(term);
-  renderSearchResults(results, term);
-}
-
-function closeSearchModal() {
-  document.getElementById('searchModal').classList.remove('open');
-}
-
-function globalSearch(term) {
-  const t = term.toLowerCase();
-  const results = [];
-
-  function match(obj, fields) {
-    return fields.some(f => (String(obj[f] || '')).toLowerCase().includes(t));
-  }
-
-  // Cars inventory
-  getDB('pnc_cars_inventory').forEach(c => {
-    if (match(c, ['plate','make','model','color','year','notes'])) {
-      results.push({
-        module: '🚗 רכבים – מלאי', url: 'רכבים.html',
-        title: [c.make, c.model, c.year].filter(Boolean).join(' ') || c.plate || '—',
-        detail: [c.plate, c.color, c.status === 'available' ? 'זמין' : 'נמכר'].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Cars buys
-  getDB('pnc_cars_buys').forEach(c => {
-    if (match(c, ['plate','make','model','sellerName','sellerPhone','notes'])) {
-      results.push({
-        module: '🚗 רכבים – קניות', url: 'רכבים.html',
-        title: [c.make, c.model, c.year].filter(Boolean).join(' ') || c.plate || '—',
-        detail: [c.plate, c.sellerName, c.buyDate].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Cars sells
-  getDB('pnc_cars_sells').forEach(c => {
-    if (match(c, ['plate','make','model','buyerName','buyerPhone','notes'])) {
-      results.push({
-        module: '🚗 רכבים – מכירות', url: 'רכבים.html',
-        title: [c.make, c.model, c.year].filter(Boolean).join(' ') || c.plate || '—',
-        detail: [c.plate, c.buyerName, c.sellDate].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Customer debts
-  getDB('pnc_customer_debts').forEach(d => {
-    if (match(d, ['customerName','plate','description','phone'])) {
-      const paid = (d.payments||[]).reduce((s,p) => s+(parseFloat(p.amount)||0), 0);
-      const balance = Math.max(0, (parseFloat(d.amount)||0) - paid);
-      results.push({
-        module: '💳 חובות לקוחות', url: 'חובות.html',
-        title: d.customerName || '—',
-        detail: [d.plate, `יתרה: ₪${balance.toLocaleString('he-IL',{maximumFractionDigits:0})}`, d.date].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Supplier debts
-  getDB('pnc_supplier_debts').forEach(d => {
-    if (match(d, ['supplierName','description','invoiceNum'])) {
-      results.push({
-        module: '🏭 חובות ספקים', url: 'חובות.html',
-        title: d.supplierName || '—',
-        detail: [`₪${(parseFloat(d.amount)||0).toLocaleString('he-IL',{maximumFractionDigits:0})}`, d.paid ? 'שולם ✓' : 'פתוח', d.dueDate].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Employees
-  getDB('pnc_employees').forEach(e => {
-    if (match(e, ['name','phone','role','id_num','notes'])) {
-      results.push({
-        module: '👷 עובדים', url: 'עובדים.html',
-        title: e.name || '—',
-        detail: [e.role, e.phone, e.active ? 'פעיל' : 'לא פעיל'].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Products
-  getDB('pnc_products').forEach(p => {
-    if (match(p, ['name','sku','category','notes'])) {
-      results.push({
-        module: '📦 מוצרים', url: 'מוצרים.html',
-        title: p.name || '—',
-        detail: [p.category, `${p.quantity || 0} ${p.unit || 'יח\''}`, p.sku].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Tires
-  getDB('pnc_tires').forEach(ti => {
-    if (match(ti, ['brand','size','season','notes'])) {
-      results.push({
-        module: '🔵 צמיגים', url: 'צמיגים.html',
-        title: [ti.brand, ti.size].filter(Boolean).join(' ') || '—',
-        detail: [ti.season, `${ti.quantity || 0} יח'`, ti.price ? `₪${ti.price}` : ''].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Suppliers
-  getDB('pnc_suppliers').forEach(s => {
-    if (match(s, ['name','contact','phone','email','category'])) {
-      results.push({
-        module: '🏭 ספקים', url: 'ספקים.html',
-        title: s.name || '—',
-        detail: [s.contact, s.phone, s.category].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Expenses
-  getDB('pnc_expenses').forEach(e => {
-    if (match(e, ['description','category','notes','supplier'])) {
-      results.push({
-        module: '💰 הוצאות', url: 'הוצאות.html',
-        title: e.description || e.category || '—',
-        detail: [`₪${(parseFloat(e.amount)||0).toLocaleString('he-IL',{maximumFractionDigits:0})}`, e.date, e.category].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Reminders
-  getDB('pnc_reminders').forEach(r => {
-    if (match(r, ['text','notes'])) {
-      results.push({
-        module: '🔔 תזכורות', url: 'תזכורות.html',
-        title: r.text || '—',
-        detail: [r.due, r.priority === 'high' ? '⚡ דחוף' : '', r.done ? 'הושלם ✓' : 'פתוח'].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Car inspections
-  const checks = (() => { try { return JSON.parse(localStorage.getItem('mualem_db_v3')) || []; } catch { return []; } })();
-  checks.forEach(c => {
-    if (match(c, ['plate','owner','make','model','notes'])) {
-      results.push({
-        module: '📝 בדיקות קניה', url: 'בדיקות-קניה.html',
-        title: [c.make, c.model, c.year].filter(Boolean).join(' ') || c.plate || '—',
-        detail: [c.plate, c.owner, c.date].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  // Tenants (invoices)
-  getDB('pnc_tenants').forEach(t => {
-    if (match(t, ['name','phone','address','notes'])) {
-      results.push({
-        module: '🧾 חשבונות', url: 'חשבונות.html',
-        title: t.name || '—',
-        detail: [t.phone, t.address].filter(Boolean).join(' · ')
-      });
-    }
-  });
-
-  return results;
-}
-
-function renderSearchResults(results, term) {
-  const el = document.getElementById('searchResults');
-  if (results.length === 0) {
-    el.innerHTML = `<div class="search-empty">🔍 לא נמצאו תוצאות עבור "<strong>${escHtml(term)}</strong>"</div>`;
-    return;
-  }
-
-  // Group by module
-  const groups = {};
-  results.forEach(r => {
-    if (!groups[r.module]) groups[r.module] = [];
-    groups[r.module].push(r);
-  });
-
-  let html = `<div class="search-count">נמצאו ${results.length} תוצאות</div>`;
-  for (const [mod, items] of Object.entries(groups)) {
-    html += `<div class="search-result-group">
-      <div class="search-group-title">${mod} (${items.length})</div>`;
-    items.slice(0, 12).forEach(item => {
-      html += `<a href="${item.url}" class="search-result-item">
-        <div class="search-result-title">${escHtml(item.title)}</div>
-        <div class="search-result-detail">${escHtml(item.detail)}</div>
-      </a>`;
-    });
-    if (items.length > 12) html += `<div style="font-size:12px;color:var(--text-muted);padding:6px 8px">...ועוד ${items.length - 12} תוצאות. עבור לדף המתאים לחיפוש מפורט.</div>`;
-    html += `</div>`;
-  }
-  el.innerHTML = html;
-}
-
-function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ════════════════════════════════════════════
