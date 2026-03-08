@@ -3,7 +3,7 @@
 //  פונקציות משותפות לכל הדפים
 // =============================================
 
-const APP_VERSION = 'v25';
+const APP_VERSION = 'v28';
 
 // ===== DB =====
 function getDB(key) {

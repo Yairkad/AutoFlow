@@ -3,7 +3,7 @@
 //  Offline-first caching strategy
 // =============================================
 
-const CACHE = 'autoline-v27';
+const CACHE = 'autoline-v28';
 
 const SHELL = [
   './',
